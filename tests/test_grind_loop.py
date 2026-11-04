@@ -1,0 +1,76 @@
+"""Tests for grind_loop.py, using a fake agent command."""
+import contextlib
+import io
+import json
+import os
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "skills" / "grindwright" / "scripts"))
+import grind_loop  # noqa: E402
+import grw  # noqa: E402
+
+
+class Loop(unittest.TestCase):
+    def setUp(self):
+        self.dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.dir.cleanup)
+        self.root = Path(self.dir.name)
+        self.state = self.root / "grind"
+        os.environ["GRINDWRIGHT_PLUGIN_DIRS"] = str(self.root / "none")
+        self.addCleanup(os.environ.pop, "GRINDWRIGHT_PLUGIN_DIRS", None)
+        self.grw("init", "--project", "T", "--repo", str(self.root))
+        self.grw("add", "work", "--lane", "code", "--source", "t", "--value", "4")
+
+    def grw(self, *argv):
+        with contextlib.redirect_stdout(io.StringIO()):
+            return grw.main(["--state", str(self.state), *argv])
+
+    def fake(self, body):
+        path = self.root / "agent.py"
+        path.write_text(body, encoding="utf-8")
+        return [sys.executable, str(path)]
+
+    def go(self, command, *more):
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            code = grind_loop.main(["p.md", "--state", str(self.state), "--max-sessions", "3", "--max-hours", "1", *more, "--go", "--", *command])
+        return code, json.loads(out.getvalue())
+
+    def test_dry_run_is_the_default(self):
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            grind_loop.main(["p.md", "--state", str(self.state), "--max-sessions", "1", "--max-hours", "1"])
+        self.assertTrue(json.loads(out.getvalue())["dry_run"])
+
+    def test_bounds_are_required(self):
+        with self.assertRaises(SystemExit), contextlib.redirect_stderr(io.StringIO()):
+            grind_loop.main(["p.md"])
+
+    def test_no_progress_stops(self):
+        code, result = self.go(self.fake("print('hi')"))
+        self.assertEqual((code, result["stopped"], result["sessions"]), (2, "no-progress", 2))
+
+    def test_max_sessions_stops(self):
+        body = f"open(r'{self.state / 'events.jsonl'}','a').write('{{\"ts\":\"0\",\"type\":\"x\"}}\\n')"
+        code, result = self.go(self.fake(body))
+        self.assertEqual((code, result["stopped"], result["sessions"]), (0, "max-sessions", 3))
+
+    def test_failure_stops(self):
+        _, result = self.go(self.fake("raise SystemExit(3)"))
+        self.assertEqual(result["stopped"], "session-failed")
+
+    def test_usage_limit_gives_up_after_waits(self):
+        body = "import sys;print('You hit your limit');sys.exit(1)"
+        code, result = self.go(self.fake(body), "--limit-wait", "0", "--max-waits", "1")
+        self.assertEqual((code, result["stopped"]), (2, "usage-limit"))
+
+    def test_lost_plugin_is_caught(self):
+        _, result = self.go(self.fake("print('no such thing')"), "--require-text", "grindwright")
+        self.assertEqual(result["stopped"], "plugin-missing")
+
+
+if __name__ == "__main__":
+    unittest.main()

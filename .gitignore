@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+dist/
+evals/results/
+.lock
+ai-docs/ask/*/server.json
+ai-docs/ask/*/server.log
+evals/last-run.txt

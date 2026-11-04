@@ -1,0 +1,4 @@
+wide cinematic painting of a small indie game developer's workshop late at night, seen from a low angle: an empty desk with a glowing monitor showing a pixel art game scene, a long paper work board of colored cards moving along lanes, a mechanical grindstone wheel turning with sparks in the foreground, a single card waiting in a tray, a mug of coffee, warm desk lamp light, deep teal shadows, painterly oil texture, calm and steady, no people, no readable text, no letters,
+
+Model: Z-Image Turbo, 9 steps, cfg 1.0, res_multistep/simple, 1536x640, workflow banner-workflow.api.json, rendered on the Mac host.
+Chosen: seed 222 of four (111, 222, 333, 444). Rendered 2026-11-03.

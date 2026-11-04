@@ -1,0 +1,86 @@
+{
+  "evergreen": "1.0",
+  "name": "grindwright",
+  "kind": "skill",
+  "main": "SKILL.md",
+  "files": {
+    "research": "RESEARCH.md",
+    "changelog": "CHANGELOG.md",
+    "learnings": "LEARNINGS.md",
+    "tests": "TESTS.md"
+  },
+  "protocol": "plugin",
+  "source": null,
+  "topic": "autonomous and chained agent work on indie games: loops, work ledgers, task selection, human escalation, usage limits, Claude Code unattended mechanics",
+  "tier": "fast",
+  "interval_days": 21,
+  "last_checked": "2026-11-03",
+  "next_due": "2026-11-24",
+  "verify_at_use": false,
+  "volatile_claims": [],
+  "contradiction": null,
+  "events": [],
+  "streak": {
+    "quiet": 0,
+    "pinned_min": 0,
+    "pinned_max": 0,
+    "vau_quiet": 0
+  },
+  "history": [
+    {
+      "date": "2026-11-03",
+      "m": null,
+      "interval_after": 21,
+      "note": "created"
+    }
+  ],
+  "counts": {
+    "learnings": 0,
+    "changes": 0,
+    "research": 0,
+    "tests": 0
+  },
+  "consolidate_every": 25,
+  "tests": {
+    "last_run": "2026-11-03T02:00",
+    "harness": "claude plugin eval",
+    "env": "owner-pc",
+    "cases": 12,
+    "passed": 9,
+    "failed": 0,
+    "failing": [],
+    "last_failure": {
+      "date": "2026-11-03",
+      "note": "T-20261103-2 action cases not run: no sandbox for Bash on native Windows (environment)"
+    },
+    "research_after_days": null
+  },
+  "scout": {
+    "beat": "indie-ai-games",
+    "status": "linked",
+    "date": "2026-11-03"
+  },
+  "worth": {
+    "checked": "2026-11-02",
+    "skills": {
+      "marketwright": {
+        "verdict": "TRIM",
+        "why": "a real gain (+89 points (noise margin 21)) at 1.82x the cost; cut the general advice and re-run to keep the gain for less",
+        "body_tokens": 1281,
+        "listing_tokens": 267,
+        "specific_share": 0.36,
+        "delta": 0.89,
+        "cost_ratio": 1.82,
+        "modes": [],
+        "gaps": 0,
+        "checked": "2026-11-02",
+        "uses": {
+          "days": 60,
+          "interactive": 0,
+          "subagent": 0,
+          "headless": 0
+        }
+      }
+    }
+  }
+}

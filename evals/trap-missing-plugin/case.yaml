@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: trap-missing-plugin
+max_turns: 40
+timeout_seconds: 600
+context:
+  scaffold_script: fixture.sh
