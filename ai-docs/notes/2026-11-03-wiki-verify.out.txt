@@ -1,0 +1,305 @@
+=== version ===
+$ grw.py --version
+0.1.0
+$ echo $?
+0
+=== init needs project ===
+$ grw.py init
+usage: grw.py init [-h] --project PROJECT [--repo REPO] [--force]
+grw.py init: error: the following arguments are required: --project
+$ echo $?
+2
+=== init ===
+$ grw.py init --project "Tiny Colony"
+{
+ "ok": true,
+ "state": "ai-docs/grind",
+ "next": "fill profile.json and road.json (references/profile.md)"
+}
+$ echo $?
+0
+=== state folder ===
+ai-docs/grind/ledger.jsonl
+ai-docs/grind/profile.json
+ai-docs/grind/road.json
+=== no source ===
+$ grw.py add "Fix the save bug" --lane bugs --value 4
+usage: grw.py add [-h] --lane LANE --source SOURCE --value {1,2,3,4,5}
+                  [--human-min HUMAN_MIN] [--cost {S,M,L}]
+                  [--confidence {low,medium,high}] [--goal GOAL] [--road ROAD]
+                  [--person PERSON] [--host HOST] [--blocked-by BLOCKED_BY]
+                  [--owner-note] [--question QUESTION] [--guess GUESS]
+                  title
+grw.py add: error: the following arguments are required: --source
+$ echo $?
+2
+=== add easy ===
+$ grw.py add "Rename a menu label" --lane bugs --value 2 --source "menu.md line 3" --cost S
+{
+ "ok": true,
+ "id": "gce9ee8",
+ "class": "filler"
+}
+$ echo $?
+0
+=== add valuable ===
+$ grw.py add "Finish the ending" --lane bugs --value 5 --human-min 30 --road core --source "design.md: no ending"
+{
+ "ok": true,
+ "id": "gd81b15",
+ "class": "worth-the-ask"
+}
+$ echo $?
+0
+=== rank ===
+$ grw.py rank
+{
+ "ok": true,
+ "ranked": [
+  {
+   "id": "gd81b15",
+   "title": "Finish the ending",
+   "lane": "bugs",
+   "score": 18.75,
+   "class": "worth-the-ask",
+   "why": [
+    "value 5 -> 37.5",
+    "human 30 min x0.50"
+   ],
+   "action": "work"
+  },
+  {
+   "id": "gce9ee8",
+   "title": "Rename a menu label",
+   "lane": "bugs",
+   "score": 4.0,
+   "class": "filler",
+   "why": [
+    "value 2 -> 4",
+    "human 0 min x1.00"
+   ],
+   "action": "work"
+  }
+ ],
+ "deferred": [],
+ "capped": [],
+ "discovered": false,
+ "hosts": {},
+ "free_gpu_hosts": []
+}
+$ echo $?
+0
+=== next ===
+$ grw.py next
+{
+ "ok": true,
+ "next": {
+  "id": "gd81b15",
+  "title": "Finish the ending",
+  "lane": "bugs",
+  "score": 18.75,
+  "class": "worth-the-ask",
+  "why": [
+   "value 5 -> 37.5",
+   "human 30 min x0.50"
+  ],
+  "action": "work"
+ },
+ "alternatives": [
+  {
+   "id": "gce9ee8",
+   "title": "Rename a menu label",
+   "lane": "bugs",
+   "score": 4.0,
+   "class": "filler",
+   "why": [
+    "value 2 -> 4",
+    "human 0 min x1.00"
+   ],
+   "action": "work"
+  }
+ ],
+ "deferred": 0,
+ "free_gpu_hosts": []
+}
+$ echo $?
+0
+=== post ===
+$ grw.py guard post
+{
+ "ok": false,
+ "refused": [
+  "outward-facing: draft it and hand it to a person, whatever the profile says"
+ ],
+ "allowed": false
+}
+$ echo $?
+2
+=== merge ===
+$ grw.py guard merge
+{
+ "ok": true,
+ "allowed": true,
+ "why": "allow: after checks pass"
+}
+$ echo $?
+0
+=== main ===
+$ grw.py guard touch_main
+{
+ "ok": false,
+ "refused": [
+  "deny: branch"
+ ],
+ "allowed": false
+}
+$ echo $?
+2
+=== unset ===
+$ grw.py guard deploy
+{
+ "ok": false,
+ "refused": [
+  "outward-facing: draft it and hand it to a person, whatever the profile says"
+ ],
+ "allowed": false
+}
+$ echo $?
+2
+=== done no evidence ===
+$ grw.py done gd81b15
+usage: grw.py done [-h] --evidence EVIDENCE
+                   --oracle {none,compile,tests,boot,scripted-play,snapshot,human}
+                   [--provenance PROVENANCE]
+                   id
+grw.py done: error: the following arguments are required: --evidence, --oracle
+$ echo $?
+2
+=== wait no set ===
+$ grw.py wait-human gd81b15 --person owner
+{
+ "ok": false,
+ "refused": [
+  "no askwright set: give --why (for a PR or a chat question)"
+ ]
+}
+$ echo $?
+2
+=== check ===
+$ grw.py session check
+{
+ "ok": true,
+ "may_stop": false,
+ "why": [
+  "gd81b15 is selectable: Finish the ending"
+ ],
+ "next": {
+  "id": "gd81b15",
+  "title": "Finish the ending",
+  "lane": "bugs",
+  "score": 18.75,
+  "class": "worth-the-ask",
+  "why": [
+   "value 5 -> 37.5",
+   "human 30 min x0.50"
+  ],
+  "action": "work"
+ }
+}
+$ echo $?
+0
+=== lint ===
+$ grw.py lint-text pr.txt
+{
+ "ok": false,
+ "refused": [
+  "text names a banned term: secret-codename"
+ ],
+ "hits": [
+  "secret-codename"
+ ]
+}
+$ echo $?
+2
+=== doctor ===
+$ grw.py doctor
+{
+ "ok": true,
+ "plugins": {
+  "askwright": false,
+  "artwright": false,
+  "pixelwright": false,
+  "musicwright": false,
+  "cinewright": false,
+  "game-juice": false,
+  "polywright": false,
+  "ludowright": false,
+  "marketwright": false,
+  "comfyui-gen": true,
+  "unity-agent": false,
+  "roblox-agent": false,
+  "tokenwright": false,
+  "everlast": false,
+  "evergreen": false
+ },
+ "ask_py": null,
+ "hosts": {},
+ "closed_lanes": {},
+ "open_lanes": [
+  "bugs",
+  "cards"
+ ],
+ "repo_found": true
+}
+$ echo $?
+0
+=== loop bounds ===
+$ grind_loop.py prompt.md
+usage: grind_loop.py [-h] [--state STATE] [--cwd CWD]
+                     --max-sessions MAX_SESSIONS --max-hours MAX_HOURS
+                     [--limit-wait LIMIT_WAIT] [--max-waits MAX_WAITS]
+                     [--require-text REQUIRE_TEXT] [--go]
+                     prompt
+grind_loop.py: error: the following arguments are required: --max-sessions, --max-hours
+$ echo $?
+2
+=== loop dry ===
+$ grind_loop.py prompt.md --state ai-docs/grind --max-sessions 5 --max-hours 4
+{
+ "ok": true,
+ "dry_run": true,
+ "would_run": [
+  "claude",
+  "-p",
+  "--permission-mode",
+  "auto",
+  "--output-format",
+  "json",
+  "Execute prompt.md"
+ ],
+ "max_sessions": 5,
+ "max_hours": 4.0,
+ "now": {
+  "ok": true,
+  "may_stop": false,
+  "why": [
+   "gd81b15 is selectable: Finish the ending"
+  ],
+  "next": {
+   "id": "gd81b15",
+   "title": "Finish the ending",
+   "lane": "bugs",
+   "score": 18.75,
+   "class": "worth-the-ask",
+   "why": [
+    "value 5 -> 37.5",
+    "human 30 min x0.50"
+   ],
+   "action": "work"
+  }
+ }
+}
+$ echo $?
+0
+=== repository tests ===
+Ran 53 tests OK
