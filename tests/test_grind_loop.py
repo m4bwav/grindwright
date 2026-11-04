@@ -5,6 +5,7 @@ import json
 import os
 import sys
 import tempfile
+import time
 import unittest
 from pathlib import Path
 
@@ -42,7 +43,7 @@ class Loop(unittest.TestCase):
     def test_dry_run_is_the_default(self):
         out = io.StringIO()
         with contextlib.redirect_stdout(out):
-            grind_loop.main(["p.md", "--state", str(self.state), "--max-sessions", "1", "--max-hours", "1"])
+            grind_loop.main(["p.md", "--state", str(self.state), "--max-sessions", "1", "--max-hours", "1", "--", sys.executable])
         self.assertTrue(json.loads(out.getvalue())["dry_run"])
 
     def test_bounds_are_required(self):
@@ -65,6 +66,27 @@ with open({str(self.state / 'events.jsonl')!r}, 'a') as f:
         code, result = self.go(self.fake("import time; time.sleep(30)"), "--session-minutes", "0.01")
         self.assertEqual(result["stopped"], "session-timeout")
         self.assertEqual(code, 2)
+
+    def test_missing_command_stops_even_in_a_dry_run(self):
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            code = grind_loop.main(["p.md", "--state", str(self.state), "--max-sessions", "1", "--max-hours", "1", "--", "no-such-agent-here"])
+        self.assertEqual(json.loads(out.getvalue())["stopped"], "command-not-found")
+        self.assertEqual(code, 2)
+
+    def test_timeout_kills_the_child_of_a_wrapper(self):
+        marker = self.root / "survived"
+        child = f"import time, pathlib; time.sleep(3); pathlib.Path({str(marker)!r}).write_text('x')"
+        wrapper = self.fake(f"import subprocess, sys; subprocess.run([sys.executable, '-c', {child!r}])")
+        code, result = self.go(wrapper, "--session-minutes", "0.01")
+        self.assertEqual(result["stopped"], "session-timeout")
+        time.sleep(4)
+        self.assertFalse(marker.exists())
+
+    def test_log_keeps_session_output(self):
+        log = self.root / "run.log"
+        self.go(self.fake("print('session said this')"), "--log", str(log))
+        self.assertIn("session said this", log.read_text(encoding="utf-8"))
 
     def test_max_sessions_stops(self):
         body = f"open(r'{self.state / 'events.jsonl'}','a').write('{{\"ts\":\"0\",\"type\":\"x\"}}\\n')"

@@ -11,7 +11,10 @@ owner's call, so both bounds are required. After --: the agent command (default 
 import argparse
 import hashlib
 import json
+import os
 import re
+import shutil
+import signal
 import subprocess
 import sys
 import time
@@ -43,6 +46,32 @@ def verdict(state):
         return {"may_stop": True, "why": ["grw.py failed: " + (done.stderr or done.stdout)[:200]]}
 
 
+def resolve(command):
+    """Windows installs claude as a .cmd wrapper, which CreateProcess cannot find by its bare name."""
+    found = shutil.which(command[0])
+    return [found, *command[1:]] if found else None
+
+
+def kill_tree(process):
+    """Killing only a wrapper leaves the real agent running and holding the pipes."""
+    if sys.platform == "win32":
+        subprocess.run(["taskkill", "/T", "/F", "/PID", str(process.pid)], capture_output=True)
+    else:
+        os.killpg(process.pid, signal.SIGKILL)
+
+
+def session(command, cwd, timeout):
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8", errors="replace",
+                               cwd=cwd, start_new_session=sys.platform != "win32")
+    try:
+        out, err = process.communicate(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        kill_tree(process)
+        process.communicate()
+        raise
+    return subprocess.CompletedProcess(command, process.returncode, out, err)
+
+
 def plugins_loaded(stdout, need):
     """A headless session that silently lost the plugin must not be trusted."""
     if not need:
@@ -51,7 +80,10 @@ def plugins_loaded(stdout, need):
 
 
 def run(args, sleep=time.sleep, clock=time.monotonic):
-    command = args.command or DEFAULT_COMMAND
+    wanted = args.command or DEFAULT_COMMAND
+    command = resolve(wanted)
+    if not command:
+        return {"ok": False, "stopped": "command-not-found", "command": wanted[0], "sessions": 0}
     prompt = f"Execute {args.prompt}"
     if not args.go:
         return {"ok": True, "dry_run": True, "would_run": command + [prompt], "max_sessions": args.max_sessions,
@@ -71,10 +103,13 @@ def run(args, sleep=time.sleep, clock=time.monotonic):
         if args.session_minutes:
             allowed = min(allowed, args.session_minutes * 60)
         try:
-            done = subprocess.run(command + [prompt], capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=args.cwd, timeout=allowed)
+            done = session(command + [prompt], args.cwd, allowed)
         except subprocess.TimeoutExpired:
             return {"ok": False, "stopped": "session-timeout", "seconds": round(allowed), "sessions": sessions}
         output = (done.stdout or "") + (done.stderr or "")
+        if args.log:
+            with open(args.log, "a", encoding="utf-8") as log:
+                print(f"=== pass {sessions + 1}, exit {done.returncode}", output, sep=chr(10), file=log)
         if done.returncode != 0 and LIMIT.search(output):
             waits += 1
             if waits > args.max_waits or clock() + args.limit_wait >= deadline:
@@ -102,6 +137,7 @@ def main(argv=None):
     parser.add_argument("--limit-wait", type=int, default=1800, help="seconds to sleep on a usage limit")
     parser.add_argument("--max-waits", type=int, default=4)
     parser.add_argument("--require-text", help="text the session output must contain, such as the plugin's name")
+    parser.add_argument("--log", help="append each session's output to this file")
     parser.add_argument("--go", action="store_true", help="really run; without it, print what would run")
     argv = list(sys.argv[1:] if argv is None else argv)
     command = []
