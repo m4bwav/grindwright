@@ -2,7 +2,7 @@
 name: grindwright
 description: "Use to keep an indie game moving like a solo dev who never stops: pick the most valuable work across lanes (card art, placeholder graphics, animation, sound, music, trailers, balance, testing and bugs, unfinished features, maintenance, marketing), do everything that needs no person, queue questions on a decision page and switch lanes instead of waiting, and end each session with the same start command. A ledger and a selector script rank value first, with human minutes as the discount. Use on 'grind on my game', 'keep working on the game', 'what should I work on next', 'everything is waiting on me', 'work through the backlog while I'm away', 'run unattended', or a continue prompt that names grindwright. Also 'refresh grindwright'. Not for one design question (ludowright), one juice pass (game-juice) or one asset."
 metadata:
-  version: "0.1.2"
+  version: "0.1.3"
 ---
 
 # grindwright
@@ -40,20 +40,20 @@ act on a road that is not confirmed, beyond work every road would include (bugs,
      Add only items with a real `--source`. Never invent busywork.
    - `stop`: nothing selectable after discovery. Say so honestly.
 3. Finish the item one of three ways:
-   - `grw.py done <id> --evidence "..." --oracle <rung>`. Rungs: compile, tests, boot, scripted-play, snapshot, human.
+   - `grw.py done <id> --evidence "..." --oracle <rung>`. Rungs: none (reports and research), compile, tests, boot, scripted-play, snapshot, human.
      Use the highest it passed. Only `human` proves it is good; never call machine-checked work fun or finished.
    - `grw.py wait-human <id> --set <askwright set> --person <who>`, which runs the gates. Then hand over one inbox
      link in one message and go to step 2.
    - `grw.py wait-machine <id> --done-file <path> --why ...`, with the render detached. Go to step 2.
 4. Failed pass: `grw.py redo <id> "<what was wrong>"`.
 5. Repeat until `grw.py session check` allows stopping. It refuses while anything is selectable. Then
-   `grw.py session end`, update `HANDOFF.md`, and print the same one-line start command.
+   `grw.py session end` (`--force "<why>"` when a fresh session would do the next item better), update `HANDOFF.md`, and print the same one-line start command.
 
 ## What to ask, and when
 
 - Ask as soon as a person is clearly needed: taste, money or machine time beyond the agreed budget, scope, anything
   hard to undo. Decide reversible small calls yourself and flag them in one line. Never stop to wait for an answer.
-- Every question has a real guess, made after looking at the media, in a plain reply as well as on a page. The gate refuses placeholders. A guess never
+- Every question has a real guess, made after looking at the media, in a plain reply as well as on a page. Its `confidence` is `high` or `low`. The gate refuses placeholders. A guess never
   licenses skipping the question: guesses matched few real picks.
 - Worth asking: picks with room for a free note, and direction before a batch. Not worth asking: technical calls,
   go-aheads, naming, housekeeping, "start now?". Decide those.

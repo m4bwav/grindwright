@@ -14,3 +14,6 @@ Published with fresh history. The earlier history, dry runs, session mining and 
 
 ## 2026-11-03: 0.1.1, driver guards
 Scan notes on silent runaways led to two driver fixes: a per-session time limit, and bookkeeping events no longer count as progress. Re-ran the small-call and busywork traps, both pass after a fixture fix. Scan folded into the survey. Pilot still waits on the owner's answers.
+
+## 2026-11-03: first live pilot, 0.1.2 and 0.1.3
+A three-session, four-hour pilot on a real game. The first start crashed before any session because the agent is a .cmd wrapper on Windows (0.1.2). The second ran 2 sessions in about 30 minutes and stopped on the ledger, with items finished on a branch, nothing merged, and 3 questions queued while work moved to other lanes. No usage limit was met, so limit behaviour is still untested. Open design question: the review cap also defers drafting that needs no person until review.

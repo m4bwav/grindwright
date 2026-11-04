@@ -1,5 +1,8 @@
 # Changelog: grindwright
 
+## 0.1.3 · 2026-11-03
+`grw.py show <id>`. The skill now names the `none` rung, the allowed guess confidence and when to force a session end. Reason: notes from the first live pilot, where a report was recorded as `compile` and a lint failed on confidence.
+
 ## 0.1.2 · 2026-11-03
 The driver finds a .cmd wrapper on Windows, reports a missing agent command even in a dry run, kills the whole process tree on a timeout, and can log session output (`--log`). Reason: the first live pilot crashed before its first session, with a traceback, on a machine where the agent is a .cmd wrapper.
 
