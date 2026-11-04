@@ -43,7 +43,7 @@ class Loop(unittest.TestCase):
     def test_dry_run_is_the_default(self):
         out = io.StringIO()
         with contextlib.redirect_stdout(out):
-            grind_loop.main(["p.md", "--state", str(self.state), "--max-sessions", "1", "--max-hours", "1"])
+            grind_loop.main(["p.md", "--state", str(self.state), "--max-sessions", "1", "--max-hours", "1", "--", sys.executable])
         self.assertTrue(json.loads(out.getvalue())["dry_run"])
 
     def test_bounds_are_required(self):
