@@ -1,6 +1,6 @@
 # Handoff
 
-Updated 2026-11-03. Public `m4bwav/grindwright`, 0.1.0.
+Updated 2026-11-03. Public `m4bwav/grindwright`, v0.1.0 tagged, wiki at 0.1.0 (`ai-docs/notes/2026-11-03-github-wiki.md`).
 
 ## State
 
