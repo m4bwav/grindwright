@@ -1,5 +1,8 @@
 # Changelog: grindwright
 
+## 0.1.1 · 2026-11-03
+The driver now stops a session past `--session-minutes` or the `--max-hours` deadline; before, one hung session could overrun every bound. Opening and closing a session no longer counts as progress; before, the no-progress stop could never fire on a real ledger. A direct owner request in the session is an owner note. The busywork and small-call fixtures have a confirmed road. Reason: runaway reports in the 2026-11-03 scan, and the re-run traps.
+
 ## 0.1.0 · 2026-11-03
 Created from the kickoff: ledger, selector, gates, driver, skill, evals, dry runs over both games. Reason: stalling on one blocked lane was the real defect in the hand-run sessions.
 

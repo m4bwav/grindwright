@@ -11,3 +11,6 @@ plugin eval stays read-only even with --allow-tools, so ran the 10 traps once ea
 
 ## 2026-11-03: public
 Published with fresh history. The earlier history, dry runs, session mining and open decisions on real games stay private with the maintainer. Restored CI on push and pull request, added a banner and a wiki.
+
+## 2026-11-03: 0.1.1, driver guards
+Scan notes on silent runaways led to two driver fixes: a per-session time limit, and bookkeeping events no longer count as progress. Re-ran the small-call and busywork traps, both pass after a fixture fix. Scan folded into the survey. Pilot still waits on the owner's answers.

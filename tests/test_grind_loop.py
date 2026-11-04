@@ -53,6 +53,19 @@ class Loop(unittest.TestCase):
         code, result = self.go(self.fake("print('hi')"))
         self.assertEqual((code, result["stopped"], result["sessions"]), (2, "no-progress", 2))
 
+    def test_bookkeeping_alone_is_no_progress(self):
+        agent = self.fake(f"""
+with open({str(self.state / 'events.jsonl')!r}, 'a') as f:
+    f.write('{{"type": "session_start"}}' + chr(10) + '{{"type": "session_end"}}' + chr(10))
+""")
+        code, result = self.go(agent)
+        self.assertEqual(result["stopped"], "no-progress")
+
+    def test_hung_session_stops_at_the_session_limit(self):
+        code, result = self.go(self.fake("import time; time.sleep(30)"), "--session-minutes", "0.01")
+        self.assertEqual(result["stopped"], "session-timeout")
+        self.assertEqual(code, 2)
+
     def test_max_sessions_stops(self):
         body = f"open(r'{self.state / 'events.jsonl'}','a').write('{{\"ts\":\"0\",\"type\":\"x\"}}\\n')"
         code, result = self.go(self.fake(body))

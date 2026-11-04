@@ -11,7 +11,9 @@ python grind_loop.py <continue prompt> --state <state> --cwd <repo> --max-sessio
 ```
 
 It starts a fresh session per pass and stops on: the ledger allowing a stop, either bound, two passes that change
-nothing, a failed session, repeated usage limits, or missing `--require-text`.
+nothing, a failed session, a session past `--session-minutes` or the `--max-hours` deadline, repeated usage limits, or
+missing `--require-text`. Runaways raise no errors, so set `--session-minutes`. Opening and closing a session does not
+count as progress.
 
 Why an outer driver (survey, 2026-11-03, `ai-docs/research/` in the plugin repo):
 - Stop hooks are overridden after repeated blocks, the `/goal` judge reads only the transcript, recurring `/loop` tasks
