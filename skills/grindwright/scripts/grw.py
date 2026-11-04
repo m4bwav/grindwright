@@ -27,7 +27,7 @@ import time
 import urllib.request
 from pathlib import Path
 
-VERSION = "0.1.2"
+VERSION = "0.1.3"
 FORMAT = 1
 STATES = ("ready", "running", "waiting-on-human", "waiting-on-machine", "done", "dropped")
 COST_UNITS = {"S": 1, "M": 3, "L": 8}
@@ -546,6 +546,13 @@ def cmd_set(store, args):
     touch(item)
     store.save_items(items)
     return {"id": item["id"]}
+
+
+def cmd_show(store, args):
+    for item in store.items():
+        if item["id"] == args.id:
+            return {"item": item}
+    return {"ok": False, "error": f"no item {args.id}"}
 
 
 def cmd_list(store, args):
@@ -1094,6 +1101,8 @@ def build_parser():
     p.add_argument("id")
     p.add_argument("field", nargs="+")
 
+    p = add("show", cmd_show)
+    p.add_argument("id")
     p = add("list", cmd_list)
     p.add_argument("--only", choices=STATES)
 
@@ -1201,7 +1210,7 @@ def main(argv=None):
     store = Store(args.state)
     if args.command != "init":
         store.require()
-    read_only = args.command in ("rank", "next", "plan", "doctor", "list", "queue", "guard", "lint-text", "metrics", "init")
+    read_only = args.command in ("show", "rank", "next", "plan", "doctor", "list", "queue", "guard", "lint-text", "metrics", "init")
     try:
         if read_only:
             result = args.func(store, args)

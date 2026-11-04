@@ -434,5 +434,18 @@ class Plan(Base):
         self.assertEqual(ids, sorted(ids))
 
 
+class Show(unittest.TestCase):
+    def test_show_returns_one_item(self):
+        with tempfile.TemporaryDirectory() as folder:
+            def call(*argv):
+                out = io.StringIO()
+                with contextlib.redirect_stdout(out):
+                    grw.main(["--state", folder, *argv])
+                return json.loads(out.getvalue())
+            call("init", "--project", "T", "--repo", folder)
+            made = call("add", "work", "--lane", "code", "--source", "t", "--value", "4")["id"]
+            self.assertEqual(call("show", made)["item"]["title"], "work")
+
+
 if __name__ == "__main__":
     unittest.main()
