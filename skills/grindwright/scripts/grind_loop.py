@@ -24,10 +24,13 @@ DEFAULT_COMMAND = ["claude", "-p", "--permission-mode", "auto", "--output-format
 
 def fingerprint(state):
     digest = hashlib.sha1()
-    for name in ("ledger.jsonl", "events.jsonl"):
-        path = Path(state) / name
-        if path.exists():
-            digest.update(path.read_bytes())
+    ledger, events = Path(state) / "ledger.jsonl", Path(state) / "events.jsonl"
+    if ledger.exists():
+        digest.update(ledger.read_bytes())
+    if events.exists():
+        for line in events.read_bytes().splitlines():
+            if b'"session_start"' not in line and b'"session_end"' not in line:  # opening and closing is not progress
+                digest.update(line)
     return digest.hexdigest()
 
 
@@ -64,7 +67,13 @@ def run(args, sleep=time.sleep, clock=time.monotonic):
         if clock() >= deadline:
             return {"ok": True, "stopped": "max-hours", "sessions": sessions}
         before = fingerprint(args.state)
-        done = subprocess.run(command + [prompt], capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=args.cwd)
+        allowed = deadline - clock()
+        if args.session_minutes:
+            allowed = min(allowed, args.session_minutes * 60)
+        try:
+            done = subprocess.run(command + [prompt], capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=args.cwd, timeout=allowed)
+        except subprocess.TimeoutExpired:
+            return {"ok": False, "stopped": "session-timeout", "seconds": round(allowed), "sessions": sessions}
         output = (done.stdout or "") + (done.stderr or "")
         if done.returncode != 0 and LIMIT.search(output):
             waits += 1
@@ -89,6 +98,7 @@ def main(argv=None):
     parser.add_argument("--cwd", default=None)
     parser.add_argument("--max-sessions", type=int, required=True)
     parser.add_argument("--max-hours", type=float, required=True)
+    parser.add_argument("--session-minutes", type=float, help="longest one session may run; --max-hours always applies")
     parser.add_argument("--limit-wait", type=int, default=1800, help="seconds to sleep on a usage limit")
     parser.add_argument("--max-waits", type=int, default=4)
     parser.add_argument("--require-text", help="text the session output must contain, such as the plugin's name")

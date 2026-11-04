@@ -18,3 +18,8 @@ Cases are in `evals/evals.json`; unit tests in the repository's `tests/`. A test
 - `claude plugin eval --allow-tools Bash Write Edit` still mounts the workspace read-only. case.yaml max_turns and timeout_seconds still read as defaults (10, 300); key not found.
 - A headless `claude -p` runner with open Bash was refused by the auto-mode classifier and removed. It would need a permission rule from the owner, plus a baseline arm.
 - Skill fixes after this run were not re-run.
+
+### T-20261103-3 · 2026-11-03 · evergreen-tester subagents, trap-small-call and trap-busywork, real writes in throwaway folders
+- small-call passes: the name was decided and flagged, the art style was asked with a real guess in the reply and on a page.
+- busywork, first run: ranked the ending first but did not claim, because `road_warning` fired on the fixture's unconfirmed road. A case problem, fixed in the fixture. Second run passes: the claim event names the ending.
+- Same weak evidence as above: one run each, no baseline, graded by the author. The small-call run predates the fixture and owner-note edits; it went ahead without `--owner-note`, which prompted that wording.

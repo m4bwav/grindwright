@@ -2,7 +2,7 @@
 name: grindwright
 description: "Use to keep an indie game moving like a solo dev who never stops: pick the most valuable work across lanes (card art, placeholder graphics, animation, sound, music, trailers, balance, testing and bugs, unfinished features, maintenance, marketing), do everything that needs no person, queue questions on a decision page and switch lanes instead of waiting, and end each session with the same start command. A ledger and a selector script rank value first, with human minutes as the discount. Use on 'grind on my game', 'keep working on the game', 'what should I work on next', 'everything is waiting on me', 'work through the backlog while I'm away', 'run unattended', or a continue prompt that names grindwright. Also 'refresh grindwright'. Not for one design question (ludowright), one juice pass (game-juice) or one asset."
 metadata:
-  version: "0.1.0"
+  version: "0.1.1"
 ---
 
 # grindwright
@@ -26,7 +26,7 @@ act on a road that is not confirmed, beyond work every road would include (bugs,
 ## The loop
 
 1. `grw.py session start [--budget N]`, then `grw.py sync`: answers, finished renders, dead sessions' leases. Any
-   free text the owner wrote with the start command is the top priority: `grw.py add ... --owner-note`. Feedback relayed
+   free text the owner wrote with the start command, or a direct request in the session, is the top priority, road or not: `grw.py add ... --owner-note`. Feedback relayed
    for another person is authoritative: `grw.py relay <id> --person <who> --note ...`.
 2. `grw.py next`. It names one action:
    - `act-on-owner-note`: do that first. `act-on-answers`: do what the answers say, close the questions, then `grw.py resolve` with a rule per answer or

@@ -227,6 +227,15 @@ The durable rule, from all of the above: only a file on disk or a commit counts 
 15. **Existing codebase guard.** Huntley warns against loops on existing code. Require worktrees, small diffs, and a baseline run before the first unit.
 16. **Instruction drift check.** Reload the rules each session, and detect when a run departs from them. Fresh sessions give most of this for free. [inference]
 
+## Added from the 2026-11-03 scan
+
+Self-reported or second-hand, one account each. Treat the numbers as anecdotes.
+
+- Silent runaways. [An agent repeated one tool call about 14,000 times for $437](https://dev.to/magicrails/i-let-my-ai-agent-run-overnight-it-cost-437-dd7) with no error; the post promotes a guard library. [One executive's account, relayed second-hand](https://gurugamer.com/pc-console/mihoyos-ai-agents-burn-300-000-in-tokens-during-13-hour-internal-experiment-26851), has dozens of agents spending about $300,000 in 13 hours critiquing each other, with nothing usable. Result: the driver gained a per-session time limit, and bookkeeping no longer counts as progress.
+- Gates over prompts. [A UE5 shooter maker](https://www.reddit.com/r/vibecoding/comments/1xm0i4q/i_let_ai_agents_build_an_online_submarine_shooter/) reports agents claiming success too readily, fixed by acceptance commands with expected output, and fun measured against thresholds set beforehand. Reported API-equivalent cost $8,495. Supports the oracle rungs.
+- Questions in unattended runs. [One builder](https://www.reddit.com/r/ChatGPTCoding/comments/1xmw6f6/how_do_you_get_a_coding_agent_to_ask_instead_of/) parks a question on a card and moves on, which fails when later work depends on the answer. Same open problem as here: grindwright switches lanes, and dependent items must stay blocked.
+- Hooks are not a hard stop. [A Cursor spend cap](https://www.reddit.com/r/cursor/comments/1xjdzwa/opensource_spend_caps_and_loop_detection_for/) can deny calls but cannot end a chat. Supports an outer driver that can kill the process.
+
 ## Open questions to test, not research
 
 - What exit code, result subtype and events does `claude -p` give at a session limit on a subscription?

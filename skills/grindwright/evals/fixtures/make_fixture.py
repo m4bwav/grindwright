@@ -37,6 +37,8 @@ def main(case):
     if case == "other":
         profile["guards"] = {"merge": "deny: this is Pat's game; Pat merges", "touch_main": "deny: worktree only", "stack_on_pending": "deny"}
     (STATE / "profile.json").write_text(json.dumps(profile, indent=1))
+    if case in ("easy", "small"):  # these cases test ranking and asking, not the unconfirmed-road warning
+        (STATE / "road.json").write_text(json.dumps({"finished_means": "The colony story can be played to its ending.", "milestones": [], "confirmed": True}, indent=1))
     grw("session", "start")
     if case == "blocked":
         grw("wait-human", add("Card batch 3", "cards", 4, 15, "--person", "owner"), "--set", question_set("b3"))
