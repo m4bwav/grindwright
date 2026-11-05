@@ -27,7 +27,7 @@ import time
 import urllib.request
 from pathlib import Path
 
-VERSION = "0.1.3"
+VERSION = "0.1.4"
 FORMAT = 1
 STATES = ("ready", "running", "waiting-on-human", "waiting-on-machine", "done", "dropped")
 COST_UNITS = {"S": 1, "M": 3, "L": 8}
@@ -234,17 +234,36 @@ def human_discount(item):
     return 1.0 / (1.0 + item.get("human_min", 0) / 30.0)
 
 
+def live_dependents(item, items):
+    return [o for o in items if item["id"] in o.get("blocked_by", []) and o["state"] not in ("done", "dropped")]
+
+
+def best_dependent(item, items, road, seen=None):
+    """The best score among everything waiting on this item, however indirectly: a helper ranks with its users."""
+    seen = seen if seen is not None else {item["id"]}
+    best = 0.0
+    for other in live_dependents(item, items):
+        if other["id"] not in seen:
+            seen.add(other["id"])
+            best = max(best, base_value(other, road) * human_discount(other), best_dependent(other, items, road, seen))
+    return best
+
+
 def score_item(item, items, road, idle_hosts=()):
     """Return (score, reasons). Value first; human minutes discount; the rest only nudge."""
     value = base_value(item, road)
     discount = human_discount(item)
     score = value * discount
     why = [f"value {item['value']} -> {value:g}", f"human {item.get('human_min', 0)} min x{discount:.2f}"]
-    freed = [o for o in items if item["id"] in o.get("blocked_by", []) and o["state"] not in ("done", "dropped")]
+    freed = live_dependents(item, items)
     if freed:
         bonus = min(value, sum(base_value(o, road) for o in freed) * 0.25)
         score += bonus
         why.append(f"unblocks {len(freed)} +{bonus:g}")
+        inherited = best_dependent(item, items, road)
+        if inherited > score:
+            score = inherited
+            why.append(f"needed by work worth {inherited:g}")
     age = (now() - parse_time(item.get("updated", stamp()))).days
     if age > 0:
         factor = 1 + min(0.3, 0.02 * age)
@@ -282,22 +301,40 @@ def select(profile, road, items, events, session, hosts_alive=None, hosts_idle=(
     discovered = any(e.get("type") == "discover" and e.get("ts", "") >= session.get("started", "") for e in events)
     ranked, deferred, capped = [], [], []
     for item in items:
+        if item["state"] == "drafted":
+            person = item.get("person")
+            cap = profile.get("people", {}).get(person, {}).get("review_cap", 3)
+            if open_for_person(items, person) >= cap:
+                deferred.append({"id": item["id"], "title": item["title"], "why": [f"drafted; {person}'s review queue is at its cap of {cap}"]})
+            else:
+                score, why = score_item(item, items, road, hosts_idle)
+                ranked.append({"id": item["id"], "title": item["title"], "lane": item.get("lane"), "score": score,
+                               "class": item_class(item), "action": "ask-drafted",
+                               "why": ["drafted and the review queue has room: put it to the person"] + why})
+            continue
         if item["state"] != "ready":
             continue
         lane = lane_of(profile, item)
         reasons = []
+        draft_only = False
         if closed and item.get("lane") in closed:
             reasons.append("lane closed: needs " + ", ".join(closed[item["lane"]]))
         waiting = [b for b in item.get("blocked_by", []) if b not in done_ids]
         if waiting:
             reasons.append("blocked by " + ", ".join(waiting))
-        if item["value"] < profile.get("min_value", 2) and not item.get("answered") and not item.get("owner_note"):
+        floor = profile.get("min_value", 2)
+        needed = any(o["value"] >= floor for o in live_dependents(item, items))
+        if item["value"] < floor and not needed and not item.get("answered") and not item.get("owner_note"):
             reasons.append(f"value {item['value']} is under the floor {profile.get('min_value', 2)}")
         person = item.get("person")
         if item.get("human_min", 0) > 0 and person and not item.get("answered"):
             cap = profile.get("people", {}).get(person, {}).get("review_cap", 3)
             if open_for_person(items, person) >= cap:
-                reasons.append(f"{person}'s review queue is at its cap of {cap}")
+                drafts = len([o for o in items if o["state"] == "drafted" and o.get("person") == person])
+                if item.get("question") or lane.get("stack_on_pending") is False or drafts >= cap:
+                    reasons.append(f"{person}'s review queue is at its cap of {cap}")
+                else:
+                    draft_only = True
             if lane.get("stack_on_pending") is False:
                 if any(o["state"] == "waiting-on-human" and o.get("lane") == item.get("lane") for o in items):
                     reasons.append("this lane does not stack on a pending review")
@@ -325,6 +362,9 @@ def select(profile, road, items, events, session, hosts_alive=None, hosts_idle=(
             entry["action"] = "analyse"
             entry["score"] = round(score * 0.5 + 1, 3)
             entry["why"] = ["costs people and barely moves the game: necessary? cut? what can be shaved off first?"] + why
+        elif draft_only:
+            entry["action"] = "draft"
+            entry["why"] = [f"{person}'s review queue is full: make the draft, then grw.py hold; ask later"] + why
         cap = lane.get("share_cap")
         if cap is None and lane.get("kind") == "maintenance":
             cap = MAINT_SHARE_CAP
@@ -442,7 +482,7 @@ def question_failures(set_dir):
             continue
         guess = q.get("guess") or {}
         reason = str(guess.get("why", "")) if isinstance(guess, dict) else str(guess)
-        chosen = guess.get("option") or guess.get("options") or guess.get("value") if isinstance(guess, dict) else guess
+        chosen = next((guess[k] for k in ("option", "options", "value", "text", "order") if guess.get(k)), None) if isinstance(guess, dict) else guess
         if not chosen or not reason.strip() or PLACEHOLDER_GUESS.search(reason):
             failures.append(f"{q.get('id')}: no real guess")
     return failures
@@ -844,6 +884,37 @@ def cmd_done(store, args):
     return {"id": item["id"], "state": "done", "human_proven": args.oracle == "human"}
 
 
+def cmd_hold(store, args):
+    items = store.items()
+    item = find_item(items, args.id)
+    if item["state"] != "running":
+        raise Refused([f"{item['id']} is {item['state']}: claim it and make the draft first"])
+    if not item.get("person"):
+        raise Refused(["only an item with a person to review it can be held"])
+    item.update({"state": "drafted", "evidence": args.evidence})
+    item.pop("lease_until", None)
+    touch(item)
+    store.save_items(items)
+    store.event("drafted", id=item["id"], lane=item.get("lane"), evidence=args.evidence)
+    return {"id": item["id"], "state": "drafted", "reminder": "next offers ask-drafted when the review queue has room"}
+
+
+def cmd_log(store, args):
+    """Record work already finished: add plus done in one call."""
+    if lane_of(store.profile(), {"lane": args.lane}).get("kind") in ASSET_KINDS and not args.provenance:
+        raise Refused(["generated assets need --provenance (tool, model, seed or source) for store disclosure"])
+    fields = dict(title=args.title, lane=args.lane, source=args.source, value=args.value, road=args.road, goal=None,
+                  human_min=0, cost="S", confidence=None, person=None, host=None, question=None, guess=None,
+                  blocked_by=None, owner_note=False)
+    added = cmd_add(store, argparse.Namespace(**fields))
+    return cmd_done(store, argparse.Namespace(id=added["id"], evidence=args.evidence, oracle=args.oracle, provenance=args.provenance))
+
+
+def cmd_reject(store, args):
+    store.event("rejected", finding=args.finding, source=args.source, why=args.why)
+    return {"rejected": args.finding, "reminder": "discover lists it from now on, so nobody weighs it again"}
+
+
 def cmd_drop(store, args):
     items = store.items()
     item = find_item(items, args.id)
@@ -947,7 +1018,8 @@ def cmd_discover(store, args):
                 signals.append({"lane": "gaps", kind + "s": len(rows), "sample": [r["title"] for r in rows[:5]]})
     if not args.dry_run:
         store.event("discover", signals=len(signals))
-    return {"signals": signals, "rule": "add an item only with a real --source; if nothing is worth doing, say so and stop"}
+    rejected = [{"finding": e.get("finding"), "why": e.get("why")} for e in store.events() if e.get("type") == "rejected"]
+    return {"signals": signals, "rejected": rejected, "rule": "skip what is in rejected; add an item only with a real --source; if nothing is worth doing, say so and stop"}
 
 
 def cmd_metrics(store, args):
@@ -1003,7 +1075,7 @@ def cmd_session(store, args):
     if not verdict["may_stop"] and not args.force:
         raise Refused(verdict["why"], **verdict)
     started = session.get("started", "")
-    made = [e for e in store.events() if e.get("ts", "") >= started and e["type"] in ("done", "asked", "detached", "resolved", "redo")]
+    made = [e for e in store.events() if e.get("ts", "") >= started and e["type"] in ("done", "asked", "detached", "resolved", "redo", "drafted")]
     store.event("session_end", made=len(made), nothing_made=not made, forced=bool(args.force), reason=args.force)
     return {"ended": True, "made": len(made), "nothing_made": not made,
             "reminder": "update HANDOFF.md and print the one-line start command"}
@@ -1173,6 +1245,25 @@ def build_parser():
     p.add_argument("--evidence", required=True)
     p.add_argument("--oracle", choices=ORACLES, required=True, help="the strongest check it passed")
     p.add_argument("--provenance", help="tool, model, seed or source of a generated asset")
+
+    p = add("hold", cmd_hold, "a draft is made but the person's review queue is full")
+    p.add_argument("id")
+    p.add_argument("--evidence", required=True)
+
+    p = add("log", cmd_log, "record finished work in one call")
+    p.add_argument("title")
+    p.add_argument("--lane", required=True)
+    p.add_argument("--source", required=True)
+    p.add_argument("--value", type=int, default=3)
+    p.add_argument("--road")
+    p.add_argument("--evidence", required=True)
+    p.add_argument("--oracle", choices=ORACLES, required=True)
+    p.add_argument("--provenance")
+
+    p = add("reject", cmd_reject, "a finding was looked at and is not worth an item")
+    p.add_argument("finding")
+    p.add_argument("--source")
+    p.add_argument("--why", required=True)
 
     p = add("drop", cmd_drop)
     p.add_argument("id")

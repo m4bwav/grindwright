@@ -1,5 +1,8 @@
 # Changelog: grindwright
 
+## 0.1.4 · 2026-11-04
+Past a person's review cap, items that need nobody yet come back as `draft`; `grw.py hold` parks them, at most the cap's number per person and never in a no-stacking lane, and `next` offers `ask-drafted` when room opens. A helper ranks with whatever waits on it and clears the value floor if needed. New `log` and `reject`; `discover` lists rejected findings. The guess gate reads `text` and `order`. Reason: the first live pilot stopped after 30 minutes at the cap, which would waste a 10-hour overnight run; the rest are the pilot's open items and L-002 `text-guess-gate-mismatch`.
+
 ## 0.1.3 · 2026-11-03
 `grw.py show <id>`. The skill now names the `none` rung, the allowed guess confidence and when to force a session end. Reason: notes from the first live pilot, where a report was recorded as `compile` and a lint failed on confidence.
 
