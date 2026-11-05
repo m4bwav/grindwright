@@ -65,6 +65,26 @@ class Base(unittest.TestCase):
 
 
 class Selector(Base):
+    def test_helper_ranks_with_the_item_waiting_on_it(self):
+        other = self.add("middle", 4, 0, "code")
+        helper = self.add("helper", 2, 0, "code")
+        self.add("big feature", 5, 0, "code", "--blocked-by", helper)
+        self.assertEqual(self.next_id(), helper)
+        self.assertNotEqual(helper, other)
+
+    def test_low_value_helper_clears_the_floor_when_needed(self):
+        helper = self.add("helper", 1, 0, "code")
+        self.assertNotEqual(self.next_id(), helper)
+        self.add("big feature", 5, 0, "code", "--blocked-by", helper)
+        self.assertEqual(self.next_id(), helper)
+
+    def test_log_records_finished_work_and_reject_shows_in_discover(self):
+        made = self.grw("log", "fixed a crash", "--lane", "code", "--source", "playtest", "--evidence", "boots", "--oracle", "boot")
+        self.assertEqual(made["state"], "done")
+        self.grw("log", "new card art", "--lane", "art", "--source", "t", "--evidence", "e", "--oracle", "none", expect=2)
+        self.grw("reject", "old TODO in menu", "--why", "menu is going away")
+        self.assertEqual(self.grw("discover", "--no-gh", "--dry-run")["rejected"][0]["finding"], "old TODO in menu")
+
     def test_high_value_hard_beats_easy_low_value(self):
         easy = self.add("rename a variable", 2, 0, "code")
         hard = self.add("finish the tutorial", 5, 60, "code")
@@ -173,10 +193,46 @@ class HumanQueue(Base):
             item = self.add(f"batch {n}", 4, 20, "code", "--person", "alex")
             self.grw("wait-human", item, "--set", self.make_set(f"s{n}", guess))
         more = self.add("batch 3", 5, 20, "code", "--person", "alex")
-        free = self.add("no people", 2, 0)
-        self.assertEqual(self.next_id(), free)
         refused = self.grw("wait-human", more, "--set", self.make_set("s9", guess), expect=2)
         self.assertIn("cap", " ".join(refused["refused"]))
+
+    def fill_queue(self):
+        guess = {"option": "a", "why": "reads best"}
+        for n in range(2):
+            item = self.add(f"batch {n}", 4, 20, "code", "--person", "alex")
+            self.grw("wait-human", item, "--set", self.make_set(f"s{n}", guess))
+            yield item
+
+    def test_past_the_cap_drafts_then_asks_when_room_opens(self):
+        waiting = list(self.fill_queue())
+        draft = self.add("batch 3", 5, 20, "code", "--person", "alex")
+        top = self.grw("next", "--no-probe")["next"]
+        self.assertEqual((top["id"], top["action"]), (draft, "draft"))
+        self.grw("claim", draft)
+        self.grw("hold", draft, "--evidence", "draft on branch")
+        self.assertIn(draft, [d["id"] for d in self.grw("rank", "--no-probe")["deferred"]])
+        self.grw("drop", waiting[0], "--why", "test")
+        top = self.grw("next", "--no-probe")["next"]
+        self.assertEqual((top["id"], top["action"]), (draft, "ask-drafted"))
+        self.grw("wait-human", draft, "--why", "PR")
+
+    def test_drafts_stop_at_the_cap(self):
+        list(self.fill_queue())
+        for n in range(2):
+            draft = self.add(f"draft {n}", 5, 20, "code", "--person", "alex")
+            self.grw("claim", draft)
+            self.grw("hold", draft, "--evidence", "made")
+        extra = self.add("draft 3", 5, 20, "code", "--person", "alex")
+        self.assertIn(extra, [d["id"] for d in self.grw("rank", "--no-probe")["deferred"]])
+
+    def test_a_question_is_not_drafted_past_the_cap(self):
+        list(self.fill_queue())
+        ask = self.add("which style", 5, 20, "code", "--person", "alex", "--question", "Which?", "--guess", "the first reads best")
+        self.assertIn(ask, [d["id"] for d in self.grw("rank", "--no-probe")["deferred"]])
+
+    def test_text_and_order_guesses_pass_the_gate(self):
+        for n, guess in enumerate(({"text": "ten", "why": "fits"}, {"order": ["a", "b"], "why": "fits"})):
+            self.assertEqual(grw.question_failures(self.make_set(f"g{n}", guess)), [])
 
     def test_batch_minimum_per_person(self):
         self.profile({"lanes": {"bld": {"kind": "art", "batch_min": {"sam": 5}}}})

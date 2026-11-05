@@ -2,7 +2,7 @@
 name: grindwright
 description: "Use to keep an indie game moving like a solo dev who never stops: pick the most valuable work across lanes (card art, placeholder graphics, animation, sound, music, trailers, balance, testing and bugs, unfinished features, maintenance, marketing), do everything that needs no person, queue questions on a decision page and switch lanes instead of waiting, and end each session with the same start command. A ledger and a selector script rank value first, with human minutes as the discount. Use on 'grind on my game', 'keep working on the game', 'what should I work on next', 'everything is waiting on me', 'work through the backlog while I'm away', 'run unattended', or a continue prompt that names grindwright. Also 'refresh grindwright'. Not for one design question (ludowright), one juice pass (game-juice) or one asset."
 metadata:
-  version: "0.1.3"
+  version: "0.1.4"
 ---
 
 # grindwright
@@ -32,12 +32,13 @@ act on a road that is not confirmed, beyond work every road would include (bugs,
    - `act-on-owner-note`: do that first. `act-on-answers`: do what the answers say, close the questions, then `grw.py resolve` with a rule per answer or
      `--no-rule "<why one-off>"`. Rules go in the project's rule file as well, so that kind of question gets rarer.
    - `work`: if the output has `road_warning`, take only bugs and failing tests. Otherwise `grw.py claim <id>`, work on your own branch or as the project says, `checkpoint` and commit often.
+   - `draft`: the person's review queue is full, but the draft needs nobody yet. Claim it, make it, `grw.py hold <id> --evidence ...`. `ask-drafted`: the queue has room; check the draft still makes sense and use `wait-human`.
    - `analyse`: costs people and barely moves the game. Is it necessary? Can it be cut? What sub-objective can be
      shaved off and done first? `grw.py analyse <id> --verdict keep|cut|shave --note ...`. No person is asked.
    - `change-route`: repeated redos. Do not reroll: pick a different method (a 3D blockout as a reference, another
      model, hand-built) and `claim <id> --new-route "<what>"`.
    - `discover`: nothing selectable. Run `grw.py discover`, then really test and balance the game and look for gaps.
-     Add only items with a real `--source`. Never invent busywork.
+     Add only items with a real `--source`. Never invent busywork. A finding not worth an item: `grw.py reject "<finding>" --why ...`. Work already finished: `grw.py log "<title>" --lane ... --source ... --evidence ... --oracle ...`.
    - `stop`: nothing selectable after discovery. Say so honestly.
 3. Finish the item one of three ways:
    - `grw.py done <id> --evidence "..." --oracle <rung>`. Rungs: none (reports and research), compile, tests, boot, scripted-play, snapshot, human.
@@ -61,7 +62,7 @@ act on a road that is not confirmed, beyond work every road would include (bugs,
   pilot, then batches.
 - Before review, check physical sense yourself, which automatic gates miss: does the material fit (no wooden roof on a
   stone smelter), is scaffolding in front, is it lit when idle?
-- `grw.py queue` orders proposed questions by how much they unblock. Past a person's review cap, do different work.
+- `grw.py queue` orders proposed questions by how much they unblock. Past a person's review cap, ask nothing more: draft (at most as many as the cap, never in a no-stacking lane) or do different work.
 - Use askwright sets by project and by person. Missing askwright: write the questions to `ai-docs/grind/questions.md`
   with guesses and say so.
 - After any redo, rebuild every derived review artifact (contact sheet, GIF, PR media) and look at it. Declare them

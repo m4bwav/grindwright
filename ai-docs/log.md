@@ -1,5 +1,8 @@
 # Log
 
+## 2026-11-04: 0.1.4, drafts past the cap
+Decided the open cap question: past a review cap the loop keeps drafting, bounded at the cap per person, so a long run does not stop on the review queue. Questions are never drafted and no-stacking lanes still wait. Risk accepted: drafts can go stale if a pending answer changes direction, so ask-drafted tells the agent to check first. Also: helpers rank with their users, `log` and `reject`, gate reads text and order guesses.
+
 ## 2026-11-03: built 0.1.0
 Survey in `ai-docs/research/`. Built grw.py, grind_loop.py, the skill, 16 eval cases, and read-only dry runs on two real games. Script named grw.py because gw.py is reserved for another plugin. Kept the name grindwright: nothing clearly better turned up.
 

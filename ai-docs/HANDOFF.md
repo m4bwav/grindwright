@@ -1,6 +1,6 @@
 # Handoff
 
-Updated 2026-11-03. Public `m4bwav/grindwright`, v0.1.3 tagged, wiki at 0.1.0 (`ai-docs/notes/2026-11-03-github-wiki.md`).
+Updated 2026-11-04. Public `m4bwav/grindwright`, v0.1.4 tagged, wiki at 0.1.0 (`ai-docs/notes/2026-11-03-github-wiki.md`).
 
 ## State
 
@@ -10,12 +10,9 @@ Updated 2026-11-03. Public `m4bwav/grindwright`, v0.1.3 tagged, wiki at 0.1.0 (`
 
 ## Next
 
-1. The owner reviews the pilot branch, then decides on an overnight run.
-2. Decide whether the review cap should also defer drafts that need no person until review.
-3. `discover` has no way to mark a finding as looked at and rejected; a `log` command for finished work would save calls.
-4. Dependencies between items are not ranked (a helper item can sort after its users).
-5. evergreen-worth comparison: needs a baseline arm for the traps.
+1. The owner reviews the pilot branch, then decides on an overnight run. That run is the first real test of drafting past the cap.
+2. evergreen-worth comparison: needs a baseline arm for the traps.
 
 ## Known limits
 
-Claims and the state lock do not coordinate across git worktrees: each has its own ledger copy. The physical-sense check is only an instruction, not a gate. `wait-human` accepts `--why` with no question set (needed for PR reviews), so it can skip the page. `road_warning` is advice; `claim` does not enforce it.
+Claims and the state lock do not coordinate across git worktrees: each has its own ledger copy. The physical-sense check is only an instruction, not a gate. `wait-human` accepts `--why` with no question set (needed for PR reviews), so it can skip the page. `road_warning` is advice; `claim` does not enforce it. Drafts past the cap can go stale if a pending answer changes direction; `ask-drafted` only tells the agent to check. Trap evals have not been re-run since `draft` was added.
