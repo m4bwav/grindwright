@@ -20,3 +20,6 @@ Scan notes on silent runaways led to two driver fixes: a per-session time limit,
 
 ## 2026-11-03: first live pilot, 0.1.2 and 0.1.3
 A three-session, four-hour pilot on a real game. The first start crashed before any session because the agent is a .cmd wrapper on Windows (0.1.2). The second ran 2 sessions in about 30 minutes and stopped on the ledger, with items finished on a branch, nothing merged, and 3 questions queued while work moved to other lanes. No usage limit was met, so limit behaviour is still untested. Open design question: the review cap also defers drafting that needs no person until review.
+
+## 2026-11-05: pilot merged
+The owner merged the pilot branch. No plugin change this session. The pilot ledger went stale after other sessions worked the same game outside the loop; the selector still reads the review queue as full. Worth fixing if it recurs in the overnight run.
