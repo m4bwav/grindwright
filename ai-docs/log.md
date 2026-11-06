@@ -23,3 +23,6 @@ A three-session, four-hour pilot on a real game. The first start crashed before 
 
 ## 2026-11-05: pilot merged
 The owner merged the pilot branch. No plugin change this session. The pilot ledger went stale after other sessions worked the same game outside the loop; the selector still reads the review queue as full. Worth fixing if it recurs in the overnight run.
+
+## 2026-11-06: Tiny Colony evaluation queued
+The owner answered the eval game's question sets on the real dashboard and wants grindwright to evaluate them. Queued in HANDOFF; nothing evaluated yet.

@@ -12,6 +12,7 @@ Updated 2026-11-05. Public `m4bwav/grindwright`, v0.1.4 tagged, wiki at 0.1.0 (`
 
 1. The owner merged the pilot branch on 2026-11-05 and has not yet said it was played. The overnight run is the owner's to start. It is the first real test of drafting past the cap. Reconcile the game ledger first.
 2. evergreen-worth comparison: needs a baseline arm for the traps.
+3. Owner request 2026-11-06: evaluate Tiny Colony, the eval game whose question sets the owner answered on the real dashboard. Details and copies of the answers are in the private HANDOFF.
 
 ## Known limits
 
