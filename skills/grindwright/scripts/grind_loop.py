@@ -25,15 +25,30 @@ LIMIT = re.compile(r"usage limit|rate limit|limit reached|hit your limit|overloa
 DEFAULT_COMMAND = ["claude", "-p", "--permission-mode", "auto", "--output-format", "json"]
 
 
+PROGRESS = ("done", "asked", "detached", "resolved", "redo", "drafted")
+
+
+def records(path):
+    if not path.exists():
+        return []
+    rows = []
+    for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+        try:
+            rows.append(json.loads(line))
+        except ValueError:
+            continue
+    return [r for r in rows if isinstance(r, dict)]
+
+
 def fingerprint(state):
+    """What counts as progress. Bookkeeping does not: opening, closing, discovering, or a checkpoint on idle work."""
     digest = hashlib.sha1()
-    ledger, events = Path(state) / "ledger.jsonl", Path(state) / "events.jsonl"
-    if ledger.exists():
-        digest.update(ledger.read_bytes())
-    if events.exists():
-        for line in events.read_bytes().splitlines():
-            if b'"session_start"' not in line and b'"session_end"' not in line:  # opening and closing is not progress
-                digest.update(line)
+    for item in records(Path(state) / "ledger.jsonl"):
+        working = len(item.get("checkpoints", [])) if item.get("state") == "running" else 0
+        digest.update(repr((item.get("id"), item.get("state"), bool(item.get("answered")), working)).encode())
+    for event in records(Path(state) / "events.jsonl"):
+        if event.get("type") in PROGRESS:
+            digest.update(repr((event.get("type"), event.get("id"), event.get("ts"))).encode())
     return digest.hexdigest()
 
 

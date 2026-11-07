@@ -1,5 +1,8 @@
 # Changelog: grindwright
 
+## 0.1.11 · 2026-11-07
+An item blocked on another item no longer counts as running: `claim` refuses it, `sync` and a shave send it back to ready, `session check` ignores it. The driver's fingerprint counts real progress only, not `discover` or a checkpoint on idle work. `discover` names an open lane instead of `gaps`, lists marker locations, skips suggestions the ledger has finished, and walks the repo once with engine caches pruned. `hold --person`. `wait-human` registers its set on the inbox. Reason: the first overnight run, where one blocked item forced `--force` in about 15 of 25 sessions, kept the driver from ever stopping on the ledger, and three sessions at the end rediscovered nothing.
+
 ## 0.1.10 · 2026-11-06
 
 Sfxwright, when installed: Hand sound effects to sfxwright when present and read its sounds.json; this plugin's own steps stay as the fallback.

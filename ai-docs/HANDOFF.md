@@ -1,16 +1,16 @@
 # Handoff
 
-Updated 2026-11-06. Public `m4bwav/grindwright`, v0.1.9 tagged, wiki at 0.1.0 (`ai-docs/notes/2026-11-03-github-wiki.md`). Installed locally.
+Updated 2026-11-07. Public `m4bwav/grindwright`, v0.1.11, wiki at 0.1.0 (`ai-docs/notes/2026-11-03-github-wiki.md`). Installed locally.
 
 ## State
 
 - Built: `grw.py` (ledger, selector, gates), `grind_loop.py` (bounded driver, dry run by default), the skill, 20 eval cases. Unit tests pass.
 - The owner ruled to keep the plugin and trim it. Trim shipped in 0.1.7; its saving is not measured. Evals have not been re-run since.
-- Live runs: one pilot merged and played on the first game; the owner reported one fix, since merged. A pilot on a second game started 2026-11-06: three sessions, up to 4 hours, one art lane. Usage-limit detection is still a text match; what `claude -p` does at a subscription limit is unknown.
+- Live runs: one pilot and one overnight run on the first game, one pilot on a second. The overnight run stopped on its 25-session bound in under 2 of its 10 hours and met no usage limit, so what `claude -p` does at a limit is still unknown. Drafting past the cap and `wait-human --pr` worked. 0.1.11 fixes its faults; those fixes have not run in a live chain.
 
 ## Next
 
-1. Read the overnight run's result on the first game (private sidecar has where). It started 2026-11-06 about 22:03, bounded at 10 hours and 25 sessions. Log what the loop got wrong and fix the plugin. It is the first real test of drafting past the cap and of `wait-human --pr`, and may be the first to meet a usage limit.
+1. On the next live run, check that the driver stops on the ledger with no `--force`, and that a large session bound is no longer the thing that stops it.
 2. Re-run the evals and `evergreen.py worth --ab` on the value cases when a run is worth its cost, to measure the trim. They have not run since 0.1.7.
 
 ## Known limits

@@ -570,5 +570,62 @@ class Show(unittest.TestCase):
             self.assertEqual(call("show", made)["item"]["title"], "work")
 
 
+class OvernightFaults(Base):
+    def two(self):
+        blocker = self.grw("add", "question", "--lane", "code", "--source", "t", "--value", "4", "--human-min", "5", "--person", "alex")["id"]
+        blocked = self.grw("add", "work", "--lane", "code", "--source", "t", "--value", "4", "--blocked-by", blocker)["id"]
+        return blocker, blocked
+
+    def state_of(self, item):
+        return self.grw("show", item)["item"]["state"]
+
+    def test_claim_refuses_a_blocked_item(self):
+        _, blocked = self.two()
+        self.assertIn("blocked by", " ".join(self.grw("claim", blocked, expect=2)["refused"]))
+
+    def test_shave_releases_the_claimed_item(self):
+        made = self.grw("add", "big", "--lane", "code", "--source", "t", "--value", "4")["id"]
+        self.grw("claim", made)
+        self.grw("analyse", made, "--verdict", "shave", "--note", "n", "--shave-title", "small")
+        self.assertEqual(self.state_of(made), "ready")
+
+    def test_sync_heals_an_old_ledger_and_check_ignores_blocked(self):
+        blocker, blocked = self.two()
+        self.grw("set", blocked, "state=running")
+        self.grw("session", "start")
+        self.assertEqual(self.state_of(blocked), "ready")
+        self.grw("set", blocked, "state=running")
+        why = " ".join(self.grw("session", "check").get("why", []))
+        self.assertNotIn("still running", why)
+
+    def test_hold_takes_a_person(self):
+        made = self.grw("add", "draft", "--lane", "code", "--source", "t", "--value", "4")["id"]
+        self.grw("claim", made)
+        self.grw("hold", made, "--evidence", "e", expect=2)
+        self.grw("hold", made, "--evidence", "e", "--person", "alex")
+        self.assertEqual(self.grw("show", made)["item"]["person"], "alex")
+
+    def test_discover_names_open_lanes_and_marker_locations(self):
+        repo = Path(self.dir.name)
+        (repo / "Library").mkdir()
+        (repo / "Library" / "cache.cs").write_text("// TODO cached", encoding="utf-8")
+        (repo / "game.cs").write_text("a\n// TODO real\n", encoding="utf-8")
+        found = self.grw("discover", "--no-gh", "--repo", str(repo))
+        self.assertEqual(found["open_lanes"], ["art", "code", "maint"])
+        scan = [s for s in found["signals"] if "code_markers" in s][0]
+        self.assertEqual(scan["lane"], "code")
+        self.assertEqual(scan["code_markers"], 1)
+        self.assertEqual(scan["sample"], ["game.cs:2: // TODO real"])
+
+    def test_discover_skips_suggestions_already_done(self):
+        repo = Path(self.dir.name)
+        (repo / "juice-report.md").write_text("## S-01 shake\n## S-02 pop\n", encoding="utf-8")
+        self.grw("log", "S-01 shake", "--lane", "code", "--source", "juice-report.md", "--evidence", "e", "--oracle", "tests")
+        juice = [s for s in self.grw("discover", "--no-gh", "--repo", str(repo))["signals"] if s["lane"] == "juice"]
+        self.assertEqual(juice[0]["sample"], ["S-02 pop"])
+        self.grw("log", "S-02 pop", "--lane", "code", "--source", "juice-report.md", "--evidence", "e", "--oracle", "tests")
+        self.assertFalse([s for s in self.grw("discover", "--no-gh", "--repo", str(repo))["signals"] if s["lane"] == "juice"])
+
+
 if __name__ == "__main__":
     unittest.main()

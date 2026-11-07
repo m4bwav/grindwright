@@ -1,5 +1,8 @@
 # Log
 
+## 2026-11-07: overnight run read, 0.1.11
+The first overnight run on a real game stopped on its bound: 25 sessions in about 1 h 50 of the 10 hours allowed, about $33 at list prices, no usage limit met. It finished real work, opened one PR, and left three question sets for the owner. Its largest fault: an item blocked on a question stayed running, so nearly every session needed `--force` and the driver could not stop on the ledger, then three sessions found nothing. Fixed in 0.1.11 with the other repeated notes. Eval re-run still owed.
+
 ## 2026-11-06: baseline comparison, 0.1.6
 First with and without comparison, on four new cases with fixtures that work in both arms. 11/12 with, 8/12 without, at about twice the cost. The tool says CUT because the gain is inside its noise margin; the ruling is the owner's. It found a real defect: the skill invented another person's review. Fixed by a rule. Details in skills/grindwright/TESTS.md.
 
