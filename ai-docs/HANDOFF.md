@@ -1,6 +1,6 @@
 # Handoff
 
-Updated 2026-11-06. Public `m4bwav/grindwright`, v0.1.7 tagged, wiki at 0.1.0 (`ai-docs/notes/2026-11-03-github-wiki.md`). Installed locally.
+Updated 2026-11-06. Public `m4bwav/grindwright`, v0.1.9 tagged, wiki at 0.1.0 (`ai-docs/notes/2026-11-03-github-wiki.md`). Installed locally.
 
 ## State
 
@@ -10,9 +10,8 @@ Updated 2026-11-06. Public `m4bwav/grindwright`, v0.1.7 tagged, wiki at 0.1.0 (`
 
 ## Next
 
-1. Read the second pilot's result (private sidecar has where). Log what the loop got wrong and fix the plugin.
-2. The overnight run on the first game is the owner's to start, the next night possible. Reconcile that game's ledger first. It is the first real test of drafting past the cap.
-3. Re-run `evergreen.py worth --ab` on the value cases when a run is worth its cost, to measure the trim.
+1. Read the overnight run's result on the first game (private sidecar has where). It started 2026-11-06 about 22:03, bounded at 10 hours and 25 sessions. Log what the loop got wrong and fix the plugin. It is the first real test of drafting past the cap and of `wait-human --pr`, and may be the first to meet a usage limit.
+2. Re-run the evals and `evergreen.py worth --ab` on the value cases when a run is worth its cost, to measure the trim. They have not run since 0.1.7.
 
 ## Known limits
 
