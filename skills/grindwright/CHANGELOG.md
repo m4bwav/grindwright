@@ -1,5 +1,8 @@
 # Changelog: grindwright
 
+## 0.2.1 · 2026-11-07
+A project can keep a todo file as its master list while the work runs through issues: `ticket --from-todo`, an `open_tickets` limit and `todo-sync`, which marks each line with its issue and strikes it through on close. Reason: the owner relayed this as a project's chosen way of working, and the plugin only offered a todo file or issues, not both. Tickets and issue comments now obey `text_bans`, as PRs did, and bans match whole words. Reason: found while writing a profile whose bans matter on another person's tracker. Tested with a fake gh only.
+
 ## 0.2.0 · 2026-11-07
 The owner wants several sessions at once, across projects and on one project, and optional work sources. Sessions have names and their own session files; `claim --area` and lane areas keep them apart, including named resources; non-claim actions are held; one discovery pass serves a crew; `add` refuses look-alikes; `board`, `note`, BOARD.md and WAITING.md; `session check` lists the decisions a stalled run waits on; `session release`; `grind_loop --session-id`; new `grind_crew.py`, which refuses shared state and skips members with no work. New `grw_work.py`: GitHub issue sync and triage, agent-identified replies, PRs linked both ways with both cases argued, bug and feature tickets with duplicate checks, a read-only task list with green light by a named person's label, todo-file mode. Tokens reference points at tokenwright. Not yet run on a live crew or a real tracker: tests use a fake gh. Trigger evals not re-run for this change unless TESTS.md says so.
 
