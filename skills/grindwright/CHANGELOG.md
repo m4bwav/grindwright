@@ -1,5 +1,10 @@
 # Changelog: grindwright
 
+## 0.3.3 · 2026-11-07
+
+- Command table shows `done ... [--provenance P]` (generated assets are refused without it).
+- Session end runs evergreen-wrapup when installed, before HANDOFF and the start command.
+
 ## 0.3.2 · 2026-11-07
 Fixes from setting up the first film. Video and edit lanes open with cinewright or comfyui-gen, since a render-folder film can be cut with comfyui-gen and ffmpeg alone. `add --blocked-by` refuses an id that is not an item: a milestone name was accepted and would have blocked the item for ever, so an outside gate gets its own item held with `wait-human`. `grind_loop.py` passes the prompt as an absolute path, because the session runs in `--cwd` and a relative path missed. `--version` printed 0.2.2 since 0.2.2.
 

@@ -2,7 +2,7 @@
 name: grindwright
 description: "Use to keep an indie game, or a long film, video or story project, moving like a solo maker who never stops: pick the most valuable work across lanes (art, animation, writing, voices, sound, music, shots and edits, trailers, balance, testing and bugs, unfinished features, maintenance, marketing), do everything that needs no person, queue questions on a decision page and switch lanes instead of waiting, and end each session with the same start command. A ledger and a selector script rank value first, with human minutes as the discount. Use on 'grind on my game', 'keep working on the game', 'grind on my film', 'what should I work on next', 'everything is waiting on me', 'work through the backlog while I'm away', 'run unattended', or a continue prompt that names grindwright. Also 'refresh grindwright'. Not for one design question (ludowright), one juice pass (game-juice) or one asset."
 metadata:
-  version: "0.3.2"
+  version: "0.3.3"
 ---
 
 # grindwright
@@ -49,7 +49,7 @@ act on a road that is not confirmed, beyond work every road would include (bugs,
    - `grw.py wait-machine <id> --done-file <path> --why ...`, with the render detached. Go to step 2.
 4. Failed pass: `grw.py redo <id> "<what was wrong>"`.
 5. Repeat until `grw.py session check` allows stopping. It refuses while anything is selectable. Then
-   `grw.py session end` (`--force "<why>"` when a fresh session would do the next item better), update `HANDOFF.md`, and print the same one-line start command.
+   `grw.py session end` (`--force "<why>"` when a fresh session would do the next item better), run evergreen-wrapup if it is installed (skip quietly if not; a failed wrap-up never blocks), update `HANDOFF.md`, and print the same one-line start command.
 
 ## Keep the bookkeeping small
 
@@ -57,7 +57,7 @@ Do not run `--help`; the commands are here. The game gets the turns, not the led
 
 ```
 add "<title>" --lane L --source S --value 1-5 [--human-min N] [--cost S|M|L] [--person P] [--owner-note]
-done <id> --evidence E --oracle R        log "<title>" --lane L --source S --evidence E --oracle R
+done <id> --evidence E --oracle R [--provenance P]   log "<title>" --lane L --source S --evidence E --oracle R
 wait-human <id> --set S --person P        wait-human <id> --pr N --person P        wait-machine <id> --done-file F --why W
 analyse <id> --verdict shave --note N --shave-title T
 hold <id> --evidence E [--person P] [--provenance P]   checkpoint <id> "<note>"   redo <id> "<note>"   reject "<finding>" --why W

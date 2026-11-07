@@ -82,3 +82,7 @@ The owner asked that adding tests of any kind be one lane. Added lane kind `test
 ## 2026-11-07: first film set up, 0.3.2
 
 The owner named the first film project: the next section of a short film whose first part another chain is still finishing. Set up a state folder beside the renders, a profile with the lanes the owner listed (source check, script, storyboard, refs, shots, continuity, HD, cut, voices, music, sound, holistic review, tests), a road quoting the owner's "finished", and gate items for the first part's approval and the full-cut lock. Started three driver sessions, 4 hours. Faults found and fixed in 0.3.2: video lanes closed without cinewright though comfyui-gen covers them; `--blocked-by` took a milestone name; the driver's relative prompt path missed under `--cwd`; stale `--version`. Not fixed: `init` writes a game-shaped discover list for every project.
+
+## 2026-11-07: 0.3.3
+
+Film run paused by the owner. One-hour single-member run on the second game: one session, one art fix done, stopped on the ledger (both open PRs wait on review; cap full) after about 7 minutes. The PR-cap blind spot reported in five earlier sessions did not recur. Fixed: `done` usage shows `--provenance`; session end runs evergreen-wrapup when installed.
