@@ -1,6 +1,6 @@
 # Handoff
 
-Updated 2026-11-06. Public `m4bwav/grindwright`, v0.1.5 tagged, wiki at 0.1.0 (`ai-docs/notes/2026-11-03-github-wiki.md`).
+Updated 2026-11-06. Public `m4bwav/grindwright`, v0.1.6 tagged, wiki at 0.1.0 (`ai-docs/notes/2026-11-03-github-wiki.md`).
 
 ## State
 
@@ -11,7 +11,7 @@ Updated 2026-11-06. Public `m4bwav/grindwright`, v0.1.5 tagged, wiki at 0.1.0 (`
 ## Next
 
 1. The owner merged the pilot branch on 2026-11-05 and has not yet said it was played. The overnight run is the owner's to start. It is the first real test of drafting past the cap. Reconcile the game ledger first.
-2. evergreen-worth comparison: needs a baseline arm for the traps.
+2. Worth ruling: the tool says CUT (11/12 with, 8/12 without, x1.98 cost, inside the noise). The owner decides. Maintainer recommendation: keep, cut bookkeeping turns, re-run. The cases cannot measure chaining; the overnight run can. See T-20261106-2.
 
 ## Known limits
 

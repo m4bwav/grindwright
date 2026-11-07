@@ -1,5 +1,8 @@
 # Changelog: grindwright
 
+## 0.1.6 · 2026-11-06
+The skill says to relay only words a person gave. Reason: in the first A/B (T-20261106-2), told "PR 12 looks ready", two of the three runs recorded a review from the PR's owner that the owner never gave. Added four value cases with fixtures that work without the skill, and a checker. Removed another plugin's worth verdict that had been copied into evergreen.json at creation.
+
 ## 0.1.5 · 2026-11-06
 An eval fixture's profile is marked `eval`, and `session start` and `wait-human` refuse there unless `ASKWRIGHT_HOME` is set. `wait-human` drops the ledger's guess once the page holds it. The skill says not to ask for content it can invent, and road drafts include what comes after a complete run. Reason: the owner's answers to an eval game's question sets, which reached the real inbox.
 

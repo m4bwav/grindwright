@@ -1,5 +1,8 @@
 # Log
 
+## 2026-11-06: baseline comparison, 0.1.6
+First with and without comparison, on four new cases with fixtures that work in both arms. 11/12 with, 8/12 without, at about twice the cost. The tool says CUT because the gain is inside its noise margin; the ruling is the owner's. It found a real defect: the skill invented another person's review. Fixed by a rule. Details in skills/grindwright/TESTS.md.
+
 ## 2026-11-06: eval game evaluated, 0.1.5
 Read the owner's answers to the eval game's question sets. Eval sets reached the real inbox because runners did not isolate it, so fixtures now refuse to start without `ASKWRIGHT_HOME`. The extra questions came from a session started with the set's continue prompt, not from an eval agent. Answers led to two skill rules: road drafts include what follows a complete run, and invent content rather than ask for it. Both rest on few answers. The eval game is closed as a live game.
 

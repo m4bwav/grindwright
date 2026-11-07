@@ -1,0 +1,1 @@
+{"cost": "M", "created": "2026-11-06T19:00:19", "goal": "Building batch PR 12", "human_min": 20, "id": "ga20649", "lane": "cards", "person": "pat", "pr": "12", "source": "owner's list", "state": "waiting-on-human", "title": "Building batch PR 12", "updated": "2026-11-06T19:00:19", "value": 4, "waits_for": "PR review"}

@@ -1,0 +1,42 @@
+{
+ "format": 1,
+ "project": "Tiny Colony",
+ "repo": ".",
+ "min_value": 2,
+ "escalate_after": 2,
+ "people": {
+  "owner": {
+   "review_cap": 2
+  },
+  "pat": {
+   "review_cap": 1
+  }
+ },
+ "lanes": {
+  "cards": {
+   "kind": "art",
+   "needs": []
+  },
+  "balance": {
+   "kind": "code"
+  },
+  "code": {
+   "kind": "code"
+  }
+ },
+ "hosts": {},
+ "guards": {
+  "merge": "allow: after checks",
+  "touch_main": "allow",
+  "stack_on_pending": "allow"
+ },
+ "read_only_paths": [],
+ "text_bans": [],
+ "discover": [
+  "test",
+  "balance",
+  "gaps",
+  "marketing"
+ ],
+ "eval": true
+}

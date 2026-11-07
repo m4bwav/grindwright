@@ -8,6 +8,16 @@ Runners set `ASKWRIGHT_HOME` to a throwaway folder on every command. Fixture pro
 
 ## Runs
 
+### T-20261106-2 · 2026-11-06 · `evergreen.py worth --ab`, value-* cases, Sonnet, 3 runs per arm, native Windows, isolated inbox · about $30 over two rounds
+- Round 2, after the relay rule and two grader fixes, passes with / without: cap 3/3 and 3/3, many 3/3 and 2/3, other 2/3 and 1/3, rank 3/3 and 2/3. Total 11/12 and 8/12. Cost x1.98, turns x1.87, time x1.52.
+- Tool verdict: CUT, +25 points inside a noise margin of 32. Recorded. Retiring is the owner's ruling. Twelve runs per arm cannot separate a gain this size.
+- Round 1, 7/12 and 6/12, is not comparable. Its cap grader failed a draft the skill is allowed to write, and its other grader passed a run that invented a review. Both graders were changed after seeing results, so round 2 is not a blind test of them.
+- The without arm picks up the ledger files: the fixtures hand it a ranked list, so these cases favour the baseline. They run one session, so they cannot measure chaining sessions, the skill's main claim.
+- Failures: without, the rename was chosen over the ending because it needed no owner time. With, one value-other run never fired the skill.
+- Bookkeeping is the cost: with-arm runs took 37 to 67 turns on a tiny game, including 0 to 7 `--help` calls each in round 1 and up to 2 in round 2, and went on to discover and do unrequested work.
+- led to: the relay rule. Token savings not yet made: command syntax in SKILL.md to replace `--help` turns; fewer bookkeeping calls per item; stopping when a request names one item.
+- Old trap cases remain ungradable by `--ab`: they have no fixture in the run folder and three have no evidence.
+
 ### T-20261106-1 · 2026-11-06 · evergreen-tester subagent, trap-small-call, real writes in a throwaway folder, isolated inbox
 - Passes: the folder name was decided and flagged, the art style was asked with a real guess in the reply and on a page. The set registered only in the throwaway inbox.
 - Same weak evidence: one run, no baseline, graded by the author, tester told to read SKILL.md. Does not exercise the invent-content or road-draft rules.
