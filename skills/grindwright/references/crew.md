@@ -51,6 +51,8 @@ python grind_crew.py crew.json        # dry run: refusals, and what each member 
 python grind_crew.py crew.json --go
 ```
 
+Worktrees go in `<repo>-grind/<member>`. Set `"worktree_root"` on a project when that folder is taken.
+
 Logs go to `<state>/logs/<member>-<date>.log`, the summary to `<state>/logs/crew-<date>.json`. All members draw on one usage limit; on a limit each driver sleeps and retries on its own.
 
 Grow in steps: one per project first, then two on the project with the most non-overlapping lanes. Docs and practitioners put the useful count low, around 3 to 5 on a repo, with cost about linear per session. Review is usually the real limit: past a person's review cap, more sessions only pile up drafts.

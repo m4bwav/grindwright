@@ -1,5 +1,8 @@
 # Changelog: grindwright
 
+## 0.2.2 · 2026-11-07
+Crew files can set `worktree_root`. Reason: writing the first real crew file showed the default folder can already be a worktree, which would nest new ones inside it.
+
 ## 0.2.1 · 2026-11-07
 A project can keep a todo file as its master list while the work runs through issues: `ticket --from-todo`, an `open_tickets` limit and `todo-sync`, which marks each line with its issue and strikes it through on close. Reason: the owner relayed this as a project's chosen way of working, and the plugin only offered a todo file or issues, not both. Tickets and issue comments now obey `text_bans`, as PRs did, and bans match whole words. Reason: found while writing a profile whose bans matter on another person's tracker. Tested with a fake gh only.
 

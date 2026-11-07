@@ -59,3 +59,6 @@ The owner asked for several sessions a night across and within projects, each pr
 
 ## 2026-11-07: 0.2.1, a todo file as the master list
 The owner answered the crew page: one session on the second game, two on the first, issues on the first, and for the second game a chosen flow where todo lines become issues and the file stays the master list. The plugin offered a file or issues, not both, so added `ticket --from-todo`, an open-ticket limit and `todo-sync`. Tickets and comments now obey `text_bans`. Tested with a fake gh only.
+
+## 2026-11-07: 0.2.2, worktree_root
+Writing the first real crew file showed its default worktree folder can already be taken. Added `worktree_root`. The crew file dry-runs clean on real projects: all three members would start. No live crew yet; it waits on the owner's start.
