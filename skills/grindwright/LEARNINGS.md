@@ -47,3 +47,11 @@
 - Evidence: Tiny Colony set ask/card-style, questions finished and batch, 2026-11-04.
 - Scope: skill
 - Status: active · helpful 0 · harmful 0 · last_confirmed 2026-11-04
+
+### L-003 · 2026-11-06 · `pr-cap-blind`: `next` offers ask-drafted while the person's open-PR cap is full
+- Trigger: on Arvum Electrum (three sessions), `next` and `session check` offered "ask-drafted" for drafted batches while two PRs already waited on the person. Each session had to end with `--force`.
+- Hypothesis: the review queue is counted only from `wait-human` items with askwright sets. A GitHub PR review cannot be recorded as one, so the queue looks empty.
+- Rule: until `wait-human <id> --pr N` exists, check open PRs with `gh pr list` before following "ask-drafted", and treat that action as blocked past the cap. Also, `hold` does not take `--provenance` (only `done` does), although the skill says to record provenance on generated assets.
+- Evidence: ArvumElectrum-anim-work ai-docs/grind/pilot-notes.md, sessions 1 to 3, 2026-11-06.
+- Scope: skill
+- Status: active · helpful 0 · harmful 0 · last_confirmed 2026-11-06
