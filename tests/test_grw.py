@@ -460,7 +460,10 @@ class Plugins(Base):
     def test_film_lanes_close_on_their_plugins(self):
         self.profile({"lanes": {"script": {"kind": "writing"}, "voices": {"kind": "voice"}, "cut": {"kind": "edit"}}})
         self.assertEqual(self.grw("doctor", "--no-probe")["closed_lanes"],
-                         {"script": ["everwrite or editwright"], "voices": ["voicewright"], "cut": ["cinewright"]})
+                         {"script": ["everwrite or editwright"], "voices": ["voicewright"], "cut": ["cinewright or comfyui-gen"]})
+
+    def test_blocked_by_unknown_id_is_refused(self):
+        self.assertIn("no such item", " ".join(self.grw("add", "x", "--lane", "code", "--source", "s", "--value", "2", "--blocked-by", "milestone1", expect=2)["refused"]))
 
     def test_discover_message_names_the_profile_list(self):
         self.profile({"discover": ["review the latest cut", "continuity"]})
