@@ -119,6 +119,15 @@ class Sessions(Base):
         self.assertIn("pat", (self.state / "WAITING.md").read_text(encoding="utf-8"))
 
 
+class WorktreeRoot(unittest.TestCase):
+    def test_root_replaces_the_default_folder(self):
+        with tempfile.TemporaryDirectory() as folder:
+            taken = Path(folder) / "elsewhere" / "m-1"
+            taken.mkdir(parents=True)
+            project = {"repo": str(Path(folder) / "game"), "worktree_root": str(taken.parent)}
+            self.assertEqual(grind_crew.worktree(project, "m-1", "2026-01-01"), str(taken))
+
+
 class FakeGh:
     def __init__(self):
         self.calls, self.stdin, self.issues, self.events, self.comments = [], [], [], [], []

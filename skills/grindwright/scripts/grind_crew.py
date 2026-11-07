@@ -56,7 +56,8 @@ def worktree(project, member, today):
     if project.get("worktrees") is False:
         return project["repo"]
     repo = Path(project["repo"]).resolve()
-    path = repo.parent / f"{repo.name}-grind" / member
+    root = Path(project["worktree_root"]) if project.get("worktree_root") else repo.parent / f"{repo.name}-grind"
+    path = root / member
     if path.exists():
         return str(path)
     path.parent.mkdir(parents=True, exist_ok=True)
