@@ -14,6 +14,7 @@ The ledger, selector, gates and crews do not care what the project is. A non-gam
 | `sound` | sfxwright | sfx check, human listen |
 | `music`: score | musicwright (musicwright-score) | mw.py measure, hits on cuts, human listen |
 | `model`: blockouts, crowds | polywright | render sheet |
+| `tests`: checks that catch a bad render or cut by script (duration, black or frozen frames, loudness, missing shots) | the project's scripts | the check fails on a known bad file |
 | `marketing`: posters, posts | marketwright | drafts only |
 
 Games use the writing and voice lanes too: dialogue, lore, card text, store copy.

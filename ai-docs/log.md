@@ -74,3 +74,7 @@ Read the first crew run while it was still going (three members, two projects). 
 ## 2026-11-07: 0.3.0, beyond games
 
 The owner asked for long video projects to run on grindwright, using video, audio and writing plugins, and noted game projects could use writing plugins too. The engine already took any lane from the profile; only the wording, the discover messages and the plugin map assumed a game. Added lane kinds writing, voice and edit, made the discover messages quote the profile, wrote `references/projects.md`, broadened the skill text. Two new tests, 116 pass. No video project has been set up yet; the owner picks which one.
+
+## 2026-11-07: 0.3.1, a tests lane
+
+The owner asked that adding tests of any kind be one lane. Added lane kind `tests`, a discover signal aimed at it, docs rows for games and films, one unit test (117 pass).

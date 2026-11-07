@@ -469,6 +469,13 @@ class Plugins(Base):
         self.assertIn("review the latest cut", why)
         self.assertNotIn("balance", why)
 
+    def test_discover_points_test_gaps_at_the_tests_lane(self):
+        self.profile({"lanes": {"coverage": {"kind": "tests"}}})
+        signals = self.grw("discover", "--no-gh")["signals"]
+        test_signal = [s for s in signals if s.get("lane") == "coverage"]
+        self.assertTrue(test_signal)
+        self.assertIn("end-to-end", test_signal[0]["note"])
+
     def test_sound_lane_opens_on_either_plugin(self):
         self.profile({"lanes": {"sound": {"kind": "sound"}}})
         self.assertEqual(self.grw("doctor", "--no-probe")["closed_lanes"], {"sound": ["sfxwright or musicwright"]})
