@@ -250,6 +250,18 @@ class HumanQueue(Base):
         refused = self.grw("wait-human", third, "--pr", "9", expect=2)
         self.assertIn("cap", " ".join(refused["refused"]))
 
+    def test_find_skill_reads_the_plugin_cache_layout(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            version = Path(tmp) / "market" / "someplugin" / "1.2.3"
+            (version / "skills").mkdir(parents=True)
+            real = grw.skill_roots
+            grw.skill_roots = lambda: [Path(tmp)]
+            try:
+                self.assertEqual(grw.find_skill("someplugin"), str(version))
+                self.assertIsNone(grw.find_skill("otherplugin"))
+            finally:
+                grw.skill_roots = real
+
     def test_pr_state_moves_the_item(self):
         merged = {"pr": "7", "state": "waiting-on-human"}
         self.assertTrue(grw.apply_pr_state(merged, "MERGED"))

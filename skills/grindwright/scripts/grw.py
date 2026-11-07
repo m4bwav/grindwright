@@ -27,7 +27,7 @@ import time
 import urllib.request
 from pathlib import Path
 
-VERSION = "0.1.8"
+VERSION = "0.1.9"
 FORMAT = 1
 STATES = ("ready", "running", "waiting-on-human", "waiting-on-machine", "done", "dropped")
 COST_UNITS = {"S": 1, "M": 3, "L": 8}
@@ -431,7 +431,8 @@ def find_skill(name):
     for root in skill_roots():
         if not root.is_dir():
             continue
-        for candidate in [root / name] + list(root.glob(f"*/{name}")):
+        # The plugin cache nests <marketplace>/<plugin>/<version>, so look one level under the name as well.
+        for candidate in [root / name] + list(root.glob(f"*/{name}")) + list(root.glob(f"*/{name}/*")):
             if (candidate / "SKILL.md").exists() or (candidate / "skills").is_dir():
                 return str(candidate)
     return None
