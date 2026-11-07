@@ -32,3 +32,6 @@ The owner merged the pilot branch. No plugin change this session. The pilot ledg
 
 ## 2026-11-06: Tiny Colony evaluation queued
 The owner answered the eval game's question sets on the real dashboard and wants grindwright to evaluate them. Queued in HANDOFF; nothing evaluated yet.
+
+## 2026-11-06: rulings put to the owner
+All open calls went on one decision page: keep or retire, whether the pilot was played, the overnight start, the first pilot on the second game, local install. No plugin change. The trim waits for the ruling.

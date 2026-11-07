@@ -13,6 +13,8 @@ Updated 2026-11-06. Public `m4bwav/grindwright`, v0.1.6 tagged, wiki at 0.1.0 (`
 1. The owner merged the pilot branch on 2026-11-05 and has not yet said it was played. The overnight run is the owner's to start. It is the first real test of drafting past the cap. Reconcile the game ledger first.
 2. Worth ruling: the tool says CUT (11/12 with, 8/12 without, x1.98 cost, inside the noise). The owner decides. Maintainer recommendation: keep, cut bookkeeping turns, re-run. The cases cannot measure chaining; the overnight run can. See T-20261106-2.
 
+3. All open calls are on one decision page in the private sidecar, unanswered as of 2026-11-06. Read it first.
+
 ## Known limits
 
 Claims and the state lock do not coordinate across git worktrees: each has its own ledger copy. The physical-sense check is only an instruction, not a gate. `wait-human` accepts `--why` with no question set (needed for PR reviews), so it can skip the page. `road_warning` is advice; `claim` does not enforce it. Drafts past the cap can go stale if a pending answer changes direction; `ask-drafted` only tells the agent to check. Apart from small-call, trap evals have not been re-run since `draft` was added. Eval isolation only covers fixture profiles.
