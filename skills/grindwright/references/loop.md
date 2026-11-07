@@ -36,7 +36,7 @@ a question kind recurring three times should be a rule, so stop asking it.
 | Card and placeholder graphics | artwright, comfyui-gen, the project's card tool | wired-art check, snapshots, human pick |
 | Animation | pixelwright | its gates, snapshots, human pick |
 | Models and blockouts | polywright | render sheet |
-| Sound effects and music | musicwright | mw.py measure, loop seam check, human listen |
+| Sound effects and music | sfxwright for effects when installed, else musicwright; musicwright for music | sfx.py check, mw.py measure, loop seam check, human listen |
 | Intro video, trailers | cinewright, marketwright | human watch; drafts only |
 | Feel | game-juice (juice-scan, juice-apply) | toggle works, snapshots |
 | Balance | ludowright, ldw.py simulations | seeded Monte Carlo, findings file |
