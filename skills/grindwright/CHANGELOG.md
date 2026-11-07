@@ -1,5 +1,9 @@
 # Changelog: grindwright
 
+## Unreleased
+
+Sfxwright, when installed: Hand sound effects to sfxwright when present and read its sounds.json; this plugin's own steps stay as the fallback.
+
 ## 0.1.7 · 2026-11-06
 Trimmed the bookkeeping: `session start` also syncs and names the next action, `next --claim` also claims, and SKILL.md carries the command syntax so `--help` turns go away. A request naming one item stops after that item. Reason: the owner kept the plugin on the ruling to trim its cost; T-20261106-2 measured x1.98 cost, mostly bookkeeping turns.
 

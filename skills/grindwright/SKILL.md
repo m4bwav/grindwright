@@ -97,6 +97,7 @@ hold <id> --evidence E   checkpoint <id> "<note>"   redo <id> "<note>"   reject 
 - Plugins are optional. Detect, use, route around. Call them, do not copy them: art and cards through artwright and
   comfyui-gen, sprites through pixelwright, feel through game-juice, balance through ludowright, music through
   musicwright, video through cinewright, models through polywright, marketing through marketwright.
+- Sound effects go through sfxwright when installed: hand over the game events, read its `sounds.json` for status and picked files, and keep the human listen. Without it, the sound lane keeps its musicwright route.
 - Unattended runs use `scripts/grind_loop.py`, bounded and only after the owner agrees ([chaining](references/chaining.md)).
 - A lane absent from the profile is closed. If the only lanes left wait on a person and discovery is off, stopping is
   correct: say so. Start commands use absolute paths, so they work from any folder.
