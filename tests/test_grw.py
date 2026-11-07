@@ -241,6 +241,27 @@ class HumanQueue(Base):
         self.assertEqual((top["id"], top["action"]), (draft, "ask-drafted"))
         self.grw("wait-human", draft, "--why", "PR")
 
+    def test_pr_review_counts_against_the_cap(self):
+        first = self.add("batch 0", 4, 20, "code", "--person", "alex")
+        self.assertEqual(self.grw("wait-human", first, "--pr", "7")["person"], "alex")
+        second = self.add("batch 1", 4, 20, "code", "--person", "alex")
+        self.grw("wait-human", second, "--pr", "8")
+        third = self.add("batch 2", 4, 20, "code", "--person", "alex")
+        refused = self.grw("wait-human", third, "--pr", "9", expect=2)
+        self.assertIn("cap", " ".join(refused["refused"]))
+
+    def test_pr_state_moves_the_item(self):
+        merged = {"pr": "7", "state": "waiting-on-human"}
+        self.assertTrue(grw.apply_pr_state(merged, "MERGED"))
+        self.assertEqual((merged["state"], merged["oracle"]), ("done", "human"))
+        closed = {"pr": "8", "state": "waiting-on-human"}
+        self.assertTrue(grw.apply_pr_state(closed, "CLOSED"))
+        self.assertEqual(closed["state"], "ready")
+        for state in ("OPEN", None):
+            still = {"pr": "9", "state": "waiting-on-human"}
+            self.assertFalse(grw.apply_pr_state(still, state))
+            self.assertEqual(still["state"], "waiting-on-human")
+
     def test_drafts_stop_at_the_cap(self):
         list(self.fill_queue())
         for n in range(2):

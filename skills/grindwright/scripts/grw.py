@@ -27,7 +27,7 @@ import time
 import urllib.request
 from pathlib import Path
 
-VERSION = "0.1.7"
+VERSION = "0.1.8"
 FORMAT = 1
 STATES = ("ready", "running", "waiting-on-human", "waiting-on-machine", "done", "dropped")
 COST_UNITS = {"S": 1, "M": 3, "L": 8}
@@ -755,13 +755,13 @@ def cmd_wait_human(store, args):
                 failures.append("askwright lint failed: " + str(lint.get("errors") or lint.get("error"))[:200])
     else:
         count = 1
-        if not args.why:
-            failures.append("no askwright set: give --why (for a PR or a chat question)")
+        if not args.why and not args.pr:
+            failures.append("no askwright set: give --pr or --why (for a PR or a chat question)")
     if args.batch is not None and args.batch < minimum and not args.tail:
         failures.append(f"batch of {args.batch} is under {person}'s minimum of {minimum}")
     if failures:
         raise Refused(failures)
-    item.update({"state": "waiting-on-human", "person": person, "waits_for": args.why or "answers on the askwright set"})
+    item.update({"state": "waiting-on-human", "person": person, "waits_for": args.why or (f"review of PR {args.pr}" if args.pr else "answers on the askwright set")})
     if args.set:
         item["set"] = str(args.set)
         item.pop("guess", None)  # the page holds the guess now; a second copy drifted from it
@@ -786,6 +786,32 @@ def cmd_wait_machine(store, args):
     return {"id": item["id"], "reminder": "render is detached; select other work"}
 
 
+def pr_state(number):
+    """MERGED, CLOSED or OPEN from gh; None when gh cannot tell, which leaves the item waiting."""
+    gh = shutil.which("gh")
+    if not gh:
+        return None
+    try:
+        out = subprocess.run([gh, "pr", "view", str(number), "--json", "state", "--jq", ".state"],
+                             capture_output=True, text=True, timeout=30)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return out.stdout.strip() if out.returncode == 0 else None
+
+
+def apply_pr_state(item, state):
+    """A merged PR finishes the item; a closed one sends it back. True when the item changed."""
+    if state == "MERGED":
+        item.update({"state": "done", "evidence": f"PR {item['pr']} merged", "oracle": "human", "finished": stamp()})
+    elif state == "CLOSED":
+        item["state"] = "ready"
+        item.setdefault("checkpoints", []).append({"ts": stamp(), "note": f"PR {item['pr']} closed without merging: read why"})
+    else:
+        return False
+    touch(item)
+    return True
+
+
 def cmd_sync(store, args):
     """Bring answers, finished renders and expired leases back into the ledger."""
     items = store.items()
@@ -805,6 +831,8 @@ def cmd_sync(store, args):
                 report["answers"].append({"id": item["id"], "new": len(new), "set": item["set"]})
             else:
                 report["still_waiting"].append({"id": item["id"], "person": item.get("person"), "set": item["set"]})
+        elif item["state"] == "waiting-on-human" and item.get("pr") and apply_pr_state(item, pr_state(item["pr"])):
+            report["pr"].append({"id": item["id"], "pr": item["pr"], "state": item["state"]})
         elif item["state"] == "waiting-on-human":
             report["still_waiting"].append({"id": item["id"], "person": item.get("person"), "why": item.get("waits_for")})
         elif item["state"] == "waiting-on-machine":
@@ -903,6 +931,8 @@ def cmd_hold(store, args):
     if not item.get("person"):
         raise Refused(["only an item with a person to review it can be held"])
     item.update({"state": "drafted", "evidence": args.evidence})
+    if args.provenance:
+        item["provenance"] = args.provenance
     item.pop("lease_until", None)
     touch(item)
     store.save_items(items)
@@ -1264,6 +1294,7 @@ def build_parser():
     p = add("hold", cmd_hold, "a draft is made but the person's review queue is full")
     p.add_argument("id")
     p.add_argument("--evidence", required=True)
+    p.add_argument("--provenance")
 
     p = add("log", cmd_log, "record finished work in one call")
     p.add_argument("title")
