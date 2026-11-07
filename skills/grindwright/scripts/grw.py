@@ -846,7 +846,7 @@ def cmd_sync(store, args):
     """Bring answers, finished renders and expired leases back into the ledger."""
     items = store.items()
     ask = find_ask()
-    report = {"answers": [], "machines": [], "recovered": [], "pr": [], "still_waiting": [], "released": release_blocked(items)}
+    report = {"answers": [], "machines": [], "recovered": [], "pr": [], "still_waiting": [], "closed_sets": [], "released": release_blocked(items)}
     for item in items:
         if item["state"] == "waiting-on-human" and item.get("set"):
             if not ask:
@@ -859,8 +859,14 @@ def cmd_sync(store, args):
                 item.update({"state": "ready", "answered": new, "still_open": status.get("open", 0) - len(answered)})
                 touch(item)
                 report["answers"].append({"id": item["id"], "new": len(new), "set": item["set"]})
+            elif status.get("open", 1) == 0:
+                # Everything on the page was answered and closed: nobody is left to wait for, and it fills the review queue.
+                item["state"] = "ready"
+                item.setdefault("checkpoints", []).append({"ts": stamp(), "note": f"set {item.pop('set')} is fully closed: finish or drop this item"})
+                touch(item)
+                report["closed_sets"].append(item["id"])
             else:
-                report["still_waiting"].append({"id": item["id"], "person": item.get("person"), "set": item["set"]})
+                report["still_waiting"].append({"id": item["id"], "person": item.get("person"), "set": item["set"], "unsure": status.get("unsure", [])})
         elif item["state"] == "waiting-on-human" and item.get("pr") and apply_pr_state(item, pr_state(item["pr"])):
             report["pr"].append({"id": item["id"], "pr": item["pr"], "state": item["state"]})
         elif item["state"] == "waiting-on-human":

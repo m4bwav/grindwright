@@ -626,6 +626,15 @@ class OvernightFaults(Base):
         self.grw("log", "S-02 pop", "--lane", "code", "--source", "juice-report.md", "--evidence", "e", "--oracle", "tests")
         self.assertFalse([s for s in self.grw("discover", "--no-gh", "--repo", str(repo))["signals"] if s["lane"] == "juice"])
 
+    def test_sync_frees_an_item_whose_set_is_fully_closed(self):
+        fake = Path(self.dir.name) / "ask.py"
+        fake.write_text("import json;print(json.dumps({'ok':True,'answered':[],'open':0}))", encoding="utf-8")
+        os.environ["GRINDWRIGHT_ASK"] = str(fake)
+        made = self.grw("add", "ask", "--lane", "code", "--source", "t", "--value", "4", "--human-min", "5", "--person", "alex")["id"]
+        self.grw("set", made, "state=waiting-on-human", "set=somewhere")
+        self.assertEqual(self.grw("sync")["closed_sets"], [made])
+        self.assertEqual(self.grw("show", made)["item"]["state"], "ready")
+
 
 if __name__ == "__main__":
     unittest.main()
