@@ -106,6 +106,23 @@ class Selector(Base):
         self.grw("discover", "--no-gh")
         self.assertEqual(self.grw("next", "--no-probe")["next"]["action"], "stop")
 
+    def test_session_start_also_syncs_and_names_the_next_action(self):
+        started = self.grw("session", "start", "--no-probe")
+        self.assertIn("still_waiting", started["sync"])
+        self.assertEqual(started["next"]["next"]["action"], "discover")
+
+    def test_next_claim_claims_work_only_on_a_confirmed_road(self):
+        road = self.state / "road.json"
+        saved = json.loads(road.read_text(encoding="utf-8"))
+        item = self.add("A real gap", 4)
+        saved["confirmed"] = False
+        road.write_text(json.dumps(saved), encoding="utf-8")
+        self.assertNotIn("claimed", self.grw("next", "--no-probe", "--claim"))
+        saved["confirmed"] = True
+        road.write_text(json.dumps(saved), encoding="utf-8")
+        self.assertEqual(self.grw("next", "--no-probe", "--claim")["claimed"]["id"], item)
+        self.assertIn("running", json.dumps(self.grw("show", item)))
+
     def test_add_requires_a_source(self):
         with self.assertRaises(SystemExit), contextlib.redirect_stderr(io.StringIO()):
             self.grw("add", "invented", "--lane", "code", "--value", "3")

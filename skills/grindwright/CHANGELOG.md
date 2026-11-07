@@ -1,5 +1,8 @@
 # Changelog: grindwright
 
+## 0.1.7 · 2026-11-06
+Trimmed the bookkeeping: `session start` also syncs and names the next action, `next --claim` also claims, and SKILL.md carries the command syntax so `--help` turns go away. A request naming one item stops after that item. Reason: the owner kept the plugin on the ruling to trim its cost; T-20261106-2 measured x1.98 cost, mostly bookkeeping turns.
+
 ## 0.1.6 · 2026-11-06
 The skill says to relay only words a person gave. Reason: in the first A/B (T-20261106-2), told "PR 12 looks ready", two of the three runs recorded a review from the PR's owner that the owner never gave. Added four value cases with fixtures that work without the skill, and a checker. Removed another plugin's worth verdict that had been copied into evergreen.json at creation.
 

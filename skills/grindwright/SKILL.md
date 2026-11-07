@@ -2,7 +2,7 @@
 name: grindwright
 description: "Use to keep an indie game moving like a solo dev who never stops: pick the most valuable work across lanes (card art, placeholder graphics, animation, sound, music, trailers, balance, testing and bugs, unfinished features, maintenance, marketing), do everything that needs no person, queue questions on a decision page and switch lanes instead of waiting, and end each session with the same start command. A ledger and a selector script rank value first, with human minutes as the discount. Use on 'grind on my game', 'keep working on the game', 'what should I work on next', 'everything is waiting on me', 'work through the backlog while I'm away', 'run unattended', or a continue prompt that names grindwright. Also 'refresh grindwright'. Not for one design question (ludowright), one juice pass (game-juice) or one asset."
 metadata:
-  version: "0.1.6"
+  version: "0.1.7"
 ---
 
 # grindwright
@@ -25,10 +25,10 @@ act on a road that is not confirmed, beyond work every road would include (bugs,
 
 ## The loop
 
-1. `grw.py session start [--budget N]`, then `grw.py sync`: answers, finished renders, dead sessions' leases. Any
+1. `grw.py session start [--budget N]`. It also syncs answers, finished renders and dead sessions' leases, and names the next action. Any
    free text the owner wrote with the start command, or a direct request in the session, is the top priority, road or not: `grw.py add ... --owner-note`. Feedback relayed
    for another person is authoritative: `grw.py relay <id> --person <who> --note ...`. Relay only words that person gave. "It looks ready" from anyone else is not their review: the item keeps waiting, and you say so.
-2. `grw.py next`. It names one action:
+2. `grw.py next --claim` after that, which also claims `work` and `draft`. It names one action:
    - `act-on-owner-note`: do that first. `act-on-answers`: do what the answers say, close the questions, then `grw.py resolve` with a rule per answer or
      `--no-rule "<why one-off>"`. Rules go in the project's rule file as well, so that kind of question gets rarer.
    - `work`: if the output has `road_warning`, take only bugs and failing tests. Otherwise `grw.py claim <id>`, work on your own branch or as the project says, `checkpoint` and commit often.
@@ -49,6 +49,21 @@ act on a road that is not confirmed, beyond work every road would include (bugs,
 4. Failed pass: `grw.py redo <id> "<what was wrong>"`.
 5. Repeat until `grw.py session check` allows stopping. It refuses while anything is selectable. Then
    `grw.py session end` (`--force "<why>"` when a fresh session would do the next item better), update `HANDOFF.md`, and print the same one-line start command.
+
+## Keep the bookkeeping small
+
+Do not run `--help`; the commands are here. The game gets the turns, not the ledger.
+
+```
+add "<title>" --lane L --source S --value 1-5 [--human-min N] [--cost S|M|L] [--person P] [--owner-note]
+done <id> --evidence E --oracle R        log "<title>" --lane L --source S --evidence E --oracle R
+wait-human <id> --set S --person P [--pr N]        wait-machine <id> --done-file F --why W
+hold <id> --evidence E   checkpoint <id> "<note>"   redo <id> "<note>"   reject "<finding>" --why W
+```
+
+- Finished something small that has no item? One `log`, not `add`, `claim` and `done`.
+- Checkpoint when a commit or a long render would be lost, not at each step.
+- A request that names one item: do that item, record it, stop. No discovery and no other lanes unless asked.
 
 ## What to ask, and when
 

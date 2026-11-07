@@ -27,7 +27,7 @@ import time
 import urllib.request
 from pathlib import Path
 
-VERSION = "0.1.6"
+VERSION = "0.1.7"
 FORMAT = 1
 STATES = ("ready", "running", "waiting-on-human", "waiting-on-machine", "done", "dropped")
 COST_UNITS = {"S": 1, "M": 3, "L": 8}
@@ -623,6 +623,8 @@ def cmd_next(store, args):
                   "free_gpu_hosts": result["free_gpu_hosts"]}
         if not store.road().get("confirmed"):
             answer["road_warning"] = "road not confirmed: put it to the owner; until then only work every road includes (bugs, failing tests)"
+        elif getattr(args, "claim", False) and top.get("action") in ("work", "draft"):
+            answer["claimed"] = cmd_claim(store, argparse.Namespace(id=top["id"], new_route=None))
         return answer
     lanes = store.profile().get("discover", [])
     if not result["discovered"] and lanes:
@@ -1067,7 +1069,7 @@ def cmd_session(store, args):
         session = {"started": stamp(), "budget": args.budget, "used": 0}
         store.save_session(session)
         store.event("session_start", budget=args.budget)
-        return session
+        return dict(session, sync=cmd_sync(store, args), next=cmd_next(store, args))
     if args.action == "pause":
         items = store.items()
         for item in items:
@@ -1191,7 +1193,8 @@ def build_parser():
     p.add_argument("--only", choices=STATES)
 
     probing(add("rank", cmd_rank, "rank everything and say why"))
-    probing(add("next", cmd_next, "the one thing to do next"))
+    p = probing(add("next", cmd_next, "the one thing to do next"))
+    p.add_argument("--claim", action="store_true", help="also claim it when the action is work or draft")
     probing(add("plan", cmd_plan, "read-only dry run in markdown"))
     probing(add("doctor", cmd_doctor, "which plugins and machines exist, which lanes that closes"))
 
@@ -1313,7 +1316,7 @@ def main(argv=None):
     store = Store(args.state)
     if args.command != "init":
         store.require()
-    read_only = args.command in ("show", "rank", "next", "plan", "doctor", "list", "queue", "guard", "lint-text", "metrics", "init")
+    read_only = args.command in ("show", "rank", "next", "plan", "doctor", "list", "queue", "guard", "lint-text", "metrics", "init") and not getattr(args, "claim", False)
     try:
         if read_only:
             result = args.func(store, args)
