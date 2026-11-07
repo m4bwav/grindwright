@@ -27,13 +27,14 @@ import time
 import urllib.request
 from pathlib import Path
 
-VERSION = "0.1.11"
+VERSION = "0.1.12"
 FORMAT = 1
 STATES = ("ready", "running", "waiting-on-human", "waiting-on-machine", "done", "dropped")
 COST_UNITS = {"S": 1, "M": 3, "L": 8}
 HIGH_VALUE = 3
 HIGH_HUMAN_MIN = 30
 LEASE_HOURS = 6
+ANSWER_QUIET_MINUTES = 15
 OUTWARD = ("post", "publish", "deploy", "store-page", "outreach", "install-hooks")
 PLACEHOLDER_GUESS = re.compile(r"no guess|placeholder|\btbd\b|\btodo\b|not sure|unknown|n/a", re.I)
 DEFAULT_PROFILE = {
@@ -467,6 +468,17 @@ def find_ask():
     return None
 
 
+def still_being_answered(item, status, answered):
+    """A part-answered set with no done mark waits until its answers have stopped changing for a while."""
+    if not status.get("unanswered") or status.get("done"):
+        return False
+    seen = item.get("answers_seen") or {}
+    if seen.get("count") != len(answered):
+        item["answers_seen"] = {"count": len(answered), "ts": stamp()}
+        return True
+    return parse_time(seen["ts"]) + dt.timedelta(minutes=ANSWER_QUIET_MINUTES) > now()
+
+
 def ask_call(ask, *argv):
     done = subprocess.run([sys.executable, ask, *argv], capture_output=True, text=True, encoding="utf-8")
     try:
@@ -855,7 +867,11 @@ def cmd_sync(store, args):
             status = ask_call(ask, "status", item["set"])
             answered = set(status.get("answered", []))
             new = sorted(answered - set(item.get("acted", [])))
-            if new:
+            if new and still_being_answered(item, status, answered):
+                touch(item)
+                report["still_waiting"].append({"id": item["id"], "person": item.get("person"), "set": item["set"], "why": "still being answered: acting now would split the work"})
+            elif new:
+                item.pop("answers_seen", None)
                 item.update({"state": "ready", "answered": new, "still_open": status.get("open", 0) - len(answered)})
                 touch(item)
                 report["answers"].append({"id": item["id"], "new": len(new), "set": item["set"]})

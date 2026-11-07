@@ -1,5 +1,8 @@
 # Changelog: grindwright
 
+## 0.1.12 · 2026-11-07
+`sync` leaves a part-answered set waiting while its answers are still changing: it frees the item once the person marks the set done or the answers have stood still for 15 minutes. Reason: a pilot session synced a set at 2 of 5 answers and acting then would have split the work.
+
 ## 0.1.11 · 2026-11-07
 An item blocked on another item no longer counts as running: `claim` refuses it, `sync` and a shave send it back to ready, `session check` ignores it. The driver's fingerprint counts real progress only, not `discover` or a checkpoint on idle work. `discover` names an open lane instead of `gaps`, lists marker locations, skips suggestions the ledger has finished, and walks the repo once with engine caches pruned. `hold --person`. `wait-human` registers its set on the inbox. `sync` frees an item whose set is fully closed and shows `unsure` answers on waiting ones. Reason: the first overnight run, where one blocked item forced `--force` in about 15 of 25 sessions, kept the driver from ever stopping on the ledger, and three sessions at the end rediscovered nothing.
 
