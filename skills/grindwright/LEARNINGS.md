@@ -71,3 +71,11 @@
 - Evidence: owner's note and an audit of the game's event table, private sidecar, 2026-11-07.
 - Scope: skill
 - Status: active · helpful 0 · harmful 0 · last_confirmed 2026-11-07
+
+### L-008 · 2026-11-07 · `absence-claim-unchecked`: a question claimed the design was silent without searching it
+- Trigger: an `analyse` note and a question said a game had no model for a rule and its design doc was silent. A plain search found the rule in the design doc, 13 card rows and an unused enum. The owner replied "check your reasoning and give me more details", and a later session filed that reply as "not sure".
+- Hypothesis: the agent looked only at the TODO in front of it, so it framed a design-wide gap as one odd item, and its guess (cut) would have left the rest broken. Handoffs that summarise answers lose the note.
+- Rule: before a question says something does not exist, search the design docs and data for the term and give the count. Read the note on every answer before calling it unanswered. Not yet in SKILL.md; add it with L-004 at the next change that re-runs evals.
+- Evidence: owner's answer and a search of the game's repo, private sidecar, 2026-11-07.
+- Scope: skill
+- Status: active · helpful 0 · harmful 0 · last_confirmed 2026-11-07

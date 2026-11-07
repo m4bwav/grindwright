@@ -13,7 +13,7 @@ Updated 2026-11-07. Public `m4bwav/grindwright`, v0.1.12, wiki at 0.1.0 (`ai-doc
 1. On the next live run, check that the driver stops on the ledger with no `--force`, and that a large session bound is no longer the thing that stops it.
 2. Re-run the evals and `evergreen.py worth --ab` on the value cases when a run is worth its cost, to measure the trim. They have not run since 0.1.7.
 
-3. Put L-004 `feel-per-row-blind` into the discovery step of SKILL.md at the next change that re-runs evals.
+3. Put L-004 `feel-per-row-blind` and L-008 `absence-claim-unchecked` into the discovery step of SKILL.md at the next change that re-runs evals.
 
 ## Known limits
 
