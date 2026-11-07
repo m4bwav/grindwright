@@ -1,5 +1,8 @@
 # Log
 
+## 2026-11-07: part-answered sets, 0.1.12
+Closed the last fault left from the overnight notes: `sync` no longer calls a set ready while its person is still answering. Unit tests only; no live chain has run on this or on 0.1.11. Evals not re-run.
+
 ## 2026-11-07: overnight run read, 0.1.11
 The first overnight run on a real game stopped on its bound: 25 sessions in about 1 h 50 of the 10 hours allowed, about $33 at list prices, no usage limit met. It finished real work, opened one PR, and left three question sets for the owner. Its largest fault: an item blocked on a question stayed running, so nearly every session needed `--force` and the driver could not stop on the ledger, then three sessions found nothing. Fixed in 0.1.11 with the other repeated notes. Eval re-run still owed.
 

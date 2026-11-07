@@ -635,6 +635,30 @@ class OvernightFaults(Base):
         self.assertEqual(self.grw("sync")["closed_sets"], [made])
         self.assertEqual(self.grw("show", made)["item"]["state"], "ready")
 
+    def test_part_answered_set_waits_until_answers_stop_changing(self):
+        fake = Path(self.dir.name) / "ask.py"
+        fake.write_text("import json;print(json.dumps({'ok':True,'answered':['q1'],'unanswered':['q2'],'open':2,'done':False}))", encoding="utf-8")
+        os.environ["GRINDWRIGHT_ASK"] = str(fake)
+        made = self.grw("add", "ask", "--lane", "code", "--source", "t", "--value", "4", "--human-min", "5", "--person", "alex")["id"]
+        self.grw("set", made, "state=waiting-on-human", "set=somewhere")
+        self.assertEqual(self.grw("sync")["answers"], [])
+        self.assertEqual(self.grw("sync")["answers"], [])
+        self.assertEqual(self.grw("show", made)["item"]["state"], "waiting-on-human")
+        self.grw("set", made, 'answers_seen={"count": 1, "ts": "2020-01-01T00:00:00+00:00"}')
+        self.assertEqual(len(self.grw("sync")["answers"]), 1)
+        item = self.grw("show", made)["item"]
+        self.assertEqual(item["state"], "ready")
+        self.assertEqual(item["still_open"], 1)
+        self.assertNotIn("answers_seen", item)
+
+    def test_done_mark_releases_a_part_answered_set_at_once(self):
+        fake = Path(self.dir.name) / "ask.py"
+        fake.write_text("import json;print(json.dumps({'ok':True,'answered':['q1'],'unanswered':['q2'],'open':2,'done':True}))", encoding="utf-8")
+        os.environ["GRINDWRIGHT_ASK"] = str(fake)
+        made = self.grw("add", "ask", "--lane", "code", "--source", "t", "--value", "4", "--human-min", "5", "--person", "alex")["id"]
+        self.grw("set", made, "state=waiting-on-human", "set=somewhere")
+        self.assertEqual(len(self.grw("sync")["answers"]), 1)
+
 
 if __name__ == "__main__":
     unittest.main()
