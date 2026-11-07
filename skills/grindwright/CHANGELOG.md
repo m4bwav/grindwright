@@ -4,6 +4,9 @@
 
 Sfxwright, when installed: Hand sound effects to sfxwright when present and read its sounds.json; this plugin's own steps stay as the fallback.
 
+## 0.1.9 · 2026-11-06
+Finds plugins in the installed cache, which nests marketplace, plugin and version. Reason: run from an install, `doctor` called nearly every plugin missing and closed their lanes, so a run would have stopped at once. Found in a dry run. A skill outside any plugin, such as askwright here, still needs `GRINDWRIGHT_ASK`.
+
 ## 0.1.8 · 2026-11-06
 A PR review now counts against the person's cap: `wait-human <id> --pr N` needs no set, and `sync` closes the item when `gh` says merged and reopens it when closed. `hold` takes `--provenance`. Reason: in a three-session pilot the ledger could not see open PRs, so `next` kept offering new reviews and every session ended with `--force` (L-003).
 
