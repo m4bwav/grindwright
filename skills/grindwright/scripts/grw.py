@@ -311,9 +311,19 @@ def lane_share(events, lane):
     return worked.count(lane) / len(worked)
 
 
+def same_person(left, right):
+    """People are matched without case: a ledger saying Alex and a profile saying alex are one person."""
+    return str(left or "").lower() == str(right or "").lower()
+
+
 def open_for_person(items, person):
-    sets = {i.get("set") or i["id"] for i in items if i["state"] == "waiting-on-human" and i.get("person") == person}
+    sets = {i.get("set") or i["id"] for i in items if i["state"] == "waiting-on-human" and same_person(i.get("person"), person)}
     return len(sets)
+
+
+def review_cap(profile, person):
+    people = {str(k).lower(): v for k, v in profile.get("people", {}).items()}
+    return people.get(str(person or "").lower(), {}).get("review_cap", 3)
 
 
 def area_key(area):
@@ -360,9 +370,12 @@ def select(profile, road, items, events, session, hosts_alive=None, hosts_idle=(
         if handled_elsewhere(item, sid):
             deferred.append({"id": item["id"], "title": item["title"], "why": [f"being handled by {item['handling']['session']}"]})
             continue
+        if item.get("paused_by") and item["paused_by"] != sid and sid != SOLO:
+            deferred.append({"id": item["id"], "title": item["title"], "why": [f"paused by {item['paused_by']}: its work is on that session's branch, so leave it to that session (claim --take-over moves it)"]})
+            continue
         if item["state"] == "drafted":
             person = item.get("person")
-            cap = profile.get("people", {}).get(person, {}).get("review_cap", 3)
+            cap = review_cap(profile, person)
             if open_for_person(items, person) >= cap:
                 deferred.append({"id": item["id"], "title": item["title"], "why": [f"drafted; {person}'s review queue is at its cap of {cap}"]})
             else:
@@ -387,9 +400,9 @@ def select(profile, road, items, events, session, hosts_alive=None, hosts_idle=(
             reasons.append(f"value {item['value']} is under the floor {profile.get('min_value', 2)}")
         person = item.get("person")
         if item.get("human_min", 0) > 0 and person and not item.get("answered"):
-            cap = profile.get("people", {}).get(person, {}).get("review_cap", 3)
+            cap = review_cap(profile, person)
             if open_for_person(items, person) >= cap:
-                drafts = len([o for o in items if o["state"] == "drafted" and o.get("person") == person])
+                drafts = len([o for o in items if o["state"] == "drafted" and same_person(o.get("person"), person)])
                 if item.get("question") or lane.get("stack_on_pending") is False or drafts >= cap:
                     reasons.append(f"{person}'s review queue is at its cap of {cap}")
                 else:
@@ -797,10 +810,13 @@ def cmd_claim(store, args):
         raise Refused(clashes + ["take other work, or wait"])
     if item.get("issue") and not item.get("triaged"):
         raise Refused(["triage first: issue-accept, issue-reply or issue-ask"])
+    if item.get("paused_by") and item["paused_by"] != store.sid and not getattr(args, "take_over", False):
+        raise Refused([f"paused by {item['paused_by']}, whose work is on its own branch: take other work, or claim --take-over and start from that branch"])
     if item.get("route_change_required") and not args.new_route:
         raise Refused([f"{item.get('redos')} failed passes on this route: name a new route with --new-route"])
     item["state"] = "running"
     item["session"] = store.sid
+    item.pop("paused_by", None)
     item.pop("handling", None)
     if getattr(args, "area", None):
         item["areas"] = sorted(set(item.get("areas", [])) | set(args.area))
@@ -899,7 +915,7 @@ def cmd_wait_human(store, args):
         failures.append("act on the answers already in first: " + ", ".join(others))
     if item.get("answered"):
         failures.append("record what you did with this item's answers first (grw.py resolve)")
-    cap = profile.get("people", {}).get(person, {}).get("review_cap", 3)
+    cap = review_cap(profile, person)
     already = item.get("set") and item["state"] == "waiting-on-human"
     if not already and open_for_person(items, person) >= cap:
         failures.append(f"{person}'s review queue is at its cap of {cap}: do different work")
@@ -1105,8 +1121,15 @@ def cmd_done(store, args):
 def cmd_hold(store, args):
     items = store.items()
     item = find_item(items, args.id)
-    if item["state"] != "running":
-        raise Refused([f"{item['id']} is {item['state']}: claim it and make the draft first"])
+    if item["state"] == "drafted":  # already held: keep the newer evidence, nothing else changes
+        item["evidence"] = args.evidence
+        touch(item)
+        store.save_items(items)
+        return {"id": item["id"], "state": "drafted", "note": "already drafted; evidence updated"}
+    if item["state"] not in ("running", "ready"):
+        raise Refused([f"{item['id']} is {item['state']}: only a ready, running or drafted item can be held"])
+    if item["state"] == "running" and owner_of(item) != store.sid:
+        raise Refused([f"{item['id']} is running in {owner_of(item)}"])
     person = args.person or item.get("person")
     if not person:
         raise Refused(["say who reviews this (--person)"])
@@ -1338,6 +1361,8 @@ def cmd_session(store, args):
                 item.pop("handling")
             if item["state"] == "running" and owner_of(item) == store.sid:
                 item["state"] = "ready"
+                if store.sid != SOLO:
+                    item["paused_by"] = store.sid
                 item.setdefault("checkpoints", []).append({"ts": stamp(), "note": f"paused: {args.reason}"})
                 item.pop("lease_until", None)
                 touch(item)
@@ -1476,6 +1501,7 @@ def build_parser():
     p.add_argument("--area", action="append", help="path or resource:name; refused if another session holds it")
     p.add_argument("--branch")
     p.add_argument("--new-route")
+    p.add_argument("--take-over", action="store_true", help="claim an item another crew session paused; start from its branch")
 
     p = add("checkpoint", cmd_checkpoint, "save progress on an item")
     p.add_argument("id")
@@ -1538,7 +1564,7 @@ def build_parser():
 
     p = add("hold", cmd_hold, "a draft is made but the person's review queue is full")
     p.add_argument("id")
-    p.add_argument("--person")
+    p.add_argument("--person", help="who reviews it; defaults to the item's person, required when it has none")
     p.add_argument("--evidence", required=True)
     p.add_argument("--provenance")
 

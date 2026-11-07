@@ -86,6 +86,35 @@ class Sessions(Base):
         states = {i["id"]: i["state"] for i in grw.Store(self.state).items()}
         self.assertEqual((states[mine], states[theirs]), ("ready", "running"))
 
+    def test_paused_item_stays_with_its_session(self):
+        item = self.add("alpha engine rewrite")
+        self.run_grw("claim", item, sid="a")
+        self.run_grw("session", "release", sid="a")
+        _, ranked = self.run_grw("rank", "--no-probe", sid="b")
+        self.assertNotIn(item, [r["id"] for r in ranked["ranked"]])
+        self.assertEqual(self.run_grw("claim", item, sid="b")[0], 2)
+        self.assertEqual(self.run_grw("claim", item, "--take-over", sid="b")[0], 0)
+        self.assertNotIn("paused_by", grw.find_item(grw.Store(self.state).items(), item))
+
+    def test_cap_matches_people_without_case(self):
+        path = self.state / "profile.json"
+        profile = json.loads(path.read_text(encoding="utf-8"))
+        profile["people"] = {"jo": {"review_cap": 1}}
+        path.write_text(json.dumps(profile), encoding="utf-8")
+        waiting, drafted = self.add("alpha engine rewrite"), self.add("beta shop screen")
+        self.run_grw("claim", waiting)
+        self.run_grw("wait-human", waiting, "--person", "Jo", "--pr", "5")
+        self.run_grw("claim", drafted)
+        self.run_grw("hold", drafted, "--evidence", "e", "--person", "Jo")
+        _, ranked = self.run_grw("rank", "--no-probe")
+        self.assertIn(drafted, [d["id"] for d in ranked["deferred"]])
+
+    def test_hold_from_ready_and_again_when_drafted(self):
+        item = self.add("alpha engine rewrite")
+        self.assertEqual(self.run_grw("hold", item, "--evidence", "e", "--person", "jo")[0], 0)
+        _, again = self.run_grw("hold", item, "--evidence", "newer")
+        self.assertEqual(again["state"], "drafted")
+
     def test_session_files_do_not_clobber(self):
         self.run_grw("session", "start", "--budget", "3", "--no-probe", sid="a")
         self.run_grw("session", "start", "--budget", "9", "--no-probe", sid="b")
@@ -208,6 +237,11 @@ class Issues(Base):
         self.fake.issues = [issue(1, "Crash on load", updated="2999-01-01T00:00:00Z")]
         self.fake.comments = [{"created_at": "2998-01-01T00:00:00Z", "body": "x " + grw_work.MARKER}]
         self.assertEqual(self.run_grw("issue-sync")[1]["reopened"], [])
+
+    def test_issue_accept_takes_the_issue_number(self):
+        self.fake.issues = [issue(7, "Crash on load")]
+        self.synced()
+        self.assertEqual(self.run_grw("issue-accept", "#7")[0], 0)
 
     def test_pr_links_both_ways_with_both_cases(self):
         self.fake.issues = [issue(1, "Crash on load")]

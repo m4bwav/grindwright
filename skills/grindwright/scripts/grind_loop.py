@@ -96,11 +96,22 @@ def plugins_loaded(stdout, need):
     return need in stdout
 
 
+def note(args, text):
+    if args.log:
+        with open(args.log, "a", encoding="utf-8") as log:
+            print(f"=== {text}", file=log)
+
+
 def run(args, sleep=time.sleep, clock=time.monotonic):
-    """A crew member gives back what it held however it stops, so its areas do not stay locked for the lease."""
+    """A crew member gives back what it held however it stops, so its areas do not stay locked for the lease.
+    Its stop reason goes to its own log at once: the crew prints results only when every member has ended."""
+    result = {"ok": False, "stopped": "crashed"}
     try:
-        return drive(args, sleep, clock)
+        result = drive(args, sleep, clock)
+        return result
     finally:
+        if args.go:
+            note(args, "stopped: " + json.dumps(result, ensure_ascii=False))
         if args.session_id and args.go:
             subprocess.run([sys.executable, str(GRW), "--state", str(args.state), "--session", args.session_id, "session", "release", "--reason", "driver stopped"], capture_output=True)
 
@@ -115,7 +126,7 @@ def drive(args, sleep, clock):
         return {"ok": True, "dry_run": True, "would_run": command + [prompt], "max_sessions": args.max_sessions,
                 "max_hours": args.max_hours, "now": verdict(args.state, args.session_id)}
     deadline = clock() + args.max_hours * 3600
-    sessions, idle, waits = 0, 0, 0
+    sessions, idle, waits, missing = 0, 0, 0, 0
     while True:
         check = verdict(args.state, args.session_id)
         if check.get("may_stop"):
@@ -146,7 +157,12 @@ def drive(args, sleep, clock):
             return {"ok": False, "stopped": "session-failed", "code": done.returncode, "tail": output[-500:], "sessions": sessions}
         sessions += 1
         if not plugins_loaded(output, args.require_text):
-            return {"ok": False, "stopped": "plugin-missing", "sessions": sessions}
+            missing += 1  # one miss is often a session that ended its turn mid-wait; two in a row is a lost plugin
+            if missing >= 2:
+                return {"ok": False, "stopped": "plugin-missing", "sessions": sessions}
+            note(args, f"marker {args.require_text!r} missing from pass {sessions}; one more miss stops this member")
+        else:
+            missing = 0
         idle = idle + 1 if fingerprint(args.state, args.session_id) == before else 0
         if idle >= 2:
             return {"ok": False, "stopped": "no-progress", "sessions": sessions}

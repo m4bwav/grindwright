@@ -1,5 +1,8 @@
 # Changelog: grindwright
 
+## 0.2.3 · 2026-11-07
+Fixes from the first live crew. A member whose session ends without the plugin's marker gets one more pass before it stops; a session that ended its turn while a compile ran in the background had stopped its member after one pass. Each member writes its stop reason to its own log at once, since the crew prints results only when every member has ended. An item a stopped member paused stays with that member (`paused_by`), because its work is on that member's branch; `claim --take-over` moves it. Review caps match people without case: a ledger saying "Alex" against a profile key "alex" fell back to the default cap and offered drafts past the real one. `hold` works from ready and again on a drafted item. `issue-accept` and the other issue verbs take the issue number. The skill tells driven sessions not to end their turn on a background job.
+
 ## 0.2.2 · 2026-11-07
 Crew files can set `worktree_root`. Reason: writing the first real crew file showed the default folder can already be a worktree, which would nest new ones inside it.
 
