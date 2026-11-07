@@ -56,3 +56,6 @@ A held answer had been filed as "not sure", but its note asked for the reasoning
 
 ## 2026-11-07: 0.2.0, crews and work sources
 The owner asked for several sessions a night across and within projects, each project's knowledge and logs kept apart, a way to say nothing can move without a decision, tokenwright awareness, GitHub issue handling, todo and task-list modes, and a scouting beat. Built all of it (see CHANGELOG). Chose ledger claims and areas over a lead agent: the survey found plain claims working at scale and heavy orchestration costly, and agent teams cannot run in `-p` mode. Also added an untrusted-author gate, not asked for, because anyone can file an issue on a public repo. L-004 and L-008 are now in the discovery step. Tests only, with a fake gh; no live crew yet.
+
+## 2026-11-07: 0.2.1, a todo file as the master list
+The owner answered the crew page: one session on the second game, two on the first, issues on the first, and for the second game a chosen flow where todo lines become issues and the file stays the master list. The plugin offered a file or issues, not both, so added `ticket --from-todo`, an open-ticket limit and `todo-sync`. Tickets and comments now obey `text_bans`. Tested with a fake gh only.

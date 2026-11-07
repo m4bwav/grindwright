@@ -105,7 +105,14 @@ def agent_line(store):
     return f"**I am an AI agent ({name}, session `{store.sid}`), not a person.** A person reviews what I do here."
 
 
+def refuse_banned(store, text, where):
+    bans = [w for w in store.profile().get("text_bans", []) if re.search(rf"\b{re.escape(w)}\b", text, re.I)]
+    if bans:
+        raise Refused([f"banned words in the {where}: " + ", ".join(bans)])
+
+
 def post_issue_comment(store, repo, number, text):
+    refuse_banned(store, text, "comment")
     body = f"{agent_line(store)}\n\n{text}\n\n{MARKER}\n"
     return gh("issue", "comment", str(number), "-R", repo, "--body-file", "-", stdin=body).strip()
 
@@ -255,9 +262,7 @@ def cmd_issue_pr(store, args):
     # GitHub honours the closing keyword only for a PR into the default branch; the comment below links it either way.
     body = (f"Closes #{number}\n\nOpened by an AI agent (session `{store.sid}`) for human review. Nothing merges without a person.\n\n"
             f"## Why this is a good idea\n{args.why}\n\n## Why it may not be\n{args.why_not}\n\n## What was checked\n{args.evidence}\n\n{MARKER}\n")
-    bans = [w for w in store.profile().get("text_bans", []) if w.lower() in (body + args.title).lower()]
-    if bans:
-        raise Refused(["banned words in the PR text: " + ", ".join(bans)])
+    refuse_banned(store, body + " " + args.title, "PR text")
     command = ["pr", "create", "-R", repo, "--head", args.branch, "--title", args.title, "--body-file", "-"]
     if args.base:
         command += ["--base", args.base]
@@ -286,12 +291,13 @@ def cmd_ticket(store, args):
     """File a bug or feature. Refuses duplicates across the ledger and the tracker, open or closed."""
     block = store.profile().get("work", {})
     mode = block.get("tickets", "issues")
-    key = key_of(args.from_task or args.title)
+    key = key_of(clean_line(args.from_todo) if args.from_todo else args.from_task or args.title)
     if args.from_task and not args.checked:
         raise Refused(["task lists go stale: say with --checked how you confirmed this is not already done"])
     person = args.person or (block.get("tasks", {}).get("person") if args.from_task else None)
     if args.from_task and not person:
         raise Refused(["a ticket from the task list needs a person to green light it: --person or work.tasks.person"])
+    refuse_banned(store, args.title + " " + args.body, "ticket")
     items = store.items()
     same = [i["id"] for i in items if i.get("ticket_key") == key or (similar(i["title"], args.title) and i["state"] != "dropped")]
     if same and not args.not_duplicate:
@@ -301,6 +307,13 @@ def cmd_ticket(store, args):
         waiting = [i for i in items if i["state"] == "waiting-on-human" and i.get("person") == person]
         if len(waiting) >= cap:
             raise Refused([f"{person} already has {len(waiting)} open, the cap is {cap}: do not flood them"])
+    if args.from_todo:
+        if mode != "issues":
+            raise Refused(['--from-todo files an issue: set work.tickets to "issues"'])
+        limit = block.get("todo", {}).get("open_tickets", 5)
+        running = [i for i in items if i.get("todo_key") and i["state"] not in ("done", "dropped")]
+        if len(running) >= limit:
+            raise Refused([f"{len(running)} todo tickets are open, the limit is {limit}: finish some before filing more"])
     config, number = {}, None
     if mode == "todo":
         path = store.repo_path() / work(store, "todo")["path"]
@@ -324,6 +337,8 @@ def cmd_ticket(store, args):
                     ticket_key=key, triaged=True, ticket=url)
     if number:
         item.update({"issue": number, "issue_repo": config["repo"]})
+    if args.from_todo:
+        item["todo_key"] = key
     if args.from_task and number:
         ask_person(store, config, item, person, f"This comes from your task list. Checked: {args.checked}. May an agent take it?")
     elif args.from_task:
@@ -371,20 +386,59 @@ def cmd_scan(store, args):
     used = {i.get("ticket_key") for i in store.items()} | {e.get("key") for e in store.events() if e.get("type") == "skip"}
     sources = " ".join(str(i.get("source", "")) for i in store.items())
     rows = parse_bullets(path.read_text(encoding="utf-8", errors="replace"))
+    used |= {i.get("todo_key") for i in store.items()}
     left = []
     for row in rows:
-        key = key_of(row["text"])
+        key = key_of(clean_line(row["text"]) if args.source == "todo" else row["text"])
         if key in used or f"todo:{key}" in sources:
             continue
-        left.append({"key": key, "text": row["text"][:200], "sub": row["sub"], "commits": done_hints(repo, row["text"])})
+        left.append({"key": key, "text": row["text"] if config.get("master") else row["text"][:200], "sub": row["sub"], "commits": done_hints(repo, row["text"])})
         if len(left) >= args.limit:
             break
     if args.source == "tasks":
         rule = ("never edit this file. It is often stale: search code and git before trusting a line. Real and worth doing: "
                 'ticket "<title>" --type bug|feature --from-task "<line>" --checked "<how>". Done or stale: skip <key> --why W.')
+    elif store.profile().get("work", {}).get("tickets") == "issues" and config.get("master"):
+        rule = ('this file is the master list and work goes through issues. Check the line against code and git, then: '
+                'ticket "<title>" --type bug|feature --from-todo "<full line>" --body "...", then work the issue. Run todo-sync --write when a ticket opens or closes. '
+                'Done or not worth it: skip <key> --why W.')
     else:
         rule = 'worth doing: add "<title>" --lane L --source "todo:<key>" --value N. Strike the line through when done. Not worth it: skip <key> --why W.'
     return {"source": config["path"], "open": len(rows), "showing": left, "rule": rule}
+
+
+def clean_line(text):
+    """A todo line without what todo-sync adds, so its key survives the sync."""
+    return re.sub(r"\s*\((closed )?#\d+\)", "", text).replace("~~", "").strip()
+
+
+def cmd_todo_sync(store, args):
+    """Keep the todo file the master list: an open ticket's line names its issue, a closed one is struck through."""
+    config, todo = work(store, "issues"), work(store, "todo")
+    path = Path(args.file) if args.file else store.repo_path() / todo["path"]
+    data = path.read_bytes().decode("utf-8")
+    newline = "\r\n" if "\r\n" in data else "\n"
+    lines = data.split(newline)
+    tracked = {i["todo_key"]: i for i in store.items() if i.get("todo_key") and i.get("issue")}
+    changed, missing = [], set(tracked)
+    for index, line in enumerate(lines):
+        match = re.match(r"^[-*] (.*)", line)
+        if not match:
+            continue
+        text = clean_line(match.group(1))
+        item = tracked.get(key_of(text))
+        if not item:
+            continue
+        missing.discard(key_of(text))
+        number = item["issue"]
+        state = gh_json(f"repos/{config['repo']}/issues/{number}").get("state")
+        wanted = f"- ~~{text}~~ (closed #{number})" if state == "closed" else f"- {text} (#{number})"
+        if wanted != line:
+            changed.append({"issue": number, "state": state, "line": wanted[:120]})
+            lines[index] = wanted
+    if changed and args.write:
+        path.write_bytes(newline.join(lines).encode("utf-8"))
+    return {"path": str(path), "changed": changed, "written": bool(changed and args.write), "lines_not_found": sorted(missing)}
 
 
 def cmd_skip(store, args):
@@ -425,6 +479,10 @@ def add_parsers(add):
     p.add_argument("--from-task", help="the line from the read-only task list")
     p.add_argument("--checked", help="how you confirmed it is not already done")
     p.add_argument("--not-duplicate", help="the match is wrong because...")
+    p.add_argument("--from-todo", help="the full line from the todo file, which stays the master list")
+    p = add("todo-sync", cmd_todo_sync, "update the todo file from its tickets' issues")
+    p.add_argument("--write", action="store_true", help="edit the file; without it, show the changes")
+    p.add_argument("--file", help="the todo file in this session's tree, when it is not the profile's repo")
     p = add("scan", cmd_scan, "open lines of the task list or todo file, read-only")
     p.add_argument("source", choices=["tasks", "todo"])
     p.add_argument("--limit", type=int, default=10)

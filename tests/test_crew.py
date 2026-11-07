@@ -129,6 +129,9 @@ class FakeGh:
             return self.events
         if path.endswith("/comments?per_page=100"):
             return self.comments
+        tail = path.rsplit("/", 1)[-1]
+        if tail.isdigit():
+            return next(r for r in self.issues if r["number"] == int(tail))
         return self.issues
 
     def run(self, *argv, stdin=None):
@@ -222,6 +225,47 @@ class Issues(Base):
         self.assertEqual(self.run_grw("issue-sync")[1]["greenlit"], [])
         self.fake.events = [{"event": "labeled", "label": {"name": "agent-ready"}, "actor": {"login": "pat"}}]
         self.assertEqual(self.run_grw("issue-sync")[1]["greenlit"], [item])
+
+    def test_todo_master_list_marks_then_strikes_and_keeps_line_endings(self):
+        path = self.root / "todo.md"
+        line = "2026-10-01 - **Clinic sound** never auditioned."
+        path.write_bytes(f"# Todos\r\n\r\n- {line}\r\n  second line stays\r\n- Other thing\r\n".encode())
+        code, out = self.run_grw("ticket", "Clinic sound", "--type", "bug", "--body", "b", "--from-todo", line)
+        self.assertEqual(code, 0)
+        item = grw_work.find_item(grw.Store(self.state).items(), out["id"])
+        self.assertEqual(item["state"], "ready")
+        self.fake.issues = [issue(77, "Clinic sound")]
+        self.assertEqual(self.run_grw("todo-sync")[1]["written"], False)
+        self.assertNotIn(b"#77", path.read_bytes())
+        self.run_grw("todo-sync", "--write")
+        self.assertIn(f"- {line} (#77)\r\n  second line stays\r\n".encode(), path.read_bytes())
+        shown = [r["text"] for r in self.run_grw("scan", "todo")[1]["showing"]]
+        self.assertEqual(shown, ["Other thing"])
+        self.fake.issues = [dict(issue(77, "Clinic sound"), state="closed")]
+        out = self.run_grw("todo-sync", "--write")[1]
+        self.assertEqual((out["changed"][0]["state"], out["lines_not_found"]), ("closed", []))
+        self.assertIn(f"- ~~{line}~~ (closed #77)\r\n".encode(), path.read_bytes())
+        self.assertEqual(self.run_grw("todo-sync", "--write")[1]["changed"], [])
+
+    def test_banned_words_stop_tickets_and_comments(self):
+        path = self.state / "profile.json"
+        profile = json.loads(path.read_text(encoding="utf-8"))
+        profile["text_bans"] = ["Robin"]
+        path.write_text(json.dumps(profile), encoding="utf-8")
+        self.assertEqual(self.run_grw("ticket", "Winter fishing stops", "--type", "bug", "--body", "asked by robin")[0], 2)
+        self.assertEqual(self.fake.calls, [])
+        self.fake.issues = [issue(1, "Crash on load")]
+        self.assertEqual(self.run_grw("issue-reply", self.synced()[0], "--why", "Robin said so")[0], 2)
+        self.assertEqual(self.fake.calls, [])
+        self.assertEqual(self.run_grw("ticket", "Robinson crate breaks", "--type", "bug", "--body", "b")[0], 0)
+
+    def test_todo_tickets_stop_at_the_open_limit(self):
+        path = self.state / "profile.json"
+        profile = json.loads(path.read_text(encoding="utf-8"))
+        profile["work"]["todo"]["open_tickets"] = 1
+        path.write_text(json.dumps(profile), encoding="utf-8")
+        self.assertEqual(self.run_grw("ticket", "Winter fishing stops", "--type", "bug", "--body", "b", "--from-todo", "one line")[0], 0)
+        self.assertEqual(self.run_grw("ticket", "Taxes come monthly", "--type", "bug", "--body", "b", "--from-todo", "other words")[0], 2)
 
     def test_ticket_duplicates_refused_even_closed(self):
         self.fake.issues = [dict(issue(5, "Add soil fertility now"), state="closed")]
