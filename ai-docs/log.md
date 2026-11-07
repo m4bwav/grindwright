@@ -50,3 +50,6 @@ The second game's pilot ran 3 sessions in about 32 minutes and stopped on its se
 
 ## 2026-11-07: owner's note on content feel
 The owner merged the overnight PR and asked for grind items on content feel and balance. An audit showed discovery had called feel done while few content rows had any. Filed as L-004 `feel-per-row-blind`. No code change, no release.
+
+## 2026-11-07: owner's "check your reasoning"
+A held answer had been filed as "not sure", but its note asked for the reasoning to be checked. Checking it showed the question was wrong: the design doc states the rule and many cards print it. Asked again with the details on a new page. Filed L-008 `absence-claim-unchecked`. No code change, no release.
