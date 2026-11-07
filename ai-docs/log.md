@@ -1,5 +1,8 @@
 # Log
 
+## 2026-11-06: eval game evaluated, 0.1.5
+Read the owner's answers to the eval game's question sets. Eval sets reached the real inbox because runners did not isolate it, so fixtures now refuse to start without `ASKWRIGHT_HOME`. The extra questions came from a session started with the set's continue prompt, not from an eval agent. Answers led to two skill rules: road drafts include what follows a complete run, and invent content rather than ask for it. Both rest on few answers. The eval game is closed as a live game.
+
 ## 2026-11-04: 0.1.4, drafts past the cap
 Decided the open cap question: past a review cap the loop keeps drafting, bounded at the cap per person, so a long run does not stop on the review queue. Questions are never drafted and no-stacking lanes still wait. Risk accepted: drafts can go stale if a pending answer changes direction, so ask-drafted tells the agent to check first. Also: helpers rank with their users, `log` and `reject`, gate reads text and order guesses.
 

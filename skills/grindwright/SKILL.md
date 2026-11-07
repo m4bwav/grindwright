@@ -2,7 +2,7 @@
 name: grindwright
 description: "Use to keep an indie game moving like a solo dev who never stops: pick the most valuable work across lanes (card art, placeholder graphics, animation, sound, music, trailers, balance, testing and bugs, unfinished features, maintenance, marketing), do everything that needs no person, queue questions on a decision page and switch lanes instead of waiting, and end each session with the same start command. A ledger and a selector script rank value first, with human minutes as the discount. Use on 'grind on my game', 'keep working on the game', 'what should I work on next', 'everything is waiting on me', 'work through the backlog while I'm away', 'run unattended', or a continue prompt that names grindwright. Also 'refresh grindwright'. Not for one design question (ludowright), one juice pass (game-juice) or one asset."
 metadata:
-  version: "0.1.4"
+  version: "0.1.5"
 ---
 
 # grindwright
@@ -57,7 +57,8 @@ act on a road that is not confirmed, beyond work every road would include (bugs,
 - Every question has a real guess, made after looking at the media, in a plain reply as well as on a page. Its `confidence` is `high` or `low`. The gate refuses placeholders. A guess never
   licenses skipping the question: guesses matched few real picks.
 - Worth asking: picks with room for a free note, and direction before a batch. Not worth asking: technical calls,
-  go-aheads, naming, housekeeping, "start now?". Decide those.
+  go-aheads, naming, housekeeping, "start now?", or content you can invent and the owner can cut (which cards, which
+  names). Decide those; for content, make a small pilot and show it.
 - Long pick pages go unanswered: one item per screen, at most 12 per set. New lanes start with a small direction-first
   pilot, then batches.
 - Before review, check physical sense yourself, which automatic gates miss: does the material fit (no wooden roof on a

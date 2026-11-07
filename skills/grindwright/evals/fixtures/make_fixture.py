@@ -1,5 +1,6 @@
 """Build an invented game's grindwright state in ai-docs/grind for one eval case."""
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -29,8 +30,11 @@ def question_set(name):
 
 
 def main(case):
+    os.environ.setdefault("ASKWRIGHT_HOME", str(Path(".askwright-eval").resolve()))
+    print("Eval fixture. Prefix every grw.py and ask.py command with ASKWRIGHT_HOME=" + os.environ["ASKWRIGHT_HOME"])
     grw("init", "--project", "Tiny Colony", "--repo", ".", "--force")
     profile = json.loads((STATE / "profile.json").read_text())
+    profile["eval"] = True
     profile["people"] = {"owner": {"review_cap": 2}, "pat": {"review_cap": 1}}
     profile["lanes"] = {"cards": {"kind": "art", "needs": []}, "balance": {"kind": "code"}, "code": {"kind": "code"}, "sound": {"kind": "code"}, "music": {"kind": "music"}}
     profile["guards"] = {"merge": "allow: after checks", "touch_main": "deny: branch", "stack_on_pending": "allow"}

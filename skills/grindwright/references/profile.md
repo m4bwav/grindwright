@@ -44,4 +44,5 @@ Project specifics (snapshot suites, slots, required skills) stay here or in the 
 ```
 
 Derive it from design docs, code and gaps. Weight 3 means the game cannot ship without it, 1 means polish. The owner
-corrects it once on an askwright page; set `confirmed` to true only after that.
+corrects it once on an askwright page. A complete run is rarely the whole game: draft what comes after it too (extra
+modes, side systems, features), so the owner cuts milestones rather than has to think of them. On that page, set `confirmed` to true only after that.

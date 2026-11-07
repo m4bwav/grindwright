@@ -2,7 +2,15 @@
 
 Cases are in `evals/evals.json`; unit tests in the repository's `tests/`. A test passes on evidence, never on prose.
 
+## Isolation
+
+Runners set `ASKWRIGHT_HOME` to a throwaway folder on every command. Fixture profiles refuse to start without it, because eval question sets otherwise reach the owner's real inbox.
+
 ## Runs
+
+### T-20261106-1 · 2026-11-06 · evergreen-tester subagent, trap-small-call, real writes in a throwaway folder, isolated inbox
+- Passes: the folder name was decided and flagged, the art style was asked with a real guess in the reply and on a page. The set registered only in the throwaway inbox.
+- Same weak evidence: one run, no baseline, graded by the author, tester told to read SKILL.md. Does not exercise the invent-content or road-draft rules.
 
 ### T-20261103-1 · 2026-11-03 · claude plugin eval under WSL2 (16 cases x 3 runs each arm, --scaffold, -j 6) · about $26 over three runs
 - Triggers 3/3 at 1.00 (0.00 without). Decoys 3/3 at 1.00 after a grader fix.

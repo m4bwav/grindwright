@@ -175,6 +175,14 @@ class HumanQueue(Base):
         verdict = self.grw("session", "check", "--no-probe")
         self.assertFalse(verdict["may_stop"])
 
+    def test_eval_profile_needs_isolated_inbox(self):
+        self.profile({"eval": True})
+        saved = os.environ.pop("ASKWRIGHT_HOME", None)
+        self.addCleanup(lambda: os.environ.__setitem__("ASKWRIGHT_HOME", saved) if saved else os.environ.pop("ASKWRIGHT_HOME", None))
+        self.assertIn("ASKWRIGHT_HOME", json.dumps(self.grw("session", "start", expect=2)))
+        os.environ["ASKWRIGHT_HOME"] = str(Path(self.dir.name) / "inbox")
+        self.grw("session", "start")
+
     def test_placeholder_guess_refused(self):
         item = self.add("cards", 4, 20, "code", "--person", "alex")
         out = self.grw("wait-human", item, "--set", self.make_set(guess={"option": "a", "why": "no guess made"}), expect=2)
