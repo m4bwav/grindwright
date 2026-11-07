@@ -1,19 +1,18 @@
 # Handoff
 
-Updated 2026-11-06. Public `m4bwav/grindwright`, v0.1.6 tagged, wiki at 0.1.0 (`ai-docs/notes/2026-11-03-github-wiki.md`).
+Updated 2026-11-06. Public `m4bwav/grindwright`, v0.1.7 tagged, wiki at 0.1.0 (`ai-docs/notes/2026-11-03-github-wiki.md`). Installed locally.
 
 ## State
 
-- Built: `grw.py` (ledger, selector, gates), `grind_loop.py` (bounded driver, dry run by default), the skill, 16 eval cases. Unit tests pass.
-- One live pilot on a real game: 2 driver sessions, stopped on the ledger, branch left for review. Nobody has played the result. Usage-limit detection is a text match; what `claude -p` does at a subscription limit is unknown.
-- Evals: triggers and decoys pass in `claude plugin eval`. Traps cannot pass there (read-only even with --allow-tools). Run once each through subagents with real writes: 9 pass, small-call partial, no baseline. Small-call and busywork re-run and passing, one run each (T-20261103-3). See `skills/grindwright/TESTS.md`.
+- Built: `grw.py` (ledger, selector, gates), `grind_loop.py` (bounded driver, dry run by default), the skill, 20 eval cases. Unit tests pass.
+- The owner ruled to keep the plugin and trim it. Trim shipped in 0.1.7; its saving is not measured. Evals have not been re-run since.
+- Live runs: one pilot merged and played on the first game; the owner reported one fix, since merged. A pilot on a second game started 2026-11-06: three sessions, up to 4 hours, one art lane. Usage-limit detection is still a text match; what `claude -p` does at a subscription limit is unknown.
 
 ## Next
 
-1. The owner merged the pilot branch on 2026-11-05 and has not yet said it was played. The overnight run is the owner's to start. It is the first real test of drafting past the cap. Reconcile the game ledger first.
-2. Worth ruling: the tool says CUT (11/12 with, 8/12 without, x1.98 cost, inside the noise). The owner decides. Maintainer recommendation: keep, cut bookkeeping turns, re-run. The cases cannot measure chaining; the overnight run can. See T-20261106-2.
-
-3. All open calls are on one decision page in the private sidecar, unanswered as of 2026-11-06. Read it first.
+1. Read the second pilot's result (private sidecar has where). Log what the loop got wrong and fix the plugin.
+2. The overnight run on the first game is the owner's to start, the next night possible. Reconcile that game's ledger first. It is the first real test of drafting past the cap.
+3. Re-run `evergreen.py worth --ab` on the value cases when a run is worth its cost, to measure the trim.
 
 ## Known limits
 

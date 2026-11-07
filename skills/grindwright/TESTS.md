@@ -8,6 +8,9 @@ Runners set `ASKWRIGHT_HOME` to a throwaway folder on every command. Fixture pro
 
 ## Runs
 
+### 0.1.7 · 2026-11-06 · unit tests and CI only
+- The trim changed SKILL.md and the session commands. Evals and the A/B have not been re-run, so the saving is not measured.
+
 ### T-20261106-2 · 2026-11-06 · `evergreen.py worth --ab`, value-* cases, Sonnet, 3 runs per arm, native Windows, isolated inbox · about $30 over two rounds
 - Round 2, after the relay rule and two grader fixes, passes with / without: cap 3/3 and 3/3, many 3/3 and 2/3, other 2/3 and 1/3, rank 3/3 and 2/3. Total 11/12 and 8/12. Cost x1.98, turns x1.87, time x1.52.
 - Tool verdict: CUT, +25 points inside a noise margin of 32. Recorded. Retiring is the owner's ruling. Twelve runs per arm cannot separate a gain this size.

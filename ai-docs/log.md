@@ -35,3 +35,6 @@ The owner answered the eval game's question sets on the real dashboard and wants
 
 ## 2026-11-06: rulings put to the owner
 All open calls went on one decision page: keep or retire, whether the pilot was played, the overnight start, the first pilot on the second game, local install. No plugin change. The trim waits for the ruling.
+
+## 2026-11-06: rulings answered, 0.1.7
+The owner kept the plugin and asked for the trim. Released 0.1.7: `session start` syncs and names the next action, `next --claim` claims, the skill carries command syntax, a named single item stops after that item. Saving not measured. Installed locally. A second real game's art-lane pilot started: three driver sessions, up to 4 hours. Overnight run on the first game stays the owner's to start.
