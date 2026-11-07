@@ -1,8 +1,10 @@
 # Changelog: grindwright
 
-## Unreleased
+## 0.1.10 · 2026-11-06
 
 Sfxwright, when installed: Hand sound effects to sfxwright when present and read its sounds.json; this plugin's own steps stay as the fallback.
+
+The sound lane stays open when either sfxwright or musicwright is installed. Reason: it closed without musicwright even with sfxwright present. Any-of needs are a nested list; `doctor` also reports sfxwright.
 
 ## 0.1.9 · 2026-11-06
 Finds plugins in the installed cache, which nests marketplace, plugin and version. Reason: run from an install, `doctor` called nearly every plugin missing and closed their lanes, so a run would have stopped at once. Found in a dry run. A skill outside any plugin, such as askwright here, still needs `GRINDWRIGHT_ASK`.
