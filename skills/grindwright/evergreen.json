@@ -61,22 +61,24 @@
     "date": "2026-11-03"
   },
   "worth": {
-    "checked": "2026-11-02",
+    "checked": "2026-11-06",
     "skills": {
-      "marketwright": {
-        "verdict": "TRIM",
-        "why": "a real gain (+89 points (noise margin 21)) at 1.82x the cost; cut the general advice and re-run to keep the gain for less",
-        "body_tokens": 1281,
-        "listing_tokens": 267,
-        "specific_share": 0.36,
-        "delta": 0.89,
-        "cost_ratio": 1.82,
-        "modes": [],
+      "grindwright": {
+        "verdict": "CUT",
+        "why": "no gain beyond noise (+25 points (noise margin 32)) at 1.98x the cost",
+        "body_tokens": 1920,
+        "listing_tokens": 206,
+        "specific_share": 0.58,
+        "delta": 0.25,
+        "cost_ratio": 1.98,
+        "modes": [
+          4
+        ],
         "gaps": 0,
-        "checked": "2026-11-02",
+        "checked": "2026-11-06",
         "uses": {
           "days": 60,
-          "interactive": 0,
+          "interactive": 2,
           "subagent": 0,
           "headless": 0
         }

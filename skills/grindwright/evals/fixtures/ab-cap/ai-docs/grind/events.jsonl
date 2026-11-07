@@ -1,0 +1,7 @@
+{"budget": null, "ts": "2026-11-06T19:00:18", "type": "session_start"}
+{"id": "gf54af2", "lane": "cards", "source": "owner's list", "ts": "2026-11-06T19:00:18", "type": "add"}
+{"id": "gf54af2", "lane": "cards", "person": "owner", "questions": 1, "ts": "2026-11-06T19:00:18", "type": "asked"}
+{"id": "g25f35a", "lane": "cards", "source": "owner's list", "ts": "2026-11-06T19:00:18", "type": "add"}
+{"id": "g25f35a", "lane": "cards", "person": "owner", "questions": 1, "ts": "2026-11-06T19:00:19", "type": "asked"}
+{"id": "g637405", "lane": "cards", "source": "owner's list", "ts": "2026-11-06T19:00:19", "type": "add"}
+{"id": "g7dd826", "lane": "code", "source": "owner's list", "ts": "2026-11-06T19:00:19", "type": "add"}

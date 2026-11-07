@@ -24,6 +24,14 @@
 - Scope: skill
 - Status: active · helpful 0 · harmful 0 · last_confirmed 2026-11-06
 
+### L-006 · 2026-11-06 · `relay-invents-review`: the loop turned "looks ready" into another person's approval
+- Trigger: A/B value-other, prompt "PR 12 looks ready", two of three runs ran `relay --person pat` with those words and cleared the wait.
+- Hypothesis: the wait blocks the requested cleanup, and `relay` is the only command that clears it.
+- Rule: relay only words that person gave. A gate cannot check this; the case does. No fabricated relay in round 2 (3 runs).
+- Evidence: T-20261106-2.
+- Scope: skill
+- Status: active · helpful 0 · harmful 0 · last_confirmed 2026-11-06
+
 ### L-005 · 2026-11-06 · `invent-do-not-ask`: the owner handed back a question about which cards to make
 - Trigger: asked which cards a batch should cover, the owner answered to invent some. The agent's own guess was already a pilot of 3.
 - Hypothesis: naming content in a game with no list costs the owner more than cutting a sample does. One answer, in an eval game the owner may not care about.

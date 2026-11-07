@@ -1,0 +1,33 @@
+{
+ "askwright": 1,
+ "id": "c0",
+ "title": "Card takes",
+ "project": "Tiny Colony",
+ "questions": [
+  {
+   "id": "q1",
+   "kind": "choice",
+   "title": "Card take",
+   "why": "The pick gets wired into the game.",
+   "look_for": [
+    "The silhouette at card size."
+   ],
+   "question": "Which take?",
+   "options": [
+    {
+     "id": "a",
+     "label": "Take A"
+    },
+    {
+     "id": "b",
+     "label": "Take B"
+    }
+   ],
+   "guess": {
+    "option": "a",
+    "why": "the silhouette reads best at card size",
+    "confidence": "low"
+   }
+  }
+ ]
+}
