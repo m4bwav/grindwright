@@ -56,7 +56,7 @@ DEFAULT_PROFILE = {
     "guards": {"merge": "deny: no merge right set in the profile", "touch_main": "deny: use a branch", "stack_on_pending": "deny"},
     "read_only_paths": [],
     "text_bans": [],
-    "discover": ["test", "balance", "gaps", "marketing"],
+    "discover": ["test", "missing tests", "balance", "gaps", "marketing"],
 }
 # Lane kinds: which plugins close a lane when missing, and the maintenance share cap.
 LANE_DEFAULTS = {
@@ -1292,7 +1292,10 @@ def cmd_discover(store, args):
             text = path.read_text(encoding="utf-8", errors="replace")
             signals.append({"lane": gaps, "file": str(path), "open_items": len(re.findall(r"^\s*[-*] (?:\[ \] )?", text, re.M))})
     tests = [p for p in ("Tests", "tests", "test") if (repo / p).is_dir()]
-    signals.append({"lane": "testing", "test_dirs": tests or None, "note": "run them; none means a gap" })
+    test_lane = next((n for n, l in profile.get("lanes", {}).items() if l.get("kind") == "tests"), "testing")
+    signals.append({"lane": test_lane, "test_dirs": tests or None,
+                    "note": "run them; none means a gap. Then look for missing kinds: unit, integration, end-to-end, snapshot, "
+                            "property, regression for each fixed bug, or a new check this project needs that nobody has named"})
     scan, marketing = scan_repo(repo)
     signals.append(dict(scan, lane=gaps))
     signals.append({"lane": "marketing", "files": marketing, "note": "no plan found" if not marketing else "check its age and stats"})

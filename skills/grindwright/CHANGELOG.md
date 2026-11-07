@@ -1,5 +1,8 @@
 # Changelog: grindwright
 
+## 0.3.1 · 2026-11-07
+Adding tests is its own lane kind, `tests`: unit, integration, end-to-end, snapshot, property and regression tests, or a check nobody has named yet. Discover points test gaps at that lane and lists the kinds to look for; the default discover list gains "missing tests". A new test must fail on a planted fault before it counts. Reason: the owner asked for test work to be one lane a session can pick.
+
 ## 0.3.0 · 2026-11-07
 Not only for games. New lane kinds `writing` (everwrite or editwright), `voice` (voicewright) and `edit` (cinewright), and voice counts as an asset that needs provenance. The empty-queue messages now quote the profile's `discover` list instead of "test, balance". New `references/projects.md`: lanes, an example profile, road and oracle ladder for films, video series and stories. Games get writing and voice rows in the lane table. Reason: the owner wants to run long video projects on it, with video, audio and writing plugins in place of the game ones.
 
