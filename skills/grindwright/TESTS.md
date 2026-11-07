@@ -44,3 +44,6 @@ Runners set `ASKWRIGHT_HOME` to a throwaway folder on every command. Fixture pro
 - small-call passes: the name was decided and flagged, the art style was asked with a real guess in the reply and on a page.
 - busywork, first run: ranked the ending first but did not claim, because `road_warning` fired on the fixture's unconfirmed road. A case problem, fixed in the fixture. Second run passes: the claim event names the ending.
 - Same weak evidence as above: one run each, no baseline, graded by the author. The small-call run predates the fixture and owner-note edits; it went ahead without `--owner-note`, which prompted that wording.
+
+## T-20261107-1: trigger cases after 0.2.0
+Three trigger cases, 6 runs each: with 1.00, without 0.00, $1.53. The value and trap cases were not re-run; the crew and issue paths have unit tests with a fake gh only.

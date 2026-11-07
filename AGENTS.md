@@ -5,7 +5,7 @@ Rules for any AI agent working in this repository. `CLAUDE.md` imports this file
 ## What this is
 
 grindwright: one skill, `skills/grindwright/`. SKILL.md holds the loop and rules, `references/` the details,
-`scripts/grw.py` the ledger, selector and gates, `scripts/grind_loop.py` the bounded unattended driver. Research,
+`scripts/grw.py` the ledger, selector and gates, `scripts/grw_work.py` the work sources (issues, todo, task list, tickets), `scripts/grind_loop.py` the bounded unattended driver, `scripts/grind_crew.py` several drivers at once. Research,
 decisions, the log and the handoff are under `ai-docs/` (start with `ai-docs/HANDOFF.md`).
 
 ## Rules

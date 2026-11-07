@@ -40,20 +40,22 @@ def records(path):
     return [r for r in rows if isinstance(r, dict)]
 
 
-def fingerprint(state):
+def fingerprint(state, sid=None):
     """What counts as progress. Bookkeeping does not: opening, closing, discovering, or a checkpoint on idle work."""
     digest = hashlib.sha1()
     for item in records(Path(state) / "ledger.jsonl"):
+        if sid and item.get("session") != sid:
+            continue  # another member's progress is not this member's
         working = len(item.get("checkpoints", [])) if item.get("state") == "running" else 0
         digest.update(repr((item.get("id"), item.get("state"), bool(item.get("answered")), working)).encode())
     for event in records(Path(state) / "events.jsonl"):
-        if event.get("type") in PROGRESS:
+        if event.get("type") in PROGRESS and (not sid or event.get("session") == sid):
             digest.update(repr((event.get("type"), event.get("id"), event.get("ts"))).encode())
     return digest.hexdigest()
 
 
-def verdict(state):
-    done = subprocess.run([sys.executable, str(GRW), "--state", str(state), "session", "check"],
+def verdict(state, sid=None):
+    done = subprocess.run([sys.executable, str(GRW), "--state", str(state), *(["--session", sid] if sid else []), "session", "check"],
                           capture_output=True, text=True, encoding="utf-8")
     try:
         return json.loads(done.stdout)
@@ -95,6 +97,15 @@ def plugins_loaded(stdout, need):
 
 
 def run(args, sleep=time.sleep, clock=time.monotonic):
+    """A crew member gives back what it held however it stops, so its areas do not stay locked for the lease."""
+    try:
+        return drive(args, sleep, clock)
+    finally:
+        if args.session_id and args.go:
+            subprocess.run([sys.executable, str(GRW), "--state", str(args.state), "--session", args.session_id, "session", "release", "--reason", "driver stopped"], capture_output=True)
+
+
+def drive(args, sleep, clock):
     wanted = args.command or DEFAULT_COMMAND
     command = resolve(wanted)
     if not command:
@@ -102,18 +113,18 @@ def run(args, sleep=time.sleep, clock=time.monotonic):
     prompt = f"Execute {args.prompt}"
     if not args.go:
         return {"ok": True, "dry_run": True, "would_run": command + [prompt], "max_sessions": args.max_sessions,
-                "max_hours": args.max_hours, "now": verdict(args.state)}
+                "max_hours": args.max_hours, "now": verdict(args.state, args.session_id)}
     deadline = clock() + args.max_hours * 3600
     sessions, idle, waits = 0, 0, 0
     while True:
-        check = verdict(args.state)
+        check = verdict(args.state, args.session_id)
         if check.get("may_stop"):
-            return {"ok": True, "stopped": "ledger", "why": check.get("why"), "sessions": sessions}
+            return {"ok": True, "stopped": "ledger", "why": check.get("why"), "waiting_on": check.get("waiting_on", []), "sessions": sessions}
         if sessions >= args.max_sessions:
             return {"ok": True, "stopped": "max-sessions", "sessions": sessions}
         if clock() >= deadline:
             return {"ok": True, "stopped": "max-hours", "sessions": sessions}
-        before = fingerprint(args.state)
+        before = fingerprint(args.state, args.session_id)
         allowed = deadline - clock()
         if args.session_minutes:
             allowed = min(allowed, args.session_minutes * 60)
@@ -136,7 +147,7 @@ def run(args, sleep=time.sleep, clock=time.monotonic):
         sessions += 1
         if not plugins_loaded(output, args.require_text):
             return {"ok": False, "stopped": "plugin-missing", "sessions": sessions}
-        idle = idle + 1 if fingerprint(args.state) == before else 0
+        idle = idle + 1 if fingerprint(args.state, args.session_id) == before else 0
         if idle >= 2:
             return {"ok": False, "stopped": "no-progress", "sessions": sessions}
 
@@ -153,6 +164,7 @@ def main(argv=None):
     parser.add_argument("--max-waits", type=int, default=4)
     parser.add_argument("--require-text", help="text the session output must contain, such as the plugin's name")
     parser.add_argument("--log", help="append each session's output to this file")
+    parser.add_argument("--session-id", help="this member's name when several sessions share the state")
     parser.add_argument("--go", action="store_true", help="really run; without it, print what would run")
     argv = list(sys.argv[1:] if argv is None else argv)
     command = []
