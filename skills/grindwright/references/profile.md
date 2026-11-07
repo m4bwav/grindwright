@@ -25,7 +25,7 @@ its rules restrict what may appear there, keep the state outside it and pass `--
 ```
 
 - `review_cap`: open review sets or PRs a person may have before the plugin does other work.
-- `kind`: art, animation, sound, music, video, juice, balance, marketing, model, code, maintenance, meta. It sets the
+- `kind`: art, animation, sound, music, video, edit, voice, writing, juice, balance, marketing, model, code, maintenance, meta. It sets the
   default plugin and the share cap. `needs` overrides the plugin list (a nested list means any one of them; sound defaults to sfxwright or musicwright); `share_cap` overrides the cap.
 - `batch_min`: smallest batch per person. `stack_on_pending`: `false` defers the lane while a review is open.
 - Guard values start with `allow` or `deny: reason`. Anything unset is denied.

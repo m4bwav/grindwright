@@ -457,6 +457,18 @@ class Plugins(Base):
         self.assertEqual(doctor["open_lanes"], ["bugs", "music"])
         self.assertFalse(doctor["plugins"]["artwright"])
 
+    def test_film_lanes_close_on_their_plugins(self):
+        self.profile({"lanes": {"script": {"kind": "writing"}, "voices": {"kind": "voice"}, "cut": {"kind": "edit"}}})
+        self.assertEqual(self.grw("doctor", "--no-probe")["closed_lanes"],
+                         {"script": ["everwrite or editwright"], "voices": ["voicewright"], "cut": ["cinewright"]})
+
+    def test_discover_message_names_the_profile_list(self):
+        self.profile({"discover": ["review the latest cut", "continuity"]})
+        self.grw("session", "start")
+        why = self.grw("next", "--no-probe")["next"]["why"][0]
+        self.assertIn("review the latest cut", why)
+        self.assertNotIn("balance", why)
+
     def test_sound_lane_opens_on_either_plugin(self):
         self.profile({"lanes": {"sound": {"kind": "sound"}}})
         self.assertEqual(self.grw("doctor", "--no-probe")["closed_lanes"], {"sound": ["sfxwright or musicwright"]})

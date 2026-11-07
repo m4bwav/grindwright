@@ -70,3 +70,7 @@ The owner started the first crew on two projects, three sessions in all, with th
 ## 2026-11-07: 0.2.3, fixes from the first live crew
 
 Read the first crew run while it was still going (three members, two projects). One member stopped after one pass: its session ended its turn while a compile ran in the background, so the plugin marker was missing and the loop read that as a lost plugin. Another member kept being offered an item a stopped member had paused, though its code sat on that member's branch. On the second project the review cap never held because the ledger wrote the person with a capital letter and the profile key was lower case. Fixed all three, plus `hold` from ready or drafted, issue verbs taking the issue number, and stop reasons written to each member's log at once. 114 unit tests pass. Not yet run in a live crew.
+
+## 2026-11-07: 0.3.0, beyond games
+
+The owner asked for long video projects to run on grindwright, using video, audio and writing plugins, and noted game projects could use writing plugins too. The engine already took any lane from the profile; only the wording, the discover messages and the plugin map assumed a game. Added lane kinds writing, voice and edit, made the discover messages quote the profile, wrote `references/projects.md`, broadened the skill text. Two new tests, 116 pass. No video project has been set up yet; the owner picks which one.

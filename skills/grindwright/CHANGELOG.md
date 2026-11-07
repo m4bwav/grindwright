@@ -1,5 +1,8 @@
 # Changelog: grindwright
 
+## 0.3.0 · 2026-11-07
+Not only for games. New lane kinds `writing` (everwrite or editwright), `voice` (voicewright) and `edit` (cinewright), and voice counts as an asset that needs provenance. The empty-queue messages now quote the profile's `discover` list instead of "test, balance". New `references/projects.md`: lanes, an example profile, road and oracle ladder for films, video series and stories. Games get writing and voice rows in the lane table. Reason: the owner wants to run long video projects on it, with video, audio and writing plugins in place of the game ones.
+
 ## 0.2.3 · 2026-11-07
 Fixes from the first live crew. A member whose session ends without the plugin's marker gets one more pass before it stops; a session that ended its turn while a compile ran in the background had stopped its member after one pass. Each member writes its stop reason to its own log at once, since the crew prints results only when every member has ended. An item a stopped member paused stays with that member (`paused_by`), because its work is on that member's branch; `claim --take-over` moves it. Review caps match people without case: a ledger saying "Alex" against a profile key "alex" fell back to the default cap and offered drafts past the real one. `hold` works from ready and again on a drafted item. `issue-accept` and the other issue verbs take the issue number. The skill tells driven sessions not to end their turn on a background job.
 

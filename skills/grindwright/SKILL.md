@@ -1,13 +1,13 @@
 ---
 name: grindwright
-description: "Use to keep an indie game moving like a solo dev who never stops: pick the most valuable work across lanes (card art, placeholder graphics, animation, sound, music, trailers, balance, testing and bugs, unfinished features, maintenance, marketing), do everything that needs no person, queue questions on a decision page and switch lanes instead of waiting, and end each session with the same start command. A ledger and a selector script rank value first, with human minutes as the discount. Use on 'grind on my game', 'keep working on the game', 'what should I work on next', 'everything is waiting on me', 'work through the backlog while I'm away', 'run unattended', or a continue prompt that names grindwright. Also 'refresh grindwright'. Not for one design question (ludowright), one juice pass (game-juice) or one asset."
+description: "Use to keep an indie game, or a long film, video or story project, moving like a solo maker who never stops: pick the most valuable work across lanes (art, animation, writing, voices, sound, music, shots and edits, trailers, balance, testing and bugs, unfinished features, maintenance, marketing), do everything that needs no person, queue questions on a decision page and switch lanes instead of waiting, and end each session with the same start command. A ledger and a selector script rank value first, with human minutes as the discount. Use on 'grind on my game', 'keep working on the game', 'grind on my film', 'what should I work on next', 'everything is waiting on me', 'work through the backlog while I'm away', 'run unattended', or a continue prompt that names grindwright. Also 'refresh grindwright'. Not for one design question (ludowright), one juice pass (game-juice) or one asset."
 metadata:
-  version: "0.2.3"
+  version: "0.3.0"
 ---
 
 # grindwright
 
-Work on a game the way a grinding solo dev would. **Blocked is a state of one lane, never of the session.**
+Work on a game, or a film, video series or story, the way a grinding solo maker would. Non-game projects: [projects.md](references/projects.md). **Blocked is a state of one lane, never of the session.**
 
 Script: `scripts/grw.py` in this folder (Python 3.9+, standard library). Run it by full path (`python` on Windows, `python3` elsewhere), with `--state <folder>`
 when the state is not at `ai-docs/grind`. Every command prints one JSON object; exit 2 means a gate refused and the
@@ -101,10 +101,10 @@ If `GRINDWRIGHT_SESSION` is set or `next` lists `others_working`, others share t
   `grw.py guard merge|touch_main|stack_on_pending|touch <path>`. Another person's project follows that person's
   rules. Run `grw.py lint-text <file>` on PR text where the profile bans terms.
 - Installing hooks, schedules or settings outside the repo needs the owner's go-ahead. So does running unattended.
-- Work on grindwright itself is capped: file a learning and go back to the game.
+- Work on grindwright itself is capped: file a learning and go back to the project.
 - Plugins are optional. Detect, use, route around. Call them, do not copy them: art and cards through artwright and
   comfyui-gen, sprites through pixelwright, feel through game-juice, balance through ludowright, music through
-  musicwright, video through cinewright, models through polywright, marketing through marketwright.
+  musicwright, writing through everwrite and editwright, voices through voicewright, video through cinewright, models through polywright, marketing through marketwright.
 - Sound effects go through sfxwright when installed: hand over the game events, read its `sounds.json` for status and picked files, and keep the human listen. Without it, the sound lane keeps its musicwright route.
 - Unattended runs use `scripts/grind_loop.py`, bounded and only after the owner agrees ([chaining](references/chaining.md)).
 - A lane absent from the profile is closed. If the only lanes left wait on a person and discovery is off, stopping is

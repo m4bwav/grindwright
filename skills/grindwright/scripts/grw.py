@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""grindwright: the work ledger and selector for grinding on an indie game.
+"""grindwright: the work ledger and selector for grinding on an indie game or a long creative project (film, video, story).
 
 State lives in one folder (default ai-docs/grind in the current directory, or --state):
   profile.json  lanes, people, hosts, guards for this project
@@ -69,13 +69,16 @@ LANE_DEFAULTS = {
     "balance": ["ludowright"],
     "marketing": ["marketwright"],
     "model": ["polywright"],
+    "writing": [("everwrite", "editwright")],
+    "voice": ["voicewright"],
+    "edit": ["cinewright"],
 }
 MAX_SET_QUESTIONS = 12
 MAINT_SHARE_CAP = 0.2
 META_SHARE_CAP = 0.1
 # Oracle ladder, weakest first. Only "human" proves a game is good; the rest prove it is not broken.
 ORACLES = ("none", "compile", "tests", "boot", "scripted-play", "snapshot", "human")
-ASSET_KINDS = ("art", "animation", "sound", "music", "video", "model")
+ASSET_KINDS = ("art", "animation", "sound", "music", "video", "model", "voice")
 CONFIDENCE = {"low": 0.7, "medium": 0.85, "high": 1.0}
 SHARE_WINDOW = 10
 
@@ -436,7 +439,7 @@ def select(profile, road, items, events, session, hosts_alive=None, hosts_idle=(
         elif item_class(item) == "worst" and not item.get("analysed"):
             entry["action"] = "analyse"
             entry["score"] = round(score * 0.5 + 1, 3)
-            entry["why"] = ["costs people and barely moves the game: necessary? cut? what can be shaved off first?"] + why
+            entry["why"] = ["costs people and barely moves the project: necessary? cut? what can be shaved off first?"] + why
         elif draft_only:
             entry["action"] = "draft"
             entry["why"] = [f"{person}'s review queue is full: make the draft, then grw.py hold; ask later"] + why
@@ -730,7 +733,7 @@ def cmd_next(store, args):
         return answer
     lanes = store.profile().get("discover", [])
     if not result["discovered"] and lanes:
-        return {"next": {"action": "discover", "why": ["nothing selectable: run grw.py discover, then test, balance and look for gaps"],
+        return {"next": {"action": "discover", "why": ["nothing selectable: run grw.py discover, then work through look_at (" + ", ".join(lanes) + ")"],
                          "look_at": lanes}, "deferred": result["deferred"]}
     return {"next": {"action": "stop", "why": ["nothing selectable after a discovery pass; do not invent work"]},
             "deferred": result["deferred"]}
@@ -1204,7 +1207,7 @@ def cmd_doctor(store, args):
     profile = store.profile()
     _, _, report = hosts_for(args, profile)
     closed = closed_lanes(profile)
-    plugins = ["askwright", "artwright", "pixelwright", "musicwright", "sfxwright", "cinewright", "game-juice", "polywright",
+    plugins = ["askwright", "artwright", "pixelwright", "musicwright", "sfxwright", "cinewright", "voicewright", "everwrite", "editwright", "game-juice", "polywright",
                "ludowright", "marketwright", "comfyui-gen", "unity-agent", "roblox-agent", "tokenwright", "everlast", "evergreen"]
     return {"plugins": {p: bool(find_skill(p)) for p in plugins}, "ask_py": find_ask(), "hosts": report,
             "closed_lanes": closed, "open_lanes": sorted(set(profile.get("lanes", {})) - set(closed)),
@@ -1401,7 +1404,7 @@ def stop_verdict(store, args):
     if session.get("budget") and any("budget" in " ".join(d["why"]) for d in result["deferred"]):
         return {"may_stop": True, "why": ["what is left costs more than the budget"], "deferred": result["deferred"]}
     if not result["discovered"] and store.profile().get("discover", []):
-        return {"may_stop": False, "why": ["nothing selectable and no discovery pass this session: test, balance, look for gaps"]}
+        return {"may_stop": False, "why": ["nothing selectable and no discovery pass this session: run discover, then " + ", ".join(store.profile().get("discover", []))]}
     waits = waiting_report(store)
     why = ["nothing selectable after a discovery pass"]
     if waits:
@@ -1466,7 +1469,7 @@ def build_parser():
     p.add_argument("title")
     p.add_argument("--lane", required=True)
     p.add_argument("--source", required=True, help="file, finding or observation that shows the need")
-    p.add_argument("--value", type=int, required=True, choices=range(1, 6), help="how far it moves the game to finished and polished")
+    p.add_argument("--value", type=int, required=True, choices=range(1, 6), help="how far it moves the project to finished and polished")
     p.add_argument("--human-min", type=int, default=0, help="minutes of a person's attention it will take")
     p.add_argument("--cost", choices=list(COST_UNITS), default="M")
     p.add_argument("--confidence", choices=list(CONFIDENCE), help="how sure the value is")
