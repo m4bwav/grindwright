@@ -121,7 +121,7 @@ def drive(args, sleep, clock):
     command = resolve(wanted)
     if not command:
         return {"ok": False, "stopped": "command-not-found", "command": wanted[0], "sessions": 0}
-    prompt = f"Execute {args.prompt}"
+    prompt = f"Execute {Path(args.prompt).resolve().as_posix()}"  # the session runs in --cwd, so a relative path would miss
     if not args.go:
         return {"ok": True, "dry_run": True, "would_run": command + [prompt], "max_sessions": args.max_sessions,
                 "max_hours": args.max_hours, "now": verdict(args.state, args.session_id)}

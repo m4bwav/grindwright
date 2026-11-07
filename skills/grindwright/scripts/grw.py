@@ -31,7 +31,7 @@ from pathlib import Path
 import grw_work
 from grw_work import Refused
 
-VERSION = "0.2.2"
+VERSION = "0.3.2"
 FORMAT = 1
 STATES = ("ready", "running", "waiting-on-human", "waiting-on-machine", "done", "dropped")
 COST_UNITS = {"S": 1, "M": 3, "L": 8}
@@ -64,14 +64,14 @@ LANE_DEFAULTS = {
     "animation": ["pixelwright"],
     "sound": [("sfxwright", "musicwright")],  # a tuple or nested list: any one is enough
     "music": ["musicwright"],
-    "video": ["cinewright"],
+    "video": [("cinewright", "comfyui-gen")],
     "juice": ["game-juice"],
     "balance": ["ludowright"],
     "marketing": ["marketwright"],
     "model": ["polywright"],
     "writing": [("everwrite", "editwright")],
     "voice": ["voicewright"],
-    "edit": ["cinewright"],
+    "edit": [("cinewright", "comfyui-gen")],
 }
 MAX_SET_QUESTIONS = 12
 MAINT_SHARE_CAP = 0.2
@@ -663,6 +663,9 @@ def cmd_add(store, args):
     optional = {"confidence": args.confidence, "road": args.road, "person": args.person, "host": args.host, "question": args.question, "guess": args.guess}
     item.update({k: v for k, v in optional.items() if v})
     if args.blocked_by:
+        unknown = [b for b in args.blocked_by if b not in {o["id"] for o in items}]
+        if unknown:
+            raise Refused([f"--blocked-by {', '.join(unknown)}: no such item; a milestone or outside gate needs its own item (wait-human on it)"])
         item["blocked_by"] = args.blocked_by
     if getattr(args, "area", None):
         item["areas"] = args.area

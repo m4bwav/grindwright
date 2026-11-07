@@ -78,3 +78,7 @@ The owner asked for long video projects to run on grindwright, using video, audi
 ## 2026-11-07: 0.3.1, a tests lane
 
 The owner asked that adding tests of any kind be one lane. Added lane kind `tests`, a discover signal aimed at it, docs rows for games and films, one unit test (117 pass).
+
+## 2026-11-07: first film set up, 0.3.2
+
+The owner named the first film project: the next section of a short film whose first part another chain is still finishing. Set up a state folder beside the renders, a profile with the lanes the owner listed (source check, script, storyboard, refs, shots, continuity, HD, cut, voices, music, sound, holistic review, tests), a road quoting the owner's "finished", and gate items for the first part's approval and the full-cut lock. Started three driver sessions, 4 hours. Faults found and fixed in 0.3.2: video lanes closed without cinewright though comfyui-gen covers them; `--blocked-by` took a milestone name; the driver's relative prompt path missed under `--cwd`; stale `--version`. Not fixed: `init` writes a game-shaped discover list for every project.

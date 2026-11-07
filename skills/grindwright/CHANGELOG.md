@@ -1,5 +1,8 @@
 # Changelog: grindwright
 
+## 0.3.2 · 2026-11-07
+Fixes from setting up the first film. Video and edit lanes open with cinewright or comfyui-gen, since a render-folder film can be cut with comfyui-gen and ffmpeg alone. `add --blocked-by` refuses an id that is not an item: a milestone name was accepted and would have blocked the item for ever, so an outside gate gets its own item held with `wait-human`. `grind_loop.py` passes the prompt as an absolute path, because the session runs in `--cwd` and a relative path missed. `--version` printed 0.2.2 since 0.2.2.
+
 ## 0.3.1 · 2026-11-07
 Adding tests is its own lane kind, `tests`: unit, integration, end-to-end, snapshot, property and regression tests, or a check nobody has named yet. Discover points test gaps at that lane and lists the kinds to look for; the default discover list gains "missing tests". A new test must fail on a planted fault before it counts. Reason: the owner asked for test work to be one lane a session can pick.
 
