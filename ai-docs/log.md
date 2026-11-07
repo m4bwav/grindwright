@@ -62,3 +62,7 @@ The owner answered the crew page: one session on the second game, two on the fir
 
 ## 2026-11-07: 0.2.2, worktree_root
 Writing the first real crew file showed its default worktree folder can already be taken. Added `worktree_root`. The crew file dry-runs clean on real projects: all three members would start. No live crew yet; it waits on the owner's start.
+
+## 2026-11-07: first live crew started
+
+The owner started the first crew on two projects, three sessions in all, with the driver from the installed 0.2.2. Results are not in yet.
