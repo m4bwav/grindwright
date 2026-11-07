@@ -38,12 +38,16 @@ a question kind recurring three times should be a rule, so stop asking it.
 | Models and blockouts | polywright | render sheet |
 | Sound effects and music | sfxwright for effects when installed, else musicwright; musicwright for music | sfx.py check, mw.py measure, loop seam check, human listen |
 | Intro video, trailers | cinewright, marketwright | human watch; drafts only |
+| Writing: dialogue, lore, card text, scripts, narration | everwrite, editwright | everwrite check, a person reads it |
+| Voices | voicewright | its checks, human listen |
 | Feel | game-juice (juice-scan, juice-apply) | toggle works, snapshots |
 | Balance | ludowright, ldw.py simulations | seeded Monte Carlo, findings file |
 | Testing and bugs | unity-agent, roblox-agent, the project's tests | tests, headless boot, scripted play |
 | Unfinished features | the road, open issues, TODOs | tests, then scripted play |
 | Maintenance | everkeep if present, the package manager | tests, build |
 | Marketing plan and stats | marketwright | drafts only; numbers cite their source |
+
+Film and video projects use other lanes and another ladder: [projects.md](projects.md).
 
 ## Oracle ladder
 
