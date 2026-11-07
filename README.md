@@ -23,4 +23,4 @@ Then say "grind on my game" in the game's folder. Details are in the [wiki](http
 
 It does not promise a finished game. No game found in the survey shipped from truly unattended work, and whether a game is fun stays a person's call.
 
-Plugs into artwright, pixelwright, musicwright, cinewright, game-juice, polywright, ludowright, comfyui-gen and marketwright when present, and says which lanes are closed when one is missing.
+Plugs into artwright, pixelwright, musicwright, sfxwright, cinewright, game-juice, polywright, ludowright, comfyui-gen and marketwright when present, and says which lanes are closed when one is missing.

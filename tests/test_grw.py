@@ -457,6 +457,15 @@ class Plugins(Base):
         self.assertEqual(doctor["open_lanes"], ["bugs", "music"])
         self.assertFalse(doctor["plugins"]["artwright"])
 
+    def test_sound_lane_opens_on_either_plugin(self):
+        self.profile({"lanes": {"sound": {"kind": "sound"}}})
+        self.assertEqual(self.grw("doctor", "--no-probe")["closed_lanes"], {"sound": ["sfxwright or musicwright"]})
+        for plugin in ("sfxwright", "musicwright"):
+            root = Path(self.dir.name) / "plugins" / plugin / "skills"
+            root.mkdir(parents=True)
+            self.assertEqual(self.grw("doctor", "--no-probe")["open_lanes"], ["sound"], plugin)
+            root.rmdir()
+
 
 class ClosedLane(Base):
     def test_selector_routes_around_a_closed_lane(self):

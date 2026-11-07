@@ -27,7 +27,7 @@ import time
 import urllib.request
 from pathlib import Path
 
-VERSION = "0.1.9"
+VERSION = "0.1.10"
 FORMAT = 1
 STATES = ("ready", "running", "waiting-on-human", "waiting-on-machine", "done", "dropped")
 COST_UNITS = {"S": 1, "M": 3, "L": 8}
@@ -54,7 +54,7 @@ DEFAULT_PROFILE = {
 LANE_DEFAULTS = {
     "art": ["comfyui-gen"],
     "animation": ["pixelwright"],
-    "sound": ["musicwright"],
+    "sound": [("sfxwright", "musicwright")],  # a tuple or nested list: any one is enough
     "music": ["musicwright"],
     "video": ["cinewright"],
     "juice": ["game-juice"],
@@ -458,13 +458,19 @@ def ask_call(ask, *argv):
         return {"ok": False, "error": (done.stderr or done.stdout)[:300]}
 
 
+def need_met(need):
+    if isinstance(need, (list, tuple)):
+        return any(find_skill(n) for n in need)
+    return bool(find_skill(need))
+
+
 def closed_lanes(profile):
     closed = {}
     for name, lane in profile.get("lanes", {}).items():
         needs = lane.get("needs")
         if needs is None:
             needs = LANE_DEFAULTS.get(lane.get("kind"), [])
-        missing = [n for n in needs if not find_skill(n)]
+        missing = [" or ".join(n) if isinstance(n, (list, tuple)) else n for n in needs if not need_met(n)]
         if missing:
             closed[name] = missing
     return closed
@@ -1002,7 +1008,7 @@ def cmd_doctor(store, args):
     profile = store.profile()
     _, _, report = hosts_for(args, profile)
     closed = closed_lanes(profile)
-    plugins = ["askwright", "artwright", "pixelwright", "musicwright", "cinewright", "game-juice", "polywright",
+    plugins = ["askwright", "artwright", "pixelwright", "musicwright", "sfxwright", "cinewright", "game-juice", "polywright",
                "ludowright", "marketwright", "comfyui-gen", "unity-agent", "roblox-agent", "tokenwright", "everlast", "evergreen"]
     return {"plugins": {p: bool(find_skill(p)) for p in plugins}, "ask_py": find_ask(), "hosts": report,
             "closed_lanes": closed, "open_lanes": sorted(set(profile.get("lanes", {})) - set(closed)),
