@@ -1,5 +1,8 @@
 # Changelog: grindwright
 
+## 0.2.0 · 2026-11-07
+The owner wants several sessions at once, across projects and on one project, and optional work sources. Sessions have names and their own session files; `claim --area` and lane areas keep them apart, including named resources; non-claim actions are held; one discovery pass serves a crew; `add` refuses look-alikes; `board`, `note`, BOARD.md and WAITING.md; `session check` lists the decisions a stalled run waits on; `session release`; `grind_loop --session-id`; new `grind_crew.py`, which refuses shared state and skips members with no work. New `grw_work.py`: GitHub issue sync and triage, agent-identified replies, PRs linked both ways with both cases argued, bug and feature tickets with duplicate checks, a read-only task list with green light by a named person's label, todo-file mode. Tokens reference points at tokenwright. Not yet run on a live crew or a real tracker: tests use a fake gh. Trigger evals not re-run for this change unless TESTS.md says so.
+
 ## 0.1.12 · 2026-11-07
 `sync` leaves a part-answered set waiting while its answers are still changing: it frees the item once the person marks the set done or the answers have stood still for 15 minutes. Reason: a pilot session synced a set at 2 of 5 answers and acting then would have split the work.
 

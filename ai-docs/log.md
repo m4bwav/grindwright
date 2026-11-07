@@ -53,3 +53,6 @@ The owner merged the overnight PR and asked for grind items on content feel and 
 
 ## 2026-11-07: owner's "check your reasoning"
 A held answer had been filed as "not sure", but its note asked for the reasoning to be checked. Checking it showed the question was wrong: the design doc states the rule and many cards print it. Asked again with the details on a new page. Filed L-008 `absence-claim-unchecked`. No code change, no release.
+
+## 2026-11-07: 0.2.0, crews and work sources
+The owner asked for several sessions a night across and within projects, each project's knowledge and logs kept apart, a way to say nothing can move without a decision, tokenwright awareness, GitHub issue handling, todo and task-list modes, and a scouting beat. Built all of it (see CHANGELOG). Chose ledger claims and areas over a lead agent: the survey found plain claims working at scale and heavy orchestration costly, and agent teams cannot run in `-p` mode. Also added an untrusted-author gate, not asked for, because anyone can file an issue on a public repo. L-004 and L-008 are now in the discovery step. Tests only, with a fake gh; no live crew yet.
