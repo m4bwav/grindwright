@@ -66,3 +66,7 @@ Writing the first real crew file showed its default worktree folder can already 
 ## 2026-11-07: first live crew started
 
 The owner started the first crew on two projects, three sessions in all, with the driver from the installed 0.2.2. Results are not in yet.
+
+## 2026-11-07: 0.2.3, fixes from the first live crew
+
+Read the first crew run while it was still going (three members, two projects). One member stopped after one pass: its session ended its turn while a compile ran in the background, so the plugin marker was missing and the loop read that as a lost plugin. Another member kept being offered an item a stopped member had paused, though its code sat on that member's branch. On the second project the review cap never held because the ledger wrote the person with a capital letter and the profile key was lower case. Fixed all three, plus `hold` from ready or drafted, issue verbs taking the issue number, and stop reasons written to each member's log at once. 114 unit tests pass. Not yet run in a live crew.

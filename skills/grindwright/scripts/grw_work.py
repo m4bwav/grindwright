@@ -180,6 +180,12 @@ def issue_sync(store, items):
 
 
 def issue_item(items, item_id):
+    """Takes the ledger id or the issue number (42 or #42)."""
+    number = str(item_id).lstrip("#")
+    if number.isdigit():
+        hits = [i for i in items if str(i.get("issue")) == number]
+        if len(hits) == 1:
+            return hits[0]
     item = find_item(items, item_id)
     if not item.get("issue"):
         raise Refused([f"{item_id} has no GitHub issue"])

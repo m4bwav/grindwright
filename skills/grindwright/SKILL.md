@@ -2,7 +2,7 @@
 name: grindwright
 description: "Use to keep an indie game moving like a solo dev who never stops: pick the most valuable work across lanes (card art, placeholder graphics, animation, sound, music, trailers, balance, testing and bugs, unfinished features, maintenance, marketing), do everything that needs no person, queue questions on a decision page and switch lanes instead of waiting, and end each session with the same start command. A ledger and a selector script rank value first, with human minutes as the discount. Use on 'grind on my game', 'keep working on the game', 'what should I work on next', 'everything is waiting on me', 'work through the backlog while I'm away', 'run unattended', or a continue prompt that names grindwright. Also 'refresh grindwright'. Not for one design question (ludowright), one juice pass (game-juice) or one asset."
 metadata:
-  version: "0.2.2"
+  version: "0.2.3"
 ---
 
 # grindwright
@@ -66,6 +66,7 @@ hold <id> --evidence E [--person P] [--provenance P]   checkpoint <id> "<note>" 
 - Finished something small that has no item? One `log`, not `add`, `claim` and `done`.
 - Know the next item? `add` it. Named only in HANDOFF, the next session sees nothing selectable and rediscovers it.
 - Checkpoint when a commit or a long render would be lost, not at each step.
+- Run by a driver, never end your turn while a compile, render or test still runs in the background: the session ends with it. Wait in the foreground, or checkpoint and finish the session properly.
 - A request that names one item: do that item, record it, stop. No discovery and no other lanes unless asked.
 
 ## What to ask, and when

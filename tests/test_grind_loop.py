@@ -106,6 +106,16 @@ with open({str(self.state / 'events.jsonl')!r}, 'a') as f:
         _, result = self.go(self.fake("print('no such thing')"), "--require-text", "grindwright")
         self.assertEqual(result["stopped"], "plugin-missing")
 
+    def test_one_missing_marker_is_forgiven_and_logged(self):
+        flag = self.root / "seen"
+        body = f"from pathlib import Path;p=Path(r'{flag}');print('grindwright' if p.exists() else 'waiting');p.touch()"
+        log = self.root / "member.log"
+        _, result = self.go(self.fake(body), "--require-text", "grindwright", "--log", str(log))
+        self.assertNotEqual(result["stopped"], "plugin-missing")
+        text = log.read_text(encoding="utf-8")
+        self.assertIn("missing from pass", text)
+        self.assertIn("=== stopped:", text)
+
     def test_discovery_and_idle_checkpoints_are_no_progress(self):
         ledger = self.state / "ledger.jsonl"
         agent = self.fake(f"""
