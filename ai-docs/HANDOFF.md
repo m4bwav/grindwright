@@ -1,6 +1,6 @@
 # Handoff
 
-Updated 2026-11-05. Public `m4bwav/grindwright`, v0.1.4 tagged, wiki at 0.1.0 (`ai-docs/notes/2026-11-03-github-wiki.md`).
+Updated 2026-11-06. Public `m4bwav/grindwright`, v0.1.5 tagged, wiki at 0.1.0 (`ai-docs/notes/2026-11-03-github-wiki.md`).
 
 ## State
 
@@ -12,8 +12,7 @@ Updated 2026-11-05. Public `m4bwav/grindwright`, v0.1.4 tagged, wiki at 0.1.0 (`
 
 1. The owner merged the pilot branch on 2026-11-05 and has not yet said it was played. The overnight run is the owner's to start. It is the first real test of drafting past the cap. Reconcile the game ledger first.
 2. evergreen-worth comparison: needs a baseline arm for the traps.
-3. Owner request 2026-11-06: evaluate Tiny Colony, the eval game whose question sets the owner answered on the real dashboard. Details and copies of the answers are in the private HANDOFF.
 
 ## Known limits
 
-Claims and the state lock do not coordinate across git worktrees: each has its own ledger copy. The physical-sense check is only an instruction, not a gate. `wait-human` accepts `--why` with no question set (needed for PR reviews), so it can skip the page. `road_warning` is advice; `claim` does not enforce it. Drafts past the cap can go stale if a pending answer changes direction; `ask-drafted` only tells the agent to check. Trap evals have not been re-run since `draft` was added.
+Claims and the state lock do not coordinate across git worktrees: each has its own ledger copy. The physical-sense check is only an instruction, not a gate. `wait-human` accepts `--why` with no question set (needed for PR reviews), so it can skip the page. `road_warning` is advice; `claim` does not enforce it. Drafts past the cap can go stale if a pending answer changes direction; `ask-drafted` only tells the agent to check. Apart from small-call, trap evals have not been re-run since `draft` was added. Eval isolation only covers fixture profiles.

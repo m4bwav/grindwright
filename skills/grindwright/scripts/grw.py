@@ -27,7 +27,7 @@ import time
 import urllib.request
 from pathlib import Path
 
-VERSION = "0.1.4"
+VERSION = "0.1.5"
 FORMAT = 1
 STATES = ("ready", "running", "waiting-on-human", "waiting-on-machine", "done", "dropped")
 COST_UNITS = {"S": 1, "M": 3, "L": 8}
@@ -713,6 +713,14 @@ def cmd_look(store, args):
     return {"id": item["id"], "looked_at": args.path}
 
 
+def eval_isolation_failures(profile):
+    """An eval's question sets must not reach the owner's real inbox."""
+    if profile.get("eval") and not os.environ.get("ASKWRIGHT_HOME"):
+        return ["this is an eval fixture: set ASKWRIGHT_HOME to a throwaway folder on every command, "
+                "or its question sets land in the owner's real inbox"]
+    return []
+
+
 def cmd_wait_human(store, args):
     profile = store.profile()
     items = store.items()
@@ -720,7 +728,7 @@ def cmd_wait_human(store, args):
     person = args.person or item.get("person")
     if not person:
         raise Refused(["say who answers this (--person)"])
-    failures = list(derived_failures(item))
+    failures = eval_isolation_failures(profile) + list(derived_failures(item))
     others = [i["id"] for i in items if i.get("answered") and i["id"] != item["id"]]
     if others:
         failures.append("act on the answers already in first: " + ", ".join(others))
@@ -754,6 +762,7 @@ def cmd_wait_human(store, args):
     item.update({"state": "waiting-on-human", "person": person, "waits_for": args.why or "answers on the askwright set"})
     if args.set:
         item["set"] = str(args.set)
+        item.pop("guess", None)  # the page holds the guess now; a second copy drifted from it
     if args.pr:
         item["pr"] = args.pr
     item.pop("lease_until", None)
@@ -1052,6 +1061,9 @@ def cmd_metrics(store, args):
 def cmd_session(store, args):
     session = store.session()
     if args.action == "start":
+        failures = eval_isolation_failures(store.profile())
+        if failures:
+            raise Refused(failures)
         session = {"started": stamp(), "budget": args.budget, "used": 0}
         store.save_session(session)
         store.event("session_start", budget=args.budget)
