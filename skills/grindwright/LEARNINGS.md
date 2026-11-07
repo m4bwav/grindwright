@@ -63,3 +63,11 @@
 - Evidence: pilot notes in the private sidecar, sessions 1 to 3, 2026-11-06.
 - Scope: skill
 - Status: active · helpful 0 · harmful 0 · last_confirmed 2026-11-06
+
+### L-004 · 2026-11-07 · `feel-per-row-blind`: discovery calls feel done while most data rows have none
+- Trigger: on a real game, sessions reported "juice signals all done" while only 4 of 55 event cards had their own effect. The owner noticed it, not the loop.
+- Hypothesis: `discover` and the juice scan look at core verbs, so content rows are never checked for feedback. The agent already checks that rows have code behind them, but not that the player can see or hear them.
+- Rule: in discovery, count the data rows (events, cards, buildings) that have their own visual and sound feedback, and report the count. Not yet in SKILL.md; add it at the next change that re-runs evals.
+- Evidence: owner's note and an audit of the game's event table, private sidecar, 2026-11-07.
+- Scope: skill
+- Status: active · helpful 0 · harmful 0 · last_confirmed 2026-11-07

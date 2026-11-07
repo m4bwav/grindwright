@@ -47,3 +47,6 @@ The owner kept the plugin and asked for the trim. Released 0.1.7: `session start
 
 ## 2026-11-06: second pilot read, 0.1.8 and 0.1.9, overnight run started
 The second game's pilot ran 3 sessions in about 32 minutes and stopped on its session bound. Its repeated fault was the PR cap, fixed in 0.1.8 (`wait-human --pr`, sync follows the PR, `hold --provenance`). A dry run before the overnight start showed an installed grw.py called nearly every plugin missing, because the cache nests a version folder, so the run would have stopped at once. Fixed in 0.1.9. A real game's name had reached LEARNINGS.md on main; removed from the current text, still in git history. The owner started the overnight run on the first game.
+
+## 2026-11-07: owner's note on content feel
+The owner merged the overnight PR and asked for grind items on content feel and balance. An audit showed discovery had called feel done while few content rows had any. Filed as L-004 `feel-per-row-blind`. No code change, no release.
