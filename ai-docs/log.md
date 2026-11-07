@@ -38,3 +38,6 @@ All open calls went on one decision page: keep or retire, whether the pilot was 
 
 ## 2026-11-06: rulings answered, 0.1.7
 The owner kept the plugin and asked for the trim. Released 0.1.7: `session start` syncs and names the next action, `next --claim` claims, the skill carries command syntax, a named single item stops after that item. Saving not measured. Installed locally. A second real game's art-lane pilot started: three driver sessions, up to 4 hours. Overnight run on the first game stays the owner's to start.
+
+## 2026-11-06: second pilot read, 0.1.8 and 0.1.9, overnight run started
+The second game's pilot ran 3 sessions in about 32 minutes and stopped on its session bound. Its repeated fault was the PR cap, fixed in 0.1.8 (`wait-human --pr`, sync follows the PR, `hold --provenance`). A dry run before the overnight start showed an installed grw.py called nearly every plugin missing, because the cache nests a version folder, so the run would have stopped at once. Fixed in 0.1.9. A real game's name had reached LEARNINGS.md on main; removed from the current text, still in git history. The owner started the overnight run on the first game.
