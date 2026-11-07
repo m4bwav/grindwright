@@ -27,7 +27,7 @@ import time
 import urllib.request
 from pathlib import Path
 
-VERSION = "0.1.10"
+VERSION = "0.1.11"
 FORMAT = 1
 STATES = ("ready", "running", "waiting-on-human", "waiting-on-machine", "done", "dropped")
 COST_UNITS = {"S": 1, "M": 3, "L": 8}
@@ -274,6 +274,23 @@ def score_item(item, items, road, idle_hosts=()):
             score *= 1.1
             why.append("idle machine x1.10")
     return round(score, 3), why
+
+
+def unfinished_blockers(item, items):
+    finished = {i["id"] for i in items if i["state"] in ("done", "dropped")}
+    return [b for b in item.get("blocked_by", []) if b not in finished]
+
+
+def release_blocked(items):
+    """A claimed item that now waits on another item is not being worked on: back to ready, deferred by select."""
+    released = []
+    for item in items:
+        if item["state"] == "running" and unfinished_blockers(item, items):
+            item["state"] = "ready"
+            item.pop("lease_until", None)
+            touch(item)
+            released.append(item["id"])
+    return released
 
 
 def lane_of(profile, item):
@@ -646,6 +663,9 @@ def cmd_claim(store, args):
     item = find_item(items, args.id)
     if item["state"] != "ready":
         raise Refused([f"{item['id']} is {item['state']}"])
+    blockers = unfinished_blockers(item, items)
+    if blockers:
+        raise Refused([f"{item['id']} is blocked by {', '.join(blockers)}"])
     if item_class(item) == "worst" and not item.get("analysed"):
         raise Refused(["analyse this item first: necessary, cut, or shave a part off"])
     if item.get("route_change_required") and not args.new_route:
@@ -694,6 +714,7 @@ def cmd_analyse(store, args):
                       "human_min": args.shave_human_min, "cost": "S", "state": "ready", "road": item.get("road"),
                       "created": stamp(), "updated": stamp(), "person": item.get("person")})
         item["blocked_by"] = list(item.get("blocked_by", [])) + [created]
+        release_blocked(items)
     touch(item)
     store.save_items(items)
     store.event("analyse", id=item["id"], verdict=args.verdict, lane=item.get("lane"))
@@ -778,6 +799,8 @@ def cmd_wait_human(store, args):
     touch(item)
     store.save_items(items)
     store.event("asked", id=item["id"], lane=item.get("lane"), person=person, questions=count)
+    if args.set and ask:
+        ask_call(ask, "register", str(args.set))  # a set not on the shared inbox never reaches the person
     return {"id": item["id"], "person": person, "questions": count,
             "reminder": "one inbox link per message; now select other work"}
 
@@ -823,7 +846,7 @@ def cmd_sync(store, args):
     """Bring answers, finished renders and expired leases back into the ledger."""
     items = store.items()
     ask = find_ask()
-    report = {"answers": [], "machines": [], "recovered": [], "pr": [], "still_waiting": []}
+    report = {"answers": [], "machines": [], "recovered": [], "pr": [], "still_waiting": [], "closed_sets": [], "released": release_blocked(items)}
     for item in items:
         if item["state"] == "waiting-on-human" and item.get("set"):
             if not ask:
@@ -836,8 +859,14 @@ def cmd_sync(store, args):
                 item.update({"state": "ready", "answered": new, "still_open": status.get("open", 0) - len(answered)})
                 touch(item)
                 report["answers"].append({"id": item["id"], "new": len(new), "set": item["set"]})
+            elif status.get("open", 1) == 0:
+                # Everything on the page was answered and closed: nobody is left to wait for, and it fills the review queue.
+                item["state"] = "ready"
+                item.setdefault("checkpoints", []).append({"ts": stamp(), "note": f"set {item.pop('set')} is fully closed: finish or drop this item"})
+                touch(item)
+                report["closed_sets"].append(item["id"])
             else:
-                report["still_waiting"].append({"id": item["id"], "person": item.get("person"), "set": item["set"]})
+                report["still_waiting"].append({"id": item["id"], "person": item.get("person"), "set": item["set"], "unsure": status.get("unsure", [])})
         elif item["state"] == "waiting-on-human" and item.get("pr") and apply_pr_state(item, pr_state(item["pr"])):
             report["pr"].append({"id": item["id"], "pr": item["pr"], "state": item["state"]})
         elif item["state"] == "waiting-on-human":
@@ -935,9 +964,10 @@ def cmd_hold(store, args):
     item = find_item(items, args.id)
     if item["state"] != "running":
         raise Refused([f"{item['id']} is {item['state']}: claim it and make the draft first"])
-    if not item.get("person"):
-        raise Refused(["only an item with a person to review it can be held"])
-    item.update({"state": "drafted", "evidence": args.evidence})
+    person = args.person or item.get("person")
+    if not person:
+        raise Refused(["say who reviews this (--person)"])
+    item.update({"state": "drafted", "evidence": args.evidence, "person": person})
     if args.provenance:
         item["provenance"] = args.provenance
     item.pop("lease_until", None)
@@ -1024,6 +1054,51 @@ def project_repo(store, repo):
     return state.parent.parent / path
 
 
+SKIP_DIRS = {".git", "node_modules", "Library", "Temp", "Logs", "obj", "bin", "Builds", "__pycache__", ".venv", "venv"}
+SOURCE_SUFFIXES = (".cs", ".py", ".lua", ".gd", ".ts", ".js")
+MARKER = re.compile(r"\b(?:TODO|FIXME|HACK)\b")
+
+
+def gap_lane(profile):
+    """Gap findings need an open lane: `log` and `add` refuse any other."""
+    lanes = profile.get("lanes", {})
+    if not lanes:
+        return "features"
+    for name in ("features", "bugs", "gaps"):
+        if name in lanes:
+            return name
+    for kind in ("code", "maintenance"):
+        for name, lane in lanes.items():
+            if lane.get("kind") == kind:
+                return name
+    return sorted(lanes)[0]
+
+
+def scan_repo(repo, limit=5000):
+    """One pruned walk: rglob through an engine's cache folders took minutes."""
+    markers, sources, sample, marketing = 0, 0, [], []
+    for folder, dirs, files in os.walk(repo):
+        dirs[:] = sorted(d for d in dirs if d not in SKIP_DIRS)
+        for name in dirs + files:
+            if "marketing" in name.lower() and len(marketing) < 5:
+                marketing.append(str(Path(folder) / name))
+        for name in sorted(files):
+            if sources >= limit or not name.endswith(SOURCE_SUFFIXES):
+                continue
+            sources += 1
+            path = Path(folder) / name
+            try:
+                lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+            except OSError:
+                continue
+            for number, line in enumerate(lines, 1):
+                if MARKER.search(line):
+                    markers += 1
+                    if len(sample) < 15:
+                        sample.append(f"{path.relative_to(repo).as_posix()}:{number}: {line.strip()[:80]}")
+    return {"code_markers": markers, "files_scanned": sources, "sample": sample}, marketing
+
+
 def cmd_discover(store, args):
     """Read-only signals of unfinished work. The agent reads them and adds items with a real source."""
     profile = store.profile()
@@ -1031,43 +1106,42 @@ def cmd_discover(store, args):
     signals = []
     if not repo.is_dir():
         raise SystemExit(f"repo {repo} not found")
-    for name, lane in (("juice-report.md", "juice"), ("PROJECT_REVIEW.md", "gaps")):
+    gaps = gap_lane(profile)
+    finished = " ".join(" ".join(str(i.get(k, "")) for k in ("title", "source", "goal", "evidence"))
+                        for i in store.items() if i["state"] in ("done", "dropped"))
+    for name, lane in (("juice-report.md", "juice"), ("PROJECT_REVIEW.md", gaps)):
         for path in list(repo.glob(name)) + list(repo.glob(f"ai-docs/{name}")):
             text = path.read_text(encoding="utf-8", errors="replace")
             marks = re.findall(r"^#+ (S-\d+[^\n]*)", text, re.M)
-            signals.append({"lane": lane, "file": str(path), "count": len(marks) or None, "sample": marks[:3]})
+            left = [m for m in marks if not re.search(re.escape(m.split()[0]) + r"\b", finished)]
+            if marks and not left:
+                continue  # every suggestion is already in the ledger
+            signals.append({"lane": lane, "file": str(path), "count": len(left) or None, "sample": left[:3]})
     for rel in ("Docs/Agent Todos.md", "TODO.md", "ai-docs/TODO.md"):
         path = repo / rel
         if path.exists():
             text = path.read_text(encoding="utf-8", errors="replace")
-            signals.append({"lane": "gaps", "file": str(path), "open_items": len(re.findall(r"^\s*[-*] (?:\[ \] )?", text, re.M))})
+            signals.append({"lane": gaps, "file": str(path), "open_items": len(re.findall(r"^\s*[-*] (?:\[ \] )?", text, re.M))})
     tests = [p for p in ("Tests", "tests", "test") if (repo / p).is_dir()]
     signals.append({"lane": "testing", "test_dirs": tests or None, "note": "run them; none means a gap" })
-    markers = 0
-    sources = 0
-    for path in repo.rglob("*"):
-        if sources > 5000:
-            break
-        if path.suffix in (".cs", ".py", ".lua", ".gd", ".ts", ".js") and "node_modules" not in path.parts and "Library" not in path.parts:
-            sources += 1
-            try:
-                markers += len(re.findall(r"\b(?:TODO|FIXME|HACK)\b", path.read_text(encoding="utf-8", errors="replace")))
-            except OSError:
-                pass
-    signals.append({"lane": "gaps", "code_markers": markers, "files_scanned": sources})
-    marketing = [str(p) for p in repo.glob("**/*marketing*") if ".git" not in p.parts and "Library" not in p.parts][:5]
+    scan, marketing = scan_repo(repo)
+    signals.append(dict(scan, lane=gaps))
     signals.append({"lane": "marketing", "files": marketing, "note": "no plan found" if not marketing else "check its age and stats"})
     if not args.no_gh and shutil.which("gh"):
         for kind, cmd in (("pr", "pr"), ("issue", "issue")):
-            done = subprocess.run(["gh", cmd, "list", "--json", "number,title", "--limit", "30"], cwd=str(repo),
-                                  capture_output=True, text=True, encoding="utf-8")
+            try:
+                done = subprocess.run(["gh", cmd, "list", "--json", "number,title", "--limit", "30"], cwd=str(repo),
+                                      capture_output=True, text=True, encoding="utf-8", timeout=30)
+            except subprocess.TimeoutExpired:
+                continue
             if done.returncode == 0:
                 rows = json.loads(done.stdout or "[]")
-                signals.append({"lane": "gaps", kind + "s": len(rows), "sample": [r["title"] for r in rows[:5]]})
+                signals.append({"lane": gaps, kind + "s": len(rows), "sample": [r["title"] for r in rows[:5]]})
     if not args.dry_run:
         store.event("discover", signals=len(signals))
     rejected = [{"finding": e.get("finding"), "why": e.get("why")} for e in store.events() if e.get("type") == "rejected"]
-    return {"signals": signals, "rejected": rejected, "rule": "skip what is in rejected; add an item only with a real --source; if nothing is worth doing, say so and stop"}
+    return {"signals": signals, "rejected": rejected, "open_lanes": sorted(profile.get("lanes", {})),
+            "rule": "skip what is in rejected; add an item only with a real --source; markers miss dead data, so also check that data rows have code behind them; if nothing is worth doing, say so and stop"}
 
 
 def cmd_metrics(store, args):
@@ -1137,7 +1211,7 @@ def stop_verdict(store, args):
     session, items = store.session(), store.items()
     if session.get("paused"):
         return {"may_stop": True, "why": [f"paused: {session['paused']}"]}
-    running = [i["id"] for i in items if i["state"] == "running"]
+    running = [i["id"] for i in items if i["state"] == "running" and not unfinished_blockers(i, items)]
     if running:
         return {"may_stop": False, "why": ["still running: " + ", ".join(running) + ": finish, wait or checkpoint them"]}
     result = ranking(store, args)
@@ -1300,6 +1374,7 @@ def build_parser():
 
     p = add("hold", cmd_hold, "a draft is made but the person's review queue is full")
     p.add_argument("id")
+    p.add_argument("--person")
     p.add_argument("--evidence", required=True)
     p.add_argument("--provenance")
 

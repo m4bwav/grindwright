@@ -2,7 +2,7 @@
 name: grindwright
 description: "Use to keep an indie game moving like a solo dev who never stops: pick the most valuable work across lanes (card art, placeholder graphics, animation, sound, music, trailers, balance, testing and bugs, unfinished features, maintenance, marketing), do everything that needs no person, queue questions on a decision page and switch lanes instead of waiting, and end each session with the same start command. A ledger and a selector script rank value first, with human minutes as the discount. Use on 'grind on my game', 'keep working on the game', 'what should I work on next', 'everything is waiting on me', 'work through the backlog while I'm away', 'run unattended', or a continue prompt that names grindwright. Also 'refresh grindwright'. Not for one design question (ludowright), one juice pass (game-juice) or one asset."
 metadata:
-  version: "0.1.10"
+  version: "0.1.11"
 ---
 
 # grindwright
@@ -38,7 +38,7 @@ act on a road that is not confirmed, beyond work every road would include (bugs,
    - `change-route`: repeated redos. Do not reroll: pick a different method (a 3D blockout as a reference, another
      model, hand-built) and `claim <id> --new-route "<what>"`.
    - `discover`: nothing selectable. Run `grw.py discover`, then really test and balance the game and look for gaps.
-     Add only items with a real `--source`. Never invent busywork. A finding not worth an item: `grw.py reject "<finding>" --why ...`. Work already finished: `grw.py log "<title>" --lane ... --source ... --evidence ... --oracle ...`.
+     Markers miss dead data, so also check that data rows (events, cards) have code behind them. Add only items with a real `--source`. Never invent busywork. A finding not worth an item: `grw.py reject "<finding>" --why ...`. Work already finished: `grw.py log "<title>" --lane ... --source ... --evidence ... --oracle ...`.
    - `stop`: nothing selectable after discovery. Say so honestly.
 3. Finish the item one of three ways:
    - `grw.py done <id> --evidence "..." --oracle <rung>`. Rungs: none (reports and research), compile, tests, boot, scripted-play, snapshot, human.
@@ -58,10 +58,12 @@ Do not run `--help`; the commands are here. The game gets the turns, not the led
 add "<title>" --lane L --source S --value 1-5 [--human-min N] [--cost S|M|L] [--person P] [--owner-note]
 done <id> --evidence E --oracle R        log "<title>" --lane L --source S --evidence E --oracle R
 wait-human <id> --set S --person P        wait-human <id> --pr N --person P        wait-machine <id> --done-file F --why W
-hold <id> --evidence E [--provenance P]   checkpoint <id> "<note>"   redo <id> "<note>"   reject "<finding>" --why W
+analyse <id> --verdict shave --note N --shave-title T
+hold <id> --evidence E [--person P] [--provenance P]   checkpoint <id> "<note>"   redo <id> "<note>"   reject "<finding>" --why W
 ```
 
 - Finished something small that has no item? One `log`, not `add`, `claim` and `done`.
+- Know the next item? `add` it. Named only in HANDOFF, the next session sees nothing selectable and rediscovers it.
 - Checkpoint when a commit or a long render would be lost, not at each step.
 - A request that names one item: do that item, record it, stop. No discovery and no other lanes unless asked.
 

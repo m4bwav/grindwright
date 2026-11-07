@@ -1,5 +1,13 @@
 # Learnings: grindwright
 
+### L-007 · 2026-11-07 · `bookkeeping-hid-an-empty-run`: the driver's stop checks both read bookkeeping as work
+- Trigger: the first overnight run used all 25 sessions in under 2 hours. One item blocked on a question counted as running, so the ledger stop never passed, and each session's discovery and checkpoint changed the fingerprint, so the no-progress stop never fired. Agents reported the fault in about 15 sessions and worked around it with `--force`.
+- Hypothesis: a stop condition must be tested against what a session does when it has nothing to do, not only against a silent session.
+- Rule: progress is finished, asked, drafted or answered work, or a checkpoint on running work. Fixed in 0.1.11.
+- Evidence: the run's pilot notes and session log, kept privately.
+- Scope: skill
+- Status: active · helpful 0 · harmful 0 · last_confirmed 2026-11-07
+
 ### L-001 · 2026-11-03 · `state-outside-others-repo`: a ledger in another person's repo can break their rules
 - Trigger: a game owned by someone else had a rule that nothing in the repo may imply anyone else is involved; a ledger naming the people there would.
 - Hypothesis: the kickoff's "in the game's repo" assumes the owner runs the plugin.

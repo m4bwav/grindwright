@@ -89,7 +89,7 @@ with open({str(self.state / 'events.jsonl')!r}, 'a') as f:
         self.assertIn("session said this", log.read_text(encoding="utf-8"))
 
     def test_max_sessions_stops(self):
-        body = f"open(r'{self.state / 'events.jsonl'}','a').write('{{\"ts\":\"0\",\"type\":\"x\"}}\\n')"
+        body = f"open(r'{self.state / 'events.jsonl'}','a').write('{{\"ts\":\"0\",\"type\":\"done\"}}\\n')"
         code, result = self.go(self.fake(body))
         self.assertEqual((code, result["stopped"], result["sessions"]), (0, "max-sessions", 3))
 
@@ -105,6 +105,33 @@ with open({str(self.state / 'events.jsonl')!r}, 'a') as f:
     def test_lost_plugin_is_caught(self):
         _, result = self.go(self.fake("print('no such thing')"), "--require-text", "grindwright")
         self.assertEqual(result["stopped"], "plugin-missing")
+
+    def test_discovery_and_idle_checkpoints_are_no_progress(self):
+        ledger = self.state / "ledger.jsonl"
+        agent = self.fake(f"""
+import json
+rows = [json.loads(l) for l in open({str(ledger)!r})]
+for r in rows:
+    r["state"] = "ready"
+    r.setdefault("checkpoints", []).append({{"ts": "1", "note": "still blocked"}})
+open({str(ledger)!r}, "w").write("".join(json.dumps(r) + chr(10) for r in rows))
+open({str(self.state / 'events.jsonl')!r}, "a").write(json.dumps({{"type": "discover", "ts": "1"}}) + chr(10))
+""")
+        code, result = self.go(agent)
+        self.assertEqual(result["stopped"], "no-progress")
+
+    def test_checkpoints_on_running_work_are_progress(self):
+        ledger = self.state / "ledger.jsonl"
+        agent = self.fake(f"""
+import json
+rows = [json.loads(l) for l in open({str(ledger)!r})]
+for r in rows:
+    r["state"] = "running"
+    r.setdefault("checkpoints", []).append({{"ts": "1", "note": "half way"}})
+open({str(ledger)!r}, "w").write("".join(json.dumps(r) + chr(10) for r in rows))
+""")
+        code, result = self.go(agent)
+        self.assertEqual(result["stopped"], "max-sessions")
 
 
 if __name__ == "__main__":
