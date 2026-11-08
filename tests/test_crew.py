@@ -149,6 +149,13 @@ class Sessions(Base):
 
 
 class WorktreeRoot(unittest.TestCase):
+    def test_discover_first_reaches_only_the_first_member(self):
+        crew = {"max_sessions_each": 1, "max_hours": 1, "discover_first": True}
+        project = {"name": "a", "prompt": "p.md", "state": "s"}
+        self.assertIn("--discover-first", grind_crew.loop_command(crew, project, "a-1", ".", "l"))
+        self.assertNotIn("--discover-first", grind_crew.loop_command(crew, project, "a-2", ".", "l"))
+        self.assertNotIn("--discover-first", grind_crew.loop_command({"max_sessions_each": 1, "max_hours": 1}, project, "a-1", ".", "l"))
+
     def test_root_replaces_the_default_folder(self):
         with tempfile.TemporaryDirectory() as folder:
             taken = Path(folder) / "elsewhere" / "m-1"

@@ -56,3 +56,5 @@ Worktrees go in `<repo>-grind/<member>`. Set `"worktree_root"` on a project when
 Logs go to `<state>/logs/<member>-<date>.log`, the summary to `<state>/logs/crew-<date>.json`. All members draw on one usage limit; on a limit each driver sleeps and retries on its own.
 
 Grow in steps: one per project first, then two on the project with the most non-overlapping lanes. Docs and practitioners put the useful count low, around 3 to 5 on a repo, with cost about linear per session. Review is usually the real limit: past a person's review cap, more sessions only pile up drafts.
+
+`"discover_first": true` in the crew file or one project: that project's first member runs one session even when nothing is selectable (after a person widened the rules); it is otherwise skipped.
