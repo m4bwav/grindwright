@@ -144,3 +144,7 @@ An overnight two-member crew did all its real work in its first two sessions, th
 ## 2026-11-08: merge conflicts on agent PRs (0.3.25)
 
 Owner request: scan PRs grindwright opened for merge conflicts. `pr-sync` now reads each open agent PR's `mergeable_state`; `dirty` makes one ready item keyed by head..base sha, so a handled or explained conflict stays quiet until a side moves. The agent merges the base in, verifies and pushes to the PR branch, or, when a human judgement call is needed, aborts and comments on the PR with the files, both sides and the question. Docs in `references/work-sources.md`. 136 tests pass.
+
+## 2026-11-08: picture links on private repos (0.3.26)
+
+A reviewer on a private game repo got a 404 on a PR's example sheet: `raw.githubusercontent.com` links to a private repository do not load in the browser. `references/loop.md` now says to link pictures as `github.com/OWNER/REPO/blob/BRANCH/PATH?raw=true`. The same session worked the four owner-comment items and one conflict item `pr-sync` raised on the second game: conflict resolved (both sides had appended hints), example links fixed, and a second art review applied.

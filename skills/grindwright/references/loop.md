@@ -35,6 +35,8 @@ Generate a batch, make a contact sheet, form real guesses by looking at it, ask,
 next batch. While a batch waits, do another lane. Batch size follows the person's minimum in the profile. Answers to
 a question kind recurring three times should be a rule, so stop asking it.
 
+Pictures in a pull request or issue on a private repository: link them as `https://github.com/OWNER/REPO/blob/BRANCH/PATH?raw=true`. A `raw.githubusercontent.com` link to a private repository shows the reviewer a 404.
+
 ## Lanes and what to do in them
 
 | Lane | Tool when installed | Verify with |
