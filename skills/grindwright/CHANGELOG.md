@@ -1,5 +1,9 @@
 # Changelog: grindwright
 
+## 0.3.11 · 2026-11-07
+
+- crew.md: splitting a big change into shards, regenerate conflicted mechanical shards, a baseline of already-failing checks, pattern review of mechanical PRs, an anti-backslide check (Software Engineering at Google, ch. 22).
+
 ## 0.3.10 · 2026-11-07
 
 - `require_greenlight` also gates drafted items: approved drafts record who approved them, unapproved ones wait and return to drafted once approved.
