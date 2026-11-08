@@ -79,3 +79,11 @@
 - Evidence: owner's answer and a search of the game's repo, private sidecar, 2026-11-07.
 - Scope: skill
 - Status: active · helpful 0 · harmful 0 · last_confirmed 2026-11-07
+
+### L-009 · 2026-11-07 · `gate-misses-drafted-state`: a new gate covered ready items but not drafted ones
+- Trigger: 0.3.9 added `require_greenlight` and gated only `ready` items. The first live sync on a real project left seven drafted, unapproved issues selectable for a PR.
+- Hypothesis: drafting past the PR cap puts items in a state the gate's author forgot about. The unit tests used fresh items only.
+- Rule: when adding a gate, list every non-terminal state (ready, drafted, running, waiting) and decide each one, with a test per state. Then run `issue-sync` against the live ledger and read the states before calling it done. Fixed in 0.3.10 with a drafted-state test.
+- Evidence: live sync output, private sidecar HANDOFF; test_require_greenlight_holds_unapproved_drafts.
+- Scope: skill
+- Status: active · helpful 0 · harmful 0 · last_confirmed 2026-11-07
