@@ -7,7 +7,7 @@ Start simple. One session per project needs nothing here but separate state fold
 - **One state folder per project.** Ledger, events, board, logs and knowledge never mix. `grind_crew.py` refuses two projects sharing one.
 - **Two sessions on one project share one state folder, outside the repo.** A folder inside the repo gives each worktree its own ledger copy, and claims stop working. Copy the folder out, then keep a copy in the repo only if the project wants one.
 - **Each session has a name, one branch and one worktree.** The driver sets `GRINDWRIGHT_SESSION` and `GRINDWRIGHT_STATE`; a hand-run session sets them itself. No name means `solo`, which behaves as before.
-- If the project's rules restrict worktrees (for example a live game editor exists only in the main checkout), set `"worktrees": false` with one session, or give editor-bound lanes an exclusive area and send only art and docs to worktrees. The project's rules win.
+- If the project's rules restrict worktrees (for example a live game editor exists only in the main checkout), set `"worktrees": false` with one session, or give editor-bound lanes an exclusive area and send only art and docs to worktrees. The project's rules win. Where a session can open its own editor on its worktree, verify engine work there from a warm pool ([engine-verify](engine-verify.md)).
 
 ## How sessions stay out of each other's way
 

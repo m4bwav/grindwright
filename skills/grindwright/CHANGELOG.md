@@ -1,5 +1,9 @@
 # Changelog: grindwright
 
+## 0.3.14 · 2026-11-07
+
+- New references/engine-verify.md: engine projects verify on a per-session worktree with its own editor (engines lock the folder, not the machine), install the pinned editor version once, keep a warm worktree pool so the import cache is reused, climb compile, EditMode, PlayMode and live-editor rungs, keep tests off the real save and crash reporters, seed for determinism, and write regression tests that compile on both the buggy and fixed branch and fail on the bug. Linked from SKILL.md, loop.md and crew.md.
+
 ## 0.3.13 · 2026-11-07
 
 - crew.md: a red main freezes merges; the breaker owns the fix, gets about ten minutes, then reverts; rebase and rerun checks before merging; never skip a failing test to land an item; one run reports all failures; tighten gates by ratchet (Humble and Farley, Continuous Delivery, ch. 3 and 7).
