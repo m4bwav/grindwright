@@ -132,3 +132,7 @@ Mark: scan outstanding PRs for comments once a session; owner comments get addre
 
 ## 2026-11-07 late
 Applied an owner's updated testing doc to an open game PR: three local rungs with command, exit code and XML counts in a Verified section; work gated on an owner-only approval label. Worth folding into references/engine-verify.md (Verified table format) next session.
+
+## 2026-11-08: questions go to the repository first (0.3.23)
+
+Owner ruling: on a project with a repository (issues, PRs, discussions, wiki), questions and answers go there by default (issue-question, PR comment, discussion or proposal issue), so they sit beside the code and come back through issue-sync and pr-sync. askwright stays for owners who prefer it (`ask_route: askwright`), media picks, private or money questions and projects without a repository. A tailnet-served askwright page can be linked from the issue or PR, answer written back there. Docs only (README, SKILL, work-sources, profile). PR 48 merged, v0.3.23 released and installed. No code reads `ask_route` yet; the agent follows it as an instruction.
