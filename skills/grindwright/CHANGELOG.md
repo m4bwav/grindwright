@@ -1,5 +1,9 @@
 # Changelog: grindwright
 
+## 0.3.17 · 2026-11-07
+
+- Priority tiers for bugs and issues: GitHub labels (`P0`-`P3`, `critical`/`high`/`normal`/`low`, `priority: ...`) set `priority` at every sync; no label means normal (tier 2), exactly like `P2`. The selector ranks by tier before score. Within a tier the highest value goes first, and among equal value the straightforward task wins (new plainness nudge: cost S x1.15, L x0.85). `add --priority N`; `issues.priority_labels`, `issues.priority_default`, `priority_pinned`. Three tests.
+
 ## 0.3.16 · 2026-11-07
 
 - A milestone counted as surveyed forever once any item named it, so a 12-hour crew run stopped after 12 minutes while four unmet milestones had no open work. Now an unmet milestone with no open work needs a survey every window; `grw.py surveyed <id>` records it and needs `--why` when nothing was found. One test.

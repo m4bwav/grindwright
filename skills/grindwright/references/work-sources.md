@@ -16,6 +16,11 @@ All optional. Any mix works; a project with none uses the ledger alone. The ledg
 }
 ```
 
+**Priority labels.** `P0`/`critical`, `P1`/`high`, `P2`/`normal`/`medium`, `P3`/`low` (also `priority: high` and the
+like) set the item's tier at every sync; the most urgent label wins. An issue with no priority label is normal, the same
+as `P2`. Higher tiers are worked first; inside a tier, the highest value and most straightforward go first. Change the
+table with `issues.priority_labels` (`{"label": tier}`) and the untagged tier with `issues.priority_default`.
+
 `tickets` is where new tickets go: `issues` or `todo`. Issues work the same on private repositories. Project owners decide the labels; create any that are missing, or their commands fail.
 
 ## GitHub issues

@@ -65,6 +65,19 @@ class Base(unittest.TestCase):
 
 
 class Selector(Base):
+    def test_priority_tier_outranks_value_and_untagged_is_normal(self):
+        big = self.add("normal but valuable", 5, 0, "code")
+        urgent = self.add("urgent small fix", 2, 0, "code", "--priority", "0")
+        low = self.add("low but valuable", 5, 0, "code", "--priority", "3")
+        order = [e["id"] for e in self.grw("rank", "--no-probe")["ranked"]]
+        self.assertEqual(order, [urgent, big, low])
+
+    def test_same_tier_prefers_straightforward_work(self):
+        murky = self.add("big rewrite", 4, 0, "code", "--cost", "L")
+        plain = self.add("one-line fix", 4, 0, "code", "--cost", "S")
+        self.assertEqual(self.next_id(), plain)
+        self.assertNotEqual(self.next_id(), murky)
+
     def test_helper_ranks_with_the_item_waiting_on_it(self):
         other = self.add("middle", 4, 0, "code")
         helper = self.add("helper", 2, 0, "code")

@@ -3,7 +3,13 @@
 ## How the selector scores
 
 `score = value² × road weight × confidence × 1/(1 + human_min/30)`, then small nudges: items it unblocks, age (up to
-+30%), a free machine (+10%). Answers already in always rank first. Value is how far the item moves the game to
++30%), a free machine (+10%), plainness (cost S x1.15, L x0.85). Answers already in always rank first.
+
+**Priority tiers come before score.** Items carry a priority from 0 (urgent) to 3 (low). An item with no priority is
+normal, tier 2, exactly like one tagged normal. Every P0 outranks every P1, and so on; within one tier the score
+decides, so the highest-value work goes first, and among equal value the straightforward, obvious task (small, sure)
+beats the large, murky one. Issues get their tier from labels at sync; set others with `add --priority N` or
+`set <id> priority=N` (add `priority_pinned=true` so sync leaves a hand-set tier alone). Value is how far the item moves the game to
 finished and polished, 1 to 5. Be honest: inflating value defeats the selector. Value under the profile's floor
 (default 2) is never selected.
 

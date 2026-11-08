@@ -208,6 +208,16 @@ class Issues(Base):
     def synced(self):
         return self.run_grw("issue-sync")[1]["new"]
 
+    def test_priority_labels_set_tier_and_untagged_is_normal(self):
+        self.fake.issues = [issue(1, "Crash", ("bug", "P0")), issue(2, "Typo"), issue(3, "Polish", ("bug", "low"))]
+        self.synced()
+        rows = {i["issue"]: i for i in grw.Store(self.state).items()}
+        self.assertEqual([rows[n]["priority"] for n in (1, 2, 3)], [0, 2, 3])
+        self.fake.issues = [issue(1, "Crash", ("bug",)), issue(2, "Typo", ("bug", "high")), issue(3, "Polish", ("bug", "low"))]
+        self.run_grw("issue-sync")
+        rows = {i["issue"]: i for i in grw.Store(self.state).items()}
+        self.assertEqual([rows[n]["priority"] for n in (1, 2)], [2, 1])
+
     def test_bug_and_feature_split_and_triage_first(self):
         self.fake.issues = [issue(1, "Crash on load"), issue(2, "Add a map", ("enhancement",)), dict(issue(3, "a pr"), pull_request={})]
         self.assertEqual(len(self.synced()), 2)

@@ -31,7 +31,7 @@ from pathlib import Path
 import grw_work
 from grw_work import Refused
 
-VERSION = "0.3.16"
+VERSION = "0.3.17"
 FORMAT = 1
 STATES = ("ready", "running", "waiting-on-human", "waiting-on-machine", "done", "dropped")
 COST_UNITS = {"S": 1, "M": 3, "L": 8}
@@ -80,6 +80,8 @@ META_SHARE_CAP = 0.1
 ORACLES = ("none", "compile", "tests", "boot", "scripted-play", "snapshot", "human")
 ASSET_KINDS = ("art", "animation", "sound", "music", "video", "model", "voice")
 CONFIDENCE = {"low": 0.7, "medium": 0.85, "high": 1.0}
+# Within one priority tier, plain work goes first: small and sure beats large and murky at equal value.
+PLAINNESS = {"S": 1.15, "M": 1.0, "L": 0.85}
 SHARE_WINDOW = 10
 
 
@@ -279,6 +281,10 @@ def score_item(item, items, road, idle_hosts=()):
         factor = 1 + min(0.3, 0.02 * age)
         score *= factor
         why.append(f"{age} d old x{factor:.2f}")
+    plain = PLAINNESS.get(item.get("cost", "M"), 1.0)
+    if plain != 1.0:
+        score *= plain
+        why.append(f"{'straightforward' if plain > 1 else 'large'} (cost {item.get('cost')}) x{plain:.2f}")
     if idle_hosts and item.get("host"):
         if any(item["host"] in tags for tags in idle_hosts):
             score *= 1.1
@@ -423,7 +429,10 @@ def select(profile, road, items, events, session, hosts_alive=None, hosts_idle=(
             continue
         score, why = score_item(dict(item, host=host), items, road, hosts_idle)
         entry = {"id": item["id"], "title": item["title"], "lane": item.get("lane"), "score": score,
-                 "class": item_class(item), "why": why, "action": "work"}
+                 "class": item_class(item), "why": why, "action": "work",
+                 "priority": item.get("priority", grw_work.PRIORITY_DEFAULT)}
+        if entry["priority"] != grw_work.PRIORITY_DEFAULT:
+            entry["why"] = [f"priority P{entry['priority']}: ranks {'above' if entry['priority'] < grw_work.PRIORITY_DEFAULT else 'below'} normal work"] + why
         if item.get("owner_note"):
             entry["action"] = "act-on-owner-note"
             entry["why"] = ["the owner said this at session start: it outranks the queue"] + why
@@ -453,8 +462,8 @@ def select(profile, road, items, events, session, hosts_alive=None, hosts_idle=(
             capped.append(entry)
             continue
         ranked.append(entry)
-    ranked.sort(key=lambda e: (e["action"] != "act-on-owner-note", e["action"] != "act-on-answers", -e["score"], e["id"]))
-    capped.sort(key=lambda e: (-e["score"], e["id"]))
+    ranked.sort(key=lambda e: (e["action"] != "act-on-owner-note", e["action"] != "act-on-answers", e.get("priority", grw_work.PRIORITY_DEFAULT), -e["score"], e["id"]))
+    capped.sort(key=lambda e: (e.get("priority", grw_work.PRIORITY_DEFAULT), -e["score"], e["id"]))
     if not ranked and discovered:
         ranked, capped = capped, []
     return {"ranked": ranked, "deferred": deferred, "capped": capped, "discovered": discovered}
@@ -662,6 +671,8 @@ def cmd_add(store, args):
     }
     optional = {"confidence": args.confidence, "road": args.road, "person": args.person, "host": args.host, "question": args.question, "guess": args.guess}
     item.update({k: v for k, v in optional.items() if v})
+    if getattr(args, "priority", None) is not None:
+        item["priority"] = args.priority
     if args.blocked_by:
         unknown = [b for b in args.blocked_by if b not in {o["id"] for o in items}]
         if unknown:
@@ -1554,6 +1565,7 @@ def build_parser():
     p.add_argument("--human-min", type=int, default=0, help="minutes of a person's attention it will take")
     p.add_argument("--cost", choices=list(COST_UNITS), default="M")
     p.add_argument("--confidence", choices=list(CONFIDENCE), help="how sure the value is")
+    p.add_argument("--priority", type=int, choices=range(0, 4), help="0 urgent .. 3 low; omitted means normal (2)")
     p.add_argument("--goal")
     p.add_argument("--road")
     p.add_argument("--person")

@@ -16,6 +16,10 @@ TRUSTED = ("OWNER", "MEMBER", "COLLABORATOR")
 SKIP_LABELS = ("wontfix", "duplicate", "invalid")
 BUG_LABELS = ("bug",)
 FEATURE_LABELS = ("enhancement", "feature")
+# Priority tiers: 0 is most urgent. An untagged issue is normal (tier 2), exactly like the "normal"/"P2" tag.
+PRIORITY_LABELS = {"p0": 0, "critical": 0, "priority: critical": 0, "p1": 1, "high": 1, "priority: high": 1,
+                   "p2": 2, "normal": 2, "medium": 2, "priority: medium": 2, "p3": 3, "low": 3, "priority: low": 3}
+PRIORITY_DEFAULT = 2
 SAME_TITLE = 0.7
 STOPWORDS = {"the", "a", "an", "to", "of", "for", "and", "in", "on", "add", "need", "should", "with", "when", "is", "are", "be"}
 
@@ -96,6 +100,13 @@ def issue_type(labels, config):
     return "untyped"
 
 
+def issue_priority(labels, config):
+    """The most urgent priority label wins; no priority label means the default (normal) tier."""
+    table = {k.lower(): v for k, v in config.get("priority_labels", PRIORITY_LABELS).items()}
+    tiers = [table[n.lower()] for n in labels if n.lower() in table]
+    return min(tiers) if tiers else config.get("priority_default", PRIORITY_DEFAULT)
+
+
 def lane_for(config, kind):
     return config.get("lane_feature" if kind == "feature" else "lane_bug") or config.get("lane") or "bugs"
 
@@ -148,7 +159,8 @@ def issue_sync(store, items):
         trusted = row.get("author_association") in config.get("trust", TRUSTED)
         value = config.get("value_feature", 2) if kind == "feature" else config.get("value_bug", 3)
         item = new_item(store, items, f"#{number} {row['title'][:100]}", lane=lane_for(config, kind), source=row["html_url"], issue=number,
-                        issue_repo=repo, type=kind, untrusted=not trusted, triaged=False, value=value)
+                        issue_repo=repo, type=kind, untrusted=not trusted, triaged=False, value=value,
+                        priority=issue_priority(labels, config))
         if require:
             item.update({"state": "waiting-on-human", "greenlight": True, "waits_for": wait_label})
         known[number] = item
@@ -163,6 +175,10 @@ def issue_sync(store, items):
                 touch(item)
                 report["closed"].append(item["id"])
             continue
+        tier = issue_priority([l["name"] for l in row.get("labels", [])], config)
+        if item.get("priority") != tier and not item.get("priority_pinned"):
+            item["priority"] = tier
+            touch(item)
         if require and item["state"] in ("ready", "drafted") and not item.get("greenlit_by") and not item.get("pr"):
             who = greenlight in [l["name"] for l in row.get("labels", [])] and greenlit_by(repo, number, greenlight, people)
             if who:
