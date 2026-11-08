@@ -126,3 +126,6 @@ Mark: scan outstanding PRs for comments once a session; owner comments get addre
 - Owner's ruling: bugs and issues can carry priority tags; untagged ones are normal priority. Among the same priority, the highest-value, straightforward and obvious tasks go first.
 - Built: `issue_priority()` reads labels at every sync (`P0`-`P3`, `critical`/`high`/`normal`/`low`, `priority: ...`; most urgent wins; untagged = tier 2), `add --priority`, `priority_pinned`. Selector sorts by tier, then score. New plainness nudge (cost S x1.15, L x0.85) makes the obvious task win at equal value. Docs in loop.md and work-sources.md. 3 tests, 132 pass.
 - Open: the owner's sentence about untagged items was cut off ("will be exactly ..."); read as "exactly normal". Tiers rank above value across all lanes, so a P0 bug beats a value-5 art item; ask if that is too strong.
+
+## 2026-11-07 (late): first real priority labels
+- An owner's repo now uses `high` and `low` labels plus `approved`. Their descriptions match 0.3.17 exactly: high before untagged, low after. Default label table needed no change; the open "untagged = normal?" question is closed.
