@@ -86,6 +86,20 @@ class Sessions(Base):
         states = {i["id"]: i["state"] for i in grw.Store(self.state).items()}
         self.assertEqual((states[mine], states[theirs]), ("ready", "running"))
 
+    def test_zombie_session_cannot_finish_a_reclaimed_item(self):
+        item = self.add("alpha engine rewrite")
+        self.run_grw("claim", item, sid="a")
+        store = grw.Store(self.state)
+        items = store.items()
+        grw.find_item(items, item)["lease_until"] = "2000-01-01T00:00:00"
+        store.save_items(items)
+        self.run_grw("sync", sid="b")
+        self.assertEqual(self.run_grw("claim", item, sid="b")[0], 0)
+        for verb in (["done", item, "--evidence", "e", "--oracle", "tests"], ["checkpoint", item, "half"], ["redo", item, "n"]):
+            self.assertEqual(self.run_grw(*verb, sid="a")[0], 2, verb[0])
+        self.assertEqual(grw.find_item(grw.Store(self.state).items(), item)["session"], "b")
+        self.assertEqual(self.run_grw("done", item, "--evidence", "e", "--oracle", "tests", sid="b")[0], 0)
+
     def test_paused_item_stays_with_its_session(self):
         item = self.add("alpha engine rewrite")
         self.run_grw("claim", item, sid="a")

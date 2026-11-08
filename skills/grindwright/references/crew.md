@@ -19,6 +19,7 @@ Start simple. One session per project needs nothing here but separate state fold
 | Two sessions act on the same answers, triage or analysis | `next --claim` holds the item for 2 hours for that session |
 | Two sessions discover the same work | One discovery pass serves the whole crew for 4 hours. `add` refuses a title like an open item |
 | A dead session keeps its areas | The driver runs `session release` when a member stops; otherwise the lease expires after 6 hours. Released items keep `paused_by`, so other members skip them; `claim --take-over` moves one |
+| A session that was only slow wakes after its lease ran out | `sync` gave its item back and another member claimed it; `done`, `checkpoint` and `redo` from the old session are refused (fenced), so its late writes cannot finish or extend work it no longer holds. It stops and leaves its branch for the new owner. Shared files outside the ledger need the same care: re-read just before writing and refuse when they changed since you read them |
 | One undoes another's work | `next` lists `others_working`, `notes_from_others`, `done_by_others`. Before touching something near them: `note "<what changed>" --area <path>` |
 
 `BOARD.md` in the state folder shows people who is where. Agents read `next` or `board` instead, which costs less. Do not edit it.

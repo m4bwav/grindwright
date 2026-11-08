@@ -31,7 +31,7 @@ from pathlib import Path
 import grw_work
 from grw_work import Refused
 
-VERSION = "0.3.21"
+VERSION = "0.3.22"
 FORMAT = 1
 STATES = ("ready", "running", "waiting-on-human", "waiting-on-machine", "done", "dropped")
 COST_UNITS = {"S": 1, "M": 3, "L": 8}
@@ -351,6 +351,13 @@ def item_areas(profile, item):
 
 def owner_of(item):
     return item.get("session", SOLO)
+
+
+def fence(store, item):
+    """Refuse a write from a session whose lease ran out and whose item another session now runs (a zombie)."""
+    if item["state"] == "running" and owner_of(item) != store.sid:
+        raise Refused([f"{item['id']} is running in {owner_of(item)}: your lease ran out and it was claimed again; "
+                       "stop, and leave your branch for that session to read"])
 
 
 def area_clashes(profile, item, items, sid):
@@ -862,6 +869,7 @@ def cmd_claim(store, args):
 def cmd_checkpoint(store, args):
     items = store.items()
     item = find_item(items, args.id)
+    fence(store, item)
     item.setdefault("checkpoints", []).append({"ts": stamp(), "note": args.note})
     if item["state"] == "running":
         item["lease_until"] = (now() + dt.timedelta(hours=LEASE_HOURS)).isoformat(timespec="seconds")
@@ -1116,6 +1124,7 @@ def cmd_redo(store, args):
     profile = store.profile()
     items = store.items()
     item = find_item(items, args.id)
+    fence(store, item)
     item["redos"] = item.get("redos", 0) + 1
     item.setdefault("redo_notes", []).append(args.note)
     limit = profile.get("escalate_after", 2)
@@ -1134,6 +1143,7 @@ def cmd_redo(store, args):
 def cmd_done(store, args):
     items = store.items()
     item = find_item(items, args.id)
+    fence(store, item)
     kind = lane_of(store.profile(), item).get("kind")
     if kind in ASSET_KINDS and not args.provenance:
         raise Refused(["generated assets need --provenance (tool, model, seed or source) for store disclosure"])

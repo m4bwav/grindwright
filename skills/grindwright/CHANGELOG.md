@@ -1,5 +1,9 @@
 # Changelog: grindwright
 
+## 0.3.22 · 2026-11-08
+
+- `done`, `checkpoint` and `redo` refuse a session whose item is now running in another session: a member whose lease expired while it was slow (not dead) could finish or re-lease an item someone else had claimed. crew.md risk row, test (Kleppmann & Riccomini, Designing Data-Intensive Applications 2nd ed., ch. 9, fencing off zombies).
+
 ## 0.3.21 · 2026-11-08
 
 - crew.md: rename or reshape anything other members call in expand-contract steps (add the new form, keep the old as a pass-through, move callers, delete the old only after every open item has merged), since text merges miss a call another branch added to the old name; refactor inside the item that needs it rather than as a refactoring night (Fowler, Refactoring 2nd ed., ch. 2).
