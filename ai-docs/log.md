@@ -129,3 +129,6 @@ Mark: scan outstanding PRs for comments once a session; owner comments get addre
 
 ## 2026-11-07 (late): first real priority labels
 - An owner's repo now uses `high` and `low` labels plus `approved`. Their descriptions match 0.3.17 exactly: high before untagged, low after. Default label table needed no change; the open "untagged = normal?" question is closed.
+
+## 2026-11-07 late
+Applied an owner's updated testing doc to an open game PR: three local rungs with command, exit code and XML counts in a Verified section; work gated on an owner-only approval label. Worth folding into references/engine-verify.md (Verified table format) next session.
