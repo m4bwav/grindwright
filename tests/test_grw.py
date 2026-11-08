@@ -106,6 +106,19 @@ class Selector(Base):
         self.grw("discover", "--no-gh")
         self.assertEqual(self.grw("next", "--no-probe")["next"]["action"], "stop")
 
+    def test_unsurveyed_milestone_blocks_stop_until_named_or_met(self):
+        road = self.state / "road.json"
+        data = json.loads(road.read_text(encoding="utf-8"))
+        data.update(confirmed=True, milestones=[{"id": "galaxy", "title": "Galaxy", "weight": 2}])
+        road.write_text(json.dumps(data), encoding="utf-8")
+        self.grw("session", "start")
+        self.grw("discover", "--no-gh")
+        self.assertEqual(self.grw("next", "--no-probe")["next"]["action"], "survey")
+        self.assertFalse(self.grw("session", "check")["may_stop"])
+        data["milestones"][0]["met"] = True
+        road.write_text(json.dumps(data), encoding="utf-8")
+        self.assertEqual(self.grw("next", "--no-probe")["next"]["action"], "stop")
+
     def test_session_start_also_syncs_and_names_the_next_action(self):
         started = self.grw("session", "start", "--no-probe")
         self.assertIn("still_waiting", started["sync"])

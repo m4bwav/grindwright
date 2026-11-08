@@ -31,7 +31,7 @@ from pathlib import Path
 import grw_work
 from grw_work import Refused
 
-VERSION = "0.3.8"
+VERSION = "0.3.12"
 FORMAT = 1
 STATES = ("ready", "running", "waiting-on-human", "waiting-on-machine", "done", "dropped")
 COST_UNITS = {"S": 1, "M": 3, "L": 8}
@@ -738,6 +738,11 @@ def cmd_next(store, args):
     if not result["discovered"] and lanes:
         return {"next": {"action": "discover", "why": ["nothing selectable: run grw.py discover, then work through look_at (" + ", ".join(lanes) + ")"],
                          "look_at": lanes}, "deferred": result["deferred"]}
+    blind = unsurveyed(store)
+    if blind:
+        return {"next": {"action": "survey", "why": ["no item has ever named road milestone(s) " + ", ".join(blind) +
+                                                     ": survey the game against each, add items with --road, or set met: true in road.json with evidence"],
+                         "road": blind}, "deferred": result["deferred"]}
     return {"next": {"action": "stop", "why": ["nothing selectable after a discovery pass; do not invent work"]},
             "deferred": result["deferred"]}
 
@@ -1294,6 +1299,15 @@ def cmd_discover(store, args):
     gaps = gap_lane(profile)
     finished = " ".join(" ".join(str(i.get(k, "")) for k in ("title", "source", "goal", "evidence"))
                         for i in store.items() if i["state"] in ("done", "dropped"))
+    road = store.road()
+    for stone in road.get("milestones", []):
+        tied = [i for i in store.items() if i.get("road") == stone.get("id")]
+        open_ = [i for i in tied if i["state"] not in ("done", "dropped")]
+        if not open_:
+            signals.append({"lane": gaps, "road": stone.get("id"), "title": stone.get("title"), "status": stone.get("status"),
+                            "done_items": sum(i["state"] == "done" for i in tied),
+                            "note": "no open work on this milestone: survey the game against it (play, read its systems and "
+                                    "design docs) and add items for each gap, with --road; mark it met only with evidence"})
     for name, lane in (("juice-report.md", "juice"), ("PROJECT_REVIEW.md", gaps)):
         for path in list(repo.glob(name)) + list(repo.glob(f"ai-docs/{name}")):
             text = path.read_text(encoding="utf-8", errors="replace")
@@ -1329,7 +1343,7 @@ def cmd_discover(store, args):
         store.event("discover", signals=len(signals))
     rejected = [{"finding": e.get("finding"), "why": e.get("why")} for e in store.events() if e.get("type") == "rejected"]
     return {"signals": signals, "rejected": rejected, "open_lanes": sorted(profile.get("lanes", {})),
-            "rule": "skip what is in rejected; add an item only with a real --source; markers miss dead data, so also check that data rows have code behind them; if nothing is worth doing, say so and stop"}
+            "rule": "road signals come first: an unmet milestone with no open work is not an empty ledger; skip what is in rejected; add an item only with a real --source; markers miss dead data, so also check that data rows have code behind them; if nothing is worth doing, say so and stop"}
 
 
 def cmd_metrics(store, args):
@@ -1409,6 +1423,15 @@ def cmd_session(store, args):
                          "one-line start command; a project prompt's own end steps add to these, never replace them")}
 
 
+def unsurveyed(store):
+    """Milestones of a confirmed road that no item has ever named and nobody marked met: work exists there unseen."""
+    road = store.road()
+    if not road.get("confirmed"):
+        return []
+    named = {i.get("road") for i in store.items()}
+    return [m.get("id") for m in road.get("milestones", []) if not m.get("met") and m.get("id") not in named]
+
+
 def stop_verdict(store, args):
     """A session may stop on a usage limit, an empty budget, or nothing selectable after a discovery pass."""
     session, items = store.session(), store.items()
@@ -1425,6 +1448,8 @@ def stop_verdict(store, args):
         return {"may_stop": True, "why": ["what is left costs more than the budget"], "deferred": result["deferred"]}
     if not result["discovered"] and store.profile().get("discover", []):
         return {"may_stop": False, "why": ["nothing selectable and no discovery pass this session: run discover, then " + ", ".join(store.profile().get("discover", []))]}
+    if unsurveyed(store):
+        return {"may_stop": False, "why": ["road milestone(s) never surveyed: " + ", ".join(unsurveyed(store)) + ": add items with --road or mark met"]}
     waits = waiting_report(store)
     why = ["nothing selectable after a discovery pass"]
     if waits:
