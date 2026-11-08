@@ -1,5 +1,9 @@
 # Changelog: grindwright
 
+## 0.3.10 · 2026-11-07
+
+- `require_greenlight` also gates drafted items: approved drafts record who approved them, unapproved ones wait and return to drafted once approved.
+
 ## 0.3.9 · 2026-11-07
 
 - `issues.require_greenlight`: only issues a greenlighter labelled are built; the rest wait, re-checked each session start. Approval is not triage: the agent reads every comment first.

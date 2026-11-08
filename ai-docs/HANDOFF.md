@@ -1,6 +1,6 @@
 # Handoff
 
-Updated 2026-11-07. Public `m4bwav/grindwright`, v0.3.9, wiki at 0.1.0 (`ai-docs/notes/2026-11-03-github-wiki.md`). Installed locally.
+Updated 2026-11-07. Public `m4bwav/grindwright`, v0.3.10, wiki at 0.1.0 (`ai-docs/notes/2026-11-03-github-wiki.md`). Installed locally.
 
 ## State
 
