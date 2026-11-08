@@ -2,7 +2,7 @@
 name: grindwright
 description: "Use to keep an indie game, or a long film, video or story project, moving like a solo maker who never stops: pick the most valuable work across lanes (art, animation, writing, voices, sound, music, shots and edits, trailers, balance, testing and bugs, unfinished features, maintenance, marketing), do everything that needs no person, queue questions on a decision page and switch lanes instead of waiting, and end each session with the same start command. A ledger and a selector script rank value first, with human minutes as the discount. Use on 'grind on my game', 'keep working on the game', 'grind on my film', 'what should I work on next', 'everything is waiting on me', 'work through the backlog while I'm away', 'run unattended', or a continue prompt that names grindwright. Also 'refresh grindwright'. Not for one design question (ludowright), one juice pass (game-juice) or one asset."
 metadata:
-  version: "0.3.17"
+  version: "0.3.18"
 ---
 
 # grindwright

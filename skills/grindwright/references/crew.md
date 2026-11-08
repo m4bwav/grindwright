@@ -25,6 +25,8 @@ Start simple. One session per project needs nothing here but separate state fold
 
 Name areas as narrowly as you honestly can, and name one on any item that edits shared files. Split the failure surface as well as the task list: when every test fails on one bug, parallel sessions all chase it, so give each a different subset. Areas do not prevent logical conflicts, so merges still go through tests and a person.
 
+Keep structure and behaviour apart. A member's structure-only changes (renames, moved or extracted code, reordering, dead code removed) land in their own small PR or commit, before or after the behaviour change, never mixed in: small structural PRs merge before they collide with other members, and a reviewer reads each kind at the right pace. Tidy only what the item's next behaviour change needs, for minutes up to about an hour; a mess the item does not need goes on the ledger as its own item instead of into the PR. When an item ends as a tangle of both, redo it structure first rather than ship the tangle. Reversible changes (structure, code behind a flag) get a light check; irreversible ones (schemas, public APIs, data deletion, a split into a new service) get a full review before merge.
+
 ## Saying there is nothing to do
 
 A session may stop only when `session check` says so. When only human decisions are left, `session check` returns `waiting_on`, most unblocking first, and `WAITING.md` lists the same. Say it plainly in the final message: "Nothing can move until these N decisions." Never invent work to stay busy. After another long run the same list may still be the answer, and that is correct.
