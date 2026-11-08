@@ -115,3 +115,9 @@ Mark asked to record the worktree-to-editor-to-e2e testing pattern after the Arv
 ## 2026-11-07: pr-sync (0.3.15)
 
 Mark: scan outstanding PRs for comments once a session; owner comments get addressed and pushed. `grw.py pr-sync` (in every sync) turns OWNER comments on the agent login's open PRs into one ready item per PR; docs in work-sources.md.
+
+## 2026-11-07 (late): 0.3.16 idle milestones get surveyed
+- Read the overnight crew run on the first game (restarted on 0.3.12): both members ran one session each and stopped after about 12 minutes of 12 hours, on "nothing selectable after a discovery pass". The discover output itself listed four unmet milestones with no open work.
+- Cause: `unsurveyed()` treated a milestone as surveyed forever once any item named it, even when all were done or dropped.
+- Fix: an unmet milestone with no open work needs a survey per window; new `grw.py surveyed <id> [--why]`. Test added, 130 pass.
+- Estimate-vs-actual rows from the run: 5 items, estimates 10-40 min, actuals 6-20 min; every estimate was high (owner's suspicion holds). Not yet a grw feature.

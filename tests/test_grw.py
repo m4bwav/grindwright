@@ -119,6 +119,22 @@ class Selector(Base):
         road.write_text(json.dumps(data), encoding="utf-8")
         self.assertEqual(self.grw("next", "--no-probe")["next"]["action"], "stop")
 
+    def test_milestone_with_only_finished_items_needs_a_survey_each_window(self):
+        road = self.state / "road.json"
+        data = json.loads(road.read_text(encoding="utf-8"))
+        data.update(confirmed=True, milestones=[{"id": "art", "title": "Art everywhere", "weight": 2}])
+        road.write_text(json.dumps(data), encoding="utf-8")
+        item = self.add("Old art batch", 4)
+        self.grw("set", item, "road=art", "state=done")
+        self.grw("session", "start")
+        self.grw("discover", "--no-gh")
+        self.assertEqual(self.grw("next", "--no-probe")["next"]["action"], "survey")
+        self.assertFalse(self.grw("session", "check")["may_stop"])
+        with self.assertRaises(SystemExit):  # nothing found needs a reason
+            grw.main(["--state", str(self.state), "surveyed", "art"])
+        self.grw("surveyed", "art", "--why", "every card and building has art in the build")
+        self.assertEqual(self.grw("next", "--no-probe")["next"]["action"], "stop")
+
     def test_session_start_also_syncs_and_names_the_next_action(self):
         started = self.grw("session", "start", "--no-probe")
         self.assertIn("still_waiting", started["sync"])

@@ -1,5 +1,9 @@
 # Changelog: grindwright
 
+## 0.3.16 · 2026-11-07
+
+- A milestone counted as surveyed forever once any item named it, so a 12-hour crew run stopped after 12 minutes while four unmet milestones had no open work. Now an unmet milestone with no open work needs a survey every window; `grw.py surveyed <id>` records it and needs `--why` when nothing was found. One test.
+
 ## 0.3.15 · 2026-11-07
 
 - `pr-sync`, also run by every `sync` and `session start`: the repo owner's new comments, inline review comments and reviews on the agent's open PRs become one ready item per PR; fix on the PR branch, or in a new PR if it closed. Three tests.
