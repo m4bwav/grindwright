@@ -1,5 +1,9 @@
 # Changelog: grindwright
 
+## 0.3.5 · 2026-11-07
+
+- Crew file `discover_first` (crew or project level): the project's first member runs and passes `--discover-first` instead of being skipped on an empty ledger.
+
 ## 0.3.4 · 2026-11-07
 
 - `session end` reminder names evergreen-wrapup and says a project prompt's own end steps add to the skill's, never replace them (a run followed its prompt and skipped the wrap-up).

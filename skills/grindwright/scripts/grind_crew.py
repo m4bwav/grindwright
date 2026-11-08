@@ -75,6 +75,11 @@ def plan(crew):
     return rows
 
 
+def discover_first(crew, project, member):
+    """First member of a project whose crew file sets discover_first runs once even on an empty ledger."""
+    return bool(project.get("discover_first", crew.get("discover_first"))) and member == f"{project['name']}-1"
+
+
 def loop_command(crew, project, member, cwd, log):
     command = [sys.executable, str(LOOP), project["prompt"], "--state", project["state"], "--cwd", cwd, "--session-id", member,
                "--max-sessions", str(crew["max_sessions_each"]), "--max-hours", str(crew["max_hours"]), "--log", str(log), "--go"]
@@ -82,6 +87,8 @@ def loop_command(crew, project, member, cwd, log):
         command += ["--session-minutes", str(crew["session_minutes"])]
     if crew.get("require_text"):
         command += ["--require-text", crew["require_text"]]
+    if discover_first(crew, project, member):
+        command += ["--discover-first"]
     if crew.get("agent"):
         command += ["--", *crew["agent"]]
     return command
@@ -94,7 +101,7 @@ def run(crew, sleep=time.sleep):
         if index:
             sleep(crew.get("stagger_seconds", 120))
         check = rank(project, member)
-        if check.get("may_stop"):
+        if check.get("may_stop") and not discover_first(crew, project, member):
             skipped.append({"member": member, "why": check.get("why"), "waiting_on": check.get("waiting_on", [])})
             continue
         logs = Path(project["state"]) / "logs"
