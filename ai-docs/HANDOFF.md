@@ -1,6 +1,6 @@
 # Handoff
 
-Updated 2026-11-07. Public `m4bwav/grindwright`, v0.3.10, wiki at 0.1.0 (`ai-docs/notes/2026-11-03-github-wiki.md`). Installed locally.
+Updated 2026-11-07. Public `m4bwav/grindwright`, v0.3.12, wiki at 0.1.0 (`ai-docs/notes/2026-11-03-github-wiki.md`). Installed locally.
 
 ## State
 
@@ -9,6 +9,8 @@ Updated 2026-11-07. Public `m4bwav/grindwright`, v0.3.10, wiki at 0.1.0 (`ai-doc
 - Live runs: one pilot and one overnight run on the first game, one pilot on a second. The overnight run stopped on its 25-session bound in under 2 of its 10 hours and met no usage limit, so what `claude -p` does at a limit is still unknown. Drafting past the cap and `wait-human --pr` worked. 0.1.11 and 0.1.12 fix its faults; those fixes have not run in a live chain.
 
 ## Next
+
+0000000. 0.3.12 (2026-11-07): road-aware discovery and `survey`; the overnight run on the first game was restarted on it. Read its logs: did the survey add real items, did it run near its 12 hours, and what does the estimate-vs-actual table show (owner wants self-timing turned into a grw feature).
 
 000000. 0.3.9 (2026-11-07): approval-gated issues (`require_greenlight`, `issue-question`, owners' comments as direction). Not yet run live. Future lane (owner, not yet): a demo track per game, making, publishing and maintaining a demo; publishing stays the owner's call.
 00000. 0.3.4 (2026-11-07): a 4-hour run on the second game did one session and stopped on the ledger (reviews pending); it left found work out of the ledger and skipped the wrap-up. Fixed; not yet run live. Next: a run on the first game, size asked of the owner.

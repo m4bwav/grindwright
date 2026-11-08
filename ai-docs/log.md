@@ -104,3 +104,6 @@ A single-member run on a real game stopped after one session: every open item wa
 The owner said a game owner will label issues `approved` when they may be built, and her comments are instructions; approved issues still get their comments read and may get a question first. Added `issues.require_greenlight`, `issue-question`, and the direction rule in work-sources.md. 123 tests pass. Noted for later: a demo lane (make, publish, maintain) for both games.
 
 First live sync under the rule found drafted issues ungated (drafted past the PR cap before the rule). 0.3.10 gates drafted items too. 124 tests pass.
+
+## 2026-11-07 (late): 0.3.12 road-aware discovery
+A 12-hour two-member run on the first game stopped after one session: the ledger held only an item waiting on the owner, and discovery read old reports only. A confirmed road milestone had never had any item. 0.3.12: `discover` lists milestones with no open work, `next` returns `survey`, and `session check` refuses to stop while a confirmed milestone was never named and is not `met`. `grw.py --version` fixed (said 0.3.8). PR #38 merged, v0.3.12 released and installed; the run was restarted on it.
