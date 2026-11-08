@@ -90,3 +90,7 @@ Film run paused by the owner. One-hour single-member run on the second game: one
 ## 2026-11-07 — 0.3.4 from the long run on the second game
 
 The 4-hour run on the second game did one session ($2.65, 8 min) and stopped on the ledger: both review slots waited on the project owner. The session drafted a 12-building batch and fixed three tracker issues, but named five more buildings that "need plans first" without adding them, so the loop saw nothing selectable. It also skipped the wrap-up, because the project's prompt listed its own end steps without it, and it hit a lane that allowed stacking under a guard that denied it. 0.3.4: the `session end` reminder names the wrap-up and says prompt end steps add to the skill's; leftover work goes in with `add`; `doctor` reports `conflicts`; `grind_loop --discover-first`. 120 tests pass.
+
+## 2026-11-07 — 0.3.5, overnight run on the first game
+
+Crew file `discover_first` so an empty-ledger project still gets one session. Owner chose a 10-12 hour run and asked that the plugin estimate and time its own work and improve the estimates; the run logs estimate-vs-actual rows as data for that feature (next).
