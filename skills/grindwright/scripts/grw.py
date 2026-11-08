@@ -31,7 +31,7 @@ from pathlib import Path
 import grw_work
 from grw_work import Refused
 
-VERSION = "0.3.15"
+VERSION = "0.3.16"
 FORMAT = 1
 STATES = ("ready", "running", "waiting-on-human", "waiting-on-machine", "done", "dropped")
 COST_UNITS = {"S": 1, "M": 3, "L": 8}
@@ -740,8 +740,9 @@ def cmd_next(store, args):
                          "look_at": lanes}, "deferred": result["deferred"]}
     blind = unsurveyed(store)
     if blind:
-        return {"next": {"action": "survey", "why": ["no item has ever named road milestone(s) " + ", ".join(blind) +
-                                                     ": survey the game against each, add items with --road, or set met: true in road.json with evidence"],
+        return {"next": {"action": "survey", "why": ["road milestone(s) with no open work and no survey yet: " + ", ".join(blind) +
+                                                     ": survey the game against each and add items with --road, then grw.py surveyed <id>"
+                                                     " (--why if nothing is missing), or set met: true in road.json with evidence"],
                          "road": blind}, "deferred": result["deferred"]}
     return {"next": {"action": "stop", "why": ["nothing selectable after a discovery pass; do not invent work"]},
             "deferred": result["deferred"]}
@@ -1429,13 +1430,42 @@ def cmd_session(store, args):
                          "one-line start command; a project prompt's own end steps add to these, never replace them")}
 
 
+def survey_window(store):
+    """Start of the window a discovery or survey counts in: this session, or the crew's shared hours."""
+    if store.sid != SOLO:
+        return (now() - dt.timedelta(hours=DISCOVER_HOURS)).isoformat(timespec="seconds")
+    return store.session().get("started", "")
+
+
 def unsurveyed(store):
-    """Milestones of a confirmed road that no item has ever named and nobody marked met: work exists there unseen."""
+    """Unmet milestones of a confirmed road with no open work and no survey in this window: work may exist there unseen.
+    A milestone whose items are all done or dropped is not finished; it needs a fresh look each window."""
     road = store.road()
     if not road.get("confirmed"):
         return []
-    named = {i.get("road") for i in store.items()}
-    return [m.get("id") for m in road.get("milestones", []) if not m.get("met") and m.get("id") not in named]
+    items, since = store.items(), survey_window(store)
+    looked = {e.get("road") for e in store.events() if e.get("type") == "survey" and e.get("ts", "") >= since}
+    out = []
+    for m in road.get("milestones", []):
+        mid = m.get("id")
+        if m.get("met") or mid in looked:
+            continue
+        if any(i.get("road") == mid and i["state"] not in ("done", "dropped") for i in items):
+            continue
+        out.append(mid)
+    return out
+
+
+def cmd_surveyed(store, args):
+    """Record a survey of one milestone. Finding nothing needs a reason, so a skipped look cannot pass for one."""
+    ids = [m.get("id") for m in store.road().get("milestones", [])]
+    if args.milestone not in ids:
+        raise SystemExit(f"no milestone {args.milestone}; road has: {', '.join(ids)}")
+    added = [i["id"] for i in store.items() if i.get("road") == args.milestone and i["state"] not in ("done", "dropped")]
+    if not added and not args.why:
+        raise SystemExit("no open item names this milestone: add items with --road, or pass --why saying what you checked and why nothing is missing")
+    store.event("survey", road=args.milestone, open_items=added, why=args.why)
+    return {"surveyed": args.milestone, "open_items": added, "left": unsurveyed(store)}
 
 
 def stop_verdict(store, args):
@@ -1455,7 +1485,7 @@ def stop_verdict(store, args):
     if not result["discovered"] and store.profile().get("discover", []):
         return {"may_stop": False, "why": ["nothing selectable and no discovery pass this session: run discover, then " + ", ".join(store.profile().get("discover", []))]}
     if unsurveyed(store):
-        return {"may_stop": False, "why": ["road milestone(s) never surveyed: " + ", ".join(unsurveyed(store)) + ": add items with --road or mark met"]}
+        return {"may_stop": False, "why": ["road milestone(s) not surveyed this window: " + ", ".join(unsurveyed(store)) + ": add items with --road, record grw.py surveyed, or mark met"]}
     waits = waiting_report(store)
     why = ["nothing selectable after a discovery pass"]
     if waits:
@@ -1660,6 +1690,10 @@ def build_parser():
     p.add_argument("--repo")
     p.add_argument("--no-gh", action="store_true")
     p.add_argument("--dry-run", action="store_true", help="do not record the pass")
+
+    p = add("surveyed", cmd_surveyed, "record that a road milestone was surveyed this window")
+    p.add_argument("milestone")
+    p.add_argument("--why", help="required when no open item names the milestone: what you checked")
 
     add("metrics", cmd_metrics, "questions per accepted item, redos, empty sessions")
 
