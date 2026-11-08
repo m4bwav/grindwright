@@ -2,7 +2,7 @@
 name: grindwright
 description: "Use to keep an indie game, or a long film, video or story project, moving like a solo maker who never stops: pick the most valuable work across lanes (art, animation, writing, voices, sound, music, shots and edits, trailers, balance, testing and bugs, unfinished features, maintenance, marketing), do everything that needs no person, queue questions on a decision page and switch lanes instead of waiting, and end each session with the same start command. A ledger and a selector script rank value first, with human minutes as the discount. Use on 'grind on my game', 'keep working on the game', 'grind on my film', 'what should I work on next', 'everything is waiting on me', 'work through the backlog while I'm away', 'run unattended', or a continue prompt that names grindwright. Also 'refresh grindwright'. Not for one design question (ludowright), one juice pass (game-juice) or one asset."
 metadata:
-  version: "0.3.3"
+  version: "0.3.4"
 ---
 
 # grindwright
@@ -48,7 +48,8 @@ act on a road that is not confirmed, beyond work every road would include (bugs,
      link in one message and go to step 2.
    - `grw.py wait-machine <id> --done-file <path> --why ...`, with the render detached. Go to step 2.
 4. Failed pass: `grw.py redo <id> "<what was wrong>"`.
-5. Repeat until `grw.py session check` allows stopping. It refuses while anything is selectable. Then
+5. Work you find but leave ("needs a plan first", "left for later") goes in with `grw.py add` before you stop, so the next session can select it; a summary line is not a ledger item.
+   Repeat until `grw.py session check` allows stopping. It refuses while anything is selectable. Then
    `grw.py session end` (`--force "<why>"` when a fresh session would do the next item better), run evergreen-wrapup if it is installed (skip quietly if not; a failed wrap-up never blocks), update `HANDOFF.md`, and print the same one-line start command.
 
 ## Keep the bookkeeping small

@@ -129,7 +129,7 @@ def drive(args, sleep, clock):
     sessions, idle, waits, missing = 0, 0, 0, 0
     while True:
         check = verdict(args.state, args.session_id)
-        if check.get("may_stop"):
+        if check.get("may_stop") and not (args.discover_first and sessions == 0):
             return {"ok": True, "stopped": "ledger", "why": check.get("why"), "waiting_on": check.get("waiting_on", []), "sessions": sessions}
         if sessions >= args.max_sessions:
             return {"ok": True, "stopped": "max-sessions", "sessions": sessions}
@@ -181,6 +181,8 @@ def main(argv=None):
     parser.add_argument("--require-text", help="text the session output must contain, such as the plugin's name")
     parser.add_argument("--log", help="append each session's output to this file")
     parser.add_argument("--session-id", help="this member's name when several sessions share the state")
+    parser.add_argument("--discover-first", action="store_true",
+                        help="run session 1 even when the ledger has nothing selectable, after a person widened the rules")
     parser.add_argument("--go", action="store_true", help="really run; without it, print what would run")
     argv = list(sys.argv[1:] if argv is None else argv)
     command = []

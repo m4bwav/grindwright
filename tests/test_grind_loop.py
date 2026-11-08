@@ -46,6 +46,15 @@ class Loop(unittest.TestCase):
             grind_loop.main(["p.md", "--state", str(self.state), "--max-sessions", "1", "--max-hours", "1", "--", sys.executable])
         self.assertTrue(json.loads(out.getvalue())["dry_run"])
 
+    def test_discover_first_runs_one_session_on_an_empty_ledger(self):
+        self.state = self.root / "empty"
+        self.grw("init", "--project", "T", "--repo", str(self.root))
+        profile = json.loads((self.state / "profile.json").read_text(encoding="utf-8"))
+        (self.state / "profile.json").write_text(json.dumps(dict(profile, discover=[])), encoding="utf-8")
+        self.assertEqual(self.go(self.fake("print('hi')"))[1]["sessions"], 0)
+        code, result = self.go(self.fake("print('hi')"), "--discover-first")
+        self.assertEqual((result["stopped"], result["sessions"]), ("ledger", 1))
+
     def test_bounds_are_required(self):
         with self.assertRaises(SystemExit), contextlib.redirect_stderr(io.StringIO()):
             grind_loop.main(["p.md"])

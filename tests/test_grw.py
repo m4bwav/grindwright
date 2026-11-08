@@ -457,6 +457,11 @@ class Plugins(Base):
         self.assertEqual(doctor["open_lanes"], ["bugs", "music"])
         self.assertFalse(doctor["plugins"]["artwright"])
 
+    def test_doctor_flags_stacking_lane_against_deny_guard(self):
+        self.assertEqual(grw.profile_conflicts({"lanes": {"art": {"stack_on_pending": True}}, "guards": {"stack_on_pending": "allow"}}), [])
+        hits = grw.profile_conflicts({"lanes": {"art": {"stack_on_pending": True}}, "guards": {"stack_on_pending": "deny: from main"}})
+        self.assertIn("lane art", hits[0])
+
     def test_film_lanes_close_on_their_plugins(self):
         self.profile({"lanes": {"script": {"kind": "writing"}, "voices": {"kind": "voice"}, "cut": {"kind": "edit"}}})
         self.assertEqual(self.grw("doctor", "--no-probe")["closed_lanes"],
