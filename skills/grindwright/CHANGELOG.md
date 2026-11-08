@@ -1,5 +1,9 @@
 # Changelog: grindwright
 
+## 0.3.18 · 2026-11-07
+
+- crew.md: keep structure and behaviour changes in separate PRs, tidy only what the next change needs, redo a tangle structure first, light checks for reversible changes and full review for irreversible ones (from Beck, Tidy First?).
+
 ## 0.3.17 · 2026-11-07
 
 - Priority tiers for bugs and issues: GitHub labels (`P0`-`P3`, `critical`/`high`/`normal`/`low`, `priority: ...`) set `priority` at every sync; no label means normal (tier 2), exactly like `P2`. The selector ranks by tier before score. Within a tier the highest value goes first, and among equal value the straightforward task wins (new plainness nudge: cost S x1.15, L x0.85). `add --priority N`; `issues.priority_labels`, `issues.priority_default`, `priority_pinned`. Three tests.
