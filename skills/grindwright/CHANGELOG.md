@@ -1,5 +1,9 @@
 # Changelog: grindwright
 
+## 0.3.21 · 2026-11-08
+
+- crew.md: rename or reshape anything other members call in expand-contract steps (add the new form, keep the old as a pass-through, move callers, delete the old only after every open item has merged), since text merges miss a call another branch added to the old name; refactor inside the item that needs it rather than as a refactoring night (Fowler, Refactoring 2nd ed., ch. 2).
+
 ## 0.3.20 · 2026-11-08
 
 - crew.md: a failing check gets a cause that fits every observed fact before anyone reverts or blames; checks run cheapest first; merge to main at least daily; share code within a repo, not between independently released repos (Farley, Modern Software Engineering, ch. 5, 7, 13).
