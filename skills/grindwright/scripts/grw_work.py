@@ -313,6 +313,13 @@ def cmd_ticket(store, args):
         waiting = [i for i in items if i["state"] == "waiting-on-human" and i.get("person") == person]
         if len(waiting) >= cap:
             raise Refused([f"{person} already has {len(waiting)} open, the cap is {cap}: do not flood them"])
+    if args.propose:
+        if mode != "issues":
+            raise Refused(['--propose files an issue: set work.tickets to "issues"'])
+        limit = block.get("proposals", {}).get("open", 3)
+        running = [i for i in items if i.get("proposal") and i["state"] not in ("done", "dropped")]
+        if len(running) >= limit:
+            raise Refused([f"{len(running)} proposals wait on approval, the limit is {limit}: do not flood them"])
     if args.from_todo:
         if mode != "issues":
             raise Refused(['--from-todo files an issue: set work.tickets to "issues"'])
@@ -335,8 +342,9 @@ def cmd_ticket(store, args):
         if hits and not args.not_duplicate:
             raise Refused(["looks like " + ", ".join(f"#{r['number']} ({r['state']})" for r in hits)], duplicates=[r["number"] for r in hits])
         label = config.get(f"{args.type}_label", "bug" if args.type == "bug" else "enhancement")
+        labels = ["--label", label] + (["--label", config.get("proposal_label", "proposal")] if args.propose else [])
         body = f"{agent_line(store)}\n\n{args.body}\n\n<!-- grw-key: {key} -->\n{MARKER}\n"
-        url = gh("issue", "create", "-R", config["repo"], "--title", args.title, "--label", label, "--body-file", "-", stdin=body).strip()
+        url = gh("issue", "create", "-R", config["repo"], "--title", args.title, *labels, "--body-file", "-", stdin=body).strip()
         number = int(url.rstrip("/").rsplit("/", 1)[-1])
     lane = args.lane or lane_for(config or block.get("todo", {}), args.type)
     item = new_item(store, items, args.title, lane=lane, source="tasks" if args.from_task else "agent", value=args.value, type=args.type,
@@ -345,7 +353,13 @@ def cmd_ticket(store, args):
         item.update({"issue": number, "issue_repo": config["repo"]})
     if args.from_todo:
         item["todo_key"] = key
-    if args.from_task and number:
+    if args.propose:
+        item["proposal"] = True
+        who = args.person or (config.get("greenlighters") or [None])[0] or store.profile().get("lanes", {}).get(lane, {}).get("person")
+        if not who:
+            raise Refused(["a proposal needs a person to approve it: --person, issues.greenlighters or the lane's person"])
+        ask_person(store, config, item, who, "Agent proposal: everything else waits on a person, so this is filed for approval instead of being built.")
+    elif args.from_task and number:
         ask_person(store, config, item, person, f"This comes from your task list. Checked: {args.checked}. May an agent take it?")
     elif args.from_task:
         item.update({"state": "waiting-on-human", "person": person, "waits_for": f"{person} to approve the line in {url}"})
@@ -486,6 +500,7 @@ def add_parsers(add):
     p.add_argument("--checked", help="how you confirmed it is not already done")
     p.add_argument("--not-duplicate", help="the match is wrong because...")
     p.add_argument("--from-todo", help="the full line from the todo file, which stays the master list")
+    p.add_argument("--propose", action="store_true", help="work no person asked for: file it for approval; nothing is built before the green light")
     p = add("todo-sync", cmd_todo_sync, "update the todo file from its tickets' issues")
     p.add_argument("--write", action="store_true", help="edit the file; without it, show the changes")
     p.add_argument("--file", help="the todo file in this session's tree, when it is not the profile's repo")

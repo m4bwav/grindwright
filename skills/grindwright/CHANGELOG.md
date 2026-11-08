@@ -1,5 +1,9 @@
 # Changelog: grindwright
 
+## 0.3.8 · 2026-11-07
+
+- `ticket --propose`: when everything waits on a person, file the best next work as `proposal` issues that wait for the green-light label instead of stopping; open proposals capped by `work.proposals.open` (default 3). SKILL.md stop step proposes before stopping. `grw.py --version` was stuck at 0.3.6.
+
 ## 0.3.7 · 2026-11-07
 
 - `references/crew.md`: done means the planned checks ran; flaky checks are crew defects; diff-selected tests per item, full suite before merge; a failure rate that drops to zero is a smell (book distill: Pezze and Young, Software Testing and Analysis, ch. 3, 20, 22).
