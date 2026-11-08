@@ -94,3 +94,7 @@ The 4-hour run on the second game did one session ($2.65, 8 min) and stopped on 
 ## 2026-11-07 — 0.3.5, overnight run on the first game
 
 Crew file `discover_first` so an empty-ledger project still gets one session. Owner chose a 10-12 hour run and asked that the plugin estimate and time its own work and improve the estimates; the run logs estimate-vs-actual rows as data for that feature (next).
+
+## 2026-11-07: 0.3.8, proposals instead of stopping
+
+A single-member run on a real game stopped after one session: every open item waited on the owner's reviews. Added `ticket --propose` (labelled `proposal`, waits for the green-light label, capped by `work.proposals.open`), and the SKILL stop step now proposes before stopping. Filed four proposals on that game from its agent todo file and unbuilt design docs. Fixed `--version` stuck at 0.3.6. PR #33 merged, v0.3.8 released and installed.
