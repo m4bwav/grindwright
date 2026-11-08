@@ -196,6 +196,70 @@ def issue_sync(store, items):
     return report
 
 
+PR_TRUST = ("OWNER",)
+
+
+def pr_comments(repo, number):
+    """Conversation comments, inline review comments and review bodies of one PR, oldest first."""
+    rows = []
+    for c in gh_json(f"repos/{repo}/issues/{number}/comments?per_page=100"):
+        rows.append({"id": f"c{c['id']}", "who": c["user"]["login"], "assoc": c.get("author_association"), "at": c["created_at"],
+                     "url": c["html_url"], "body": c.get("body") or ""})
+    for c in gh_json(f"repos/{repo}/pulls/{number}/comments?per_page=100"):
+        rows.append({"id": f"r{c['id']}", "who": c["user"]["login"], "assoc": c.get("author_association"), "at": c["created_at"],
+                     "url": c["html_url"], "body": c.get("body") or "", "path": c.get("path")})
+    for r in gh_json(f"repos/{repo}/pulls/{number}/reviews?per_page=100"):
+        if not (r.get("body") or r.get("state") == "CHANGES_REQUESTED"):
+            continue
+        rows.append({"id": f"v{r['id']}", "who": r["user"]["login"], "assoc": r.get("author_association"), "at": r.get("submitted_at") or "",
+                     "url": r["html_url"], "body": r.get("body") or "", "review": r.get("state")})
+    return sorted(rows, key=lambda r: r["at"])
+
+
+def pr_sync(store, items):
+    """Owner comments on the agent's open PRs become ready items: address them on the PR branch, or in a new PR if it closed."""
+    work_block = store.profile().get("work", {})
+    config = work_block.get("prs") or ({"repo": work_block["issues"]["repo"]} if work_block.get("issues") else None)
+    if not config:
+        return None
+    repo = config["repo"]
+    trust = tuple(config.get("trust", PR_TRUST))
+    authors = set(config.get("authors") or [json.loads(gh("api", "user"))["login"]])
+    report = {"new": [], "updated": []}
+    open_prs = [p for p in gh_json(f"repos/{repo}/pulls?state=open&per_page=100") if p["user"]["login"] in authors]
+    by_pr = {i["review_of"]: i for i in items if i.get("review_of") and i["state"] not in ("done", "dropped")}
+    seen = {c for i in items for c in i.get("pr_seen", [])}
+    for pr in open_prs:
+        number = pr["number"]
+        fresh = [c for c in pr_comments(repo, number)
+                 if c["id"] not in seen and c["assoc"] in trust and MARKER not in c["body"]]
+        if not fresh:
+            continue
+        ids = [c["id"] for c in fresh]
+        item = by_pr.get(number)
+        if item:
+            item["pr_seen"] = item.get("pr_seen", []) + ids
+            item.update({"state": "ready", "triaged": True})
+            touch(item)
+            report["updated"].append(item["id"])
+            continue
+        item = new_item(store, items, f"Address owner review on PR #{number}: {pr['title'][:80]}",
+                        lane=config.get("lane") or work_block.get("issues", {}).get("lane_bug") or "bugs",
+                        source=fresh[0]["url"], review_of=number, pr_repo=repo, pr_branch=pr["head"]["ref"], pr_seen=ids,
+                        value=config.get("value", 4), human_min=0, cost="S", triaged=True, untrusted=False)
+        report["new"].append(item["id"])
+    return report
+
+
+def cmd_pr_sync(store, args):
+    items = store.items()
+    report = pr_sync(store, items)
+    if report is None:
+        raise Refused(['no "work.prs" or "work.issues" block in profile.json names the repo'])
+    store.save_items(items)
+    return report
+
+
 def issue_item(items, item_id):
     """Takes the ledger id or the issue number (42 or #42)."""
     number = str(item_id).lstrip("#")
@@ -506,6 +570,7 @@ def cmd_skip(store, args):
 
 def add_parsers(add):
     add("issue-sync", cmd_issue_sync, "pull GitHub issues into the ledger")
+    add("pr-sync", cmd_pr_sync, "owner comments on open agent PRs become items to address")
     p = add("issue-accept", cmd_issue_accept, "triage says an agent can fix it: make it normal work")
     p.add_argument("id")
     p.add_argument("--value", type=int)
