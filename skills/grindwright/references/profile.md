@@ -29,6 +29,7 @@ its rules restrict what may appear there, keep the state outside it and pass `--
   default plugin and the share cap. `needs` overrides the plugin list (a nested list means any one of them; sound defaults to sfxwright or musicwright); `share_cap` overrides the cap.
 - `batch_min`: smallest batch per person. `stack_on_pending`: `false` defers the lane while a review is open.
 - Guard values start with `allow` or `deny: reason`. Anything unset is denied.
+- `ask_route`: where questions go. Default `"repo"` (issue, PR comment or discussion when the project has a repository); `"askwright"` when the owner prefers decision pages.
 - `text_bans`: words PR and commit text must not use.
 
 Project specifics (snapshot suites, slots, required skills) stay here or in the project's own docs, never in the plugin.

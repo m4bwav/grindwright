@@ -1,6 +1,6 @@
 ---
 name: grindwright
-description: "Use to keep an indie game, or a long film, video or story project, moving like a solo maker who never stops: pick the most valuable work across lanes (art, animation, writing, voices, sound, music, shots and edits, trailers, balance, testing and bugs, unfinished features, maintenance, marketing), do everything that needs no person, queue questions on a decision page and switch lanes instead of waiting, and end each session with the same start command. A ledger and a selector script rank value first, with human minutes as the discount. Use on 'grind on my game', 'keep working on the game', 'grind on my film', 'what should I work on next', 'everything is waiting on me', 'work through the backlog while I'm away', 'run unattended', or a continue prompt that names grindwright. Also 'refresh grindwright'. Not for one design question (ludowright), one juice pass (game-juice) or one asset."
+description: "Use to keep an indie game, or a long film, video or story project, moving like a solo maker who never stops: pick the most valuable work across lanes (art, animation, writing, voices, sound, music, shots and edits, trailers, balance, testing and bugs, unfinished features, maintenance, marketing), do everything that needs no person, ask questions where the project already talks (issues, PR comments, discussions) or on a decision page, and switch lanes instead of waiting, and end each session with the same start command. A ledger and a selector script rank value first, with human minutes as the discount. Use on 'grind on my game', 'keep working on the game', 'grind on my film', 'what should I work on next', 'everything is waiting on me', 'work through the backlog while I'm away', 'run unattended', or a continue prompt that names grindwright. Also 'refresh grindwright'. Not for one design question (ludowright), one juice pass (game-juice) or one asset."
 metadata:
   version: "0.3.21"
 ---
@@ -85,6 +85,13 @@ hold <id> --evidence E [--person P] [--provenance P]   checkpoint <id> "<note>" 
 - Before review, check physical sense yourself, which automatic gates miss: does the material fit (no wooden roof on a
   stone smelter), is scaffolding in front, is it lit when idle?
 - `grw.py queue` orders proposed questions by how much they unblock. Past a person's review cap, ask nothing more: draft (at most as many as the cap, never in a no-stacking lane) or do different work.
+- Ask where the project already talks. On a repository with issues, pull requests, discussions or a wiki, a question
+  about an issue goes on that issue (`issue-question`), one about a PR goes in a PR comment, and open design questions
+  go in a discussion or a `proposal` issue: the answer then sits beside the code, other people see it, and `issue-sync`
+  and `pr-sync` bring it back. Use an askwright page instead when the profile says `"ask_route": "askwright"` (the
+  owner prefers it), for picks that need side-by-side media, for private or money questions, and for projects with
+  no repository. Both can run together: an askwright page served over a tailnet (Tailscale) reaches the owner away
+  from the desk, so link the page from the issue or PR when a pick needs it, and record the answer back on the issue.
 - Use askwright sets by project and by person. Missing askwright: write the questions to `ai-docs/grind/questions.md`
   with guesses and say so.
 - After any redo, rebuild every derived review artifact (contact sheet, GIF, PR media) and look at it. Declare them

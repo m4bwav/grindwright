@@ -2,7 +2,7 @@
 
 ![A grindstone throwing sparks on a night-time desk, beside a board of colored work cards and a monitor showing a pixel art game](https://raw.githubusercontent.com/m4bwav/grindwright/main/.github/images/banner.jpg)
 
-Keeps an indie game moving the way a grinding solo dev would. It ranks work across lanes by value first, with a person's minutes as the discount. It does what needs no person, queues questions on a decision page and moves to another lane instead of waiting. Every session ends with the same start command.
+Keeps an indie game moving the way a grinding solo dev would. It ranks work across lanes by value first, with a person's minutes as the discount. It does what needs no person, asks its questions where the project already talks (issues, pull request comments, discussions, the wiki) or, when there is no such place or the owner prefers it, on an askwright decision page, and moves to another lane instead of waiting. Every session ends with the same start command.
 
 Status: 0.1.0. Unit tests pass. No live pilot yet, so it has not yet moved a real game. Expect rough edges.
 
