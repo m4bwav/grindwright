@@ -52,7 +52,7 @@ Film and video projects use other lanes and another ladder: [projects.md](projec
 
 ## Oracle ladder
 
-Compile, tests, headless boot, scripted play, screenshot diff, human taste. Climb as far as the lane allows at the
+Compile, tests, headless boot, scripted play, screenshot diff, human taste. Engine projects: one worktree per session with its own editor, a warm worktree pool, batchmode tests ([engine-verify](engine-verify.md)). Climb as far as the lane allows at the
 cheapest rung that can catch the mistake. A game can run and still be wrong: a green rung proves only what it checks.
 Agents dodge checks, so never weaken a test or a gate to pass, and treat a written excuse as a failure.
 

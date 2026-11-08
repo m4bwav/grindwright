@@ -107,3 +107,7 @@ First live sync under the rule found drafted issues ungated (drafted past the PR
 
 ## 2026-11-07 (late): 0.3.12 road-aware discovery
 A 12-hour two-member run on the first game stopped after one session: the ledger held only an item waiting on the owner, and discovery read old reports only. A confirmed road milestone had never had any item. 0.3.12: `discover` lists milestones with no open work, `next` returns `survey`, and `session check` refuses to stop while a confirmed milestone was never named and is not `met`. `grw.py --version` fixed (said 0.3.8). PR #38 merged, v0.3.12 released and installed; the run was restarted on it.
+
+## 2026-11-07: engine-verify pattern (0.3.14)
+
+Mark asked to record the worktree-to-editor-to-e2e testing pattern after the Arvum pilot showed "drafted" items that were never compiled (no csproj, no editor for the pinned version). New `references/engine-verify.md`: one worktree and editor per session, pinned editor installed once, warm worktree pool (Mark: reuse worktrees to avoid repeated setup; the import cache is the per-worktree cost), rungs compile -> EditMode -> PlayMode -> live editor, test safety (scratch save path, reporters off), determinism, regression-test shape, follow the project test plan. Ledger evidence line defined.

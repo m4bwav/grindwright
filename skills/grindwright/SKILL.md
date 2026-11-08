@@ -14,7 +14,7 @@ when the state is not at `ai-docs/grind`. Every command prints one JSON object; 
 JSON says why. Fix the cause. There is no override for a gate except `session end --force "<why>"`.
 
 Read on demand: [loop details and lanes](references/loop.md), [profile and road](references/profile.md),
-[running unattended](references/chaining.md), [several sessions at once](references/crew.md), [issues, todo files, task lists, knowledge bases](references/work-sources.md), [saving tokens](references/tokens.md).
+[running unattended](references/chaining.md), [several sessions at once](references/crew.md), [issues, todo files, task lists, knowledge bases](references/work-sources.md), [saving tokens](references/tokens.md), [verifying game-engine work with per-worktree editors](references/engine-verify.md).
 
 ## Set up once per project
 
