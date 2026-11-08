@@ -31,7 +31,7 @@ from pathlib import Path
 import grw_work
 from grw_work import Refused
 
-VERSION = "0.3.3"
+VERSION = "0.3.4"
 FORMAT = 1
 STATES = ("ready", "running", "waiting-on-human", "waiting-on-machine", "done", "dropped")
 COST_UNITS = {"S": 1, "M": 3, "L": 8}
@@ -1214,7 +1214,20 @@ def cmd_doctor(store, args):
                "ludowright", "marketwright", "comfyui-gen", "unity-agent", "roblox-agent", "tokenwright", "everlast", "evergreen"]
     return {"plugins": {p: bool(find_skill(p)) for p in plugins}, "ask_py": find_ask(), "hosts": report,
             "closed_lanes": closed, "open_lanes": sorted(set(profile.get("lanes", {})) - set(closed)),
+            "conflicts": profile_conflicts(profile),
             "repo_found": project_repo(store, profile.get("repo", ".")).exists()}
+
+
+def profile_conflicts(profile):
+    """Settings that contradict each other, so a session does not find out mid-batch."""
+    out = []
+    guard = str(profile.get("guards", {}).get("stack_on_pending", "deny"))
+    if not guard.startswith("allow"):
+        for name, lane in profile.get("lanes", {}).items():
+            if lane.get("stack_on_pending") is True:
+                out.append(f"lane {name} sets stack_on_pending true but guards.stack_on_pending says '{guard}': "
+                           "the guard wins and work goes from main; change one")
+    return out
 
 
 def project_repo(store, repo):
@@ -1392,7 +1405,8 @@ def cmd_session(store, args):
     made = [e for e in store.events() if e.get("ts", "") >= started and e["type"] in ("done", "asked", "detached", "resolved", "redo", "drafted")]
     store.event("session_end", made=len(made), nothing_made=not made, forced=bool(args.force), reason=args.force)
     return {"ended": True, "made": len(made), "nothing_made": not made,
-            "reminder": "update HANDOFF.md and print the one-line start command"}
+            "reminder": ("run evergreen-wrapup if installed (skip quietly if not), then update HANDOFF.md and print the "
+                         "one-line start command; a project prompt's own end steps add to these, never replace them")}
 
 
 def stop_verdict(store, args):

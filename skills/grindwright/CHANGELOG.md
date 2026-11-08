@@ -1,5 +1,12 @@
 # Changelog: grindwright
 
+## 0.3.4 · 2026-11-07
+
+- `session end` reminder names evergreen-wrapup and says a project prompt's own end steps add to the skill's, never replace them (a run followed its prompt and skipped the wrap-up).
+- Work a session finds but leaves goes in the ledger with `add` before stopping; a summary line is not an item.
+- `doctor` lists `conflicts`: a lane with `stack_on_pending: true` under a guard that denies stacking.
+- `grind_loop --discover-first` runs session 1 even when nothing is selectable, for when a person has just widened the rules.
+
 ## 0.3.3 · 2026-11-07
 
 - Command table shows `done ... [--provenance P]` (generated assets are refused without it).

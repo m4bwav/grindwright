@@ -86,3 +86,7 @@ The owner named the first film project: the next section of a short film whose f
 ## 2026-11-07: 0.3.3
 
 Film run paused by the owner. One-hour single-member run on the second game: one session, one art fix done, stopped on the ledger (both open PRs wait on review; cap full) after about 7 minutes. The PR-cap blind spot reported in five earlier sessions did not recur. Fixed: `done` usage shows `--provenance`; session end runs evergreen-wrapup when installed.
+
+## 2026-11-07 — 0.3.4 from the long run on the second game
+
+The 4-hour run on the second game did one session ($2.65, 8 min) and stopped on the ledger: both review slots waited on the project owner. The session drafted a 12-building batch and fixed three tracker issues, but named five more buildings that "need plans first" without adding them, so the loop saw nothing selectable. It also skipped the wrap-up, because the project's prompt listed its own end steps without it, and it hit a lane that allowed stacking under a guard that denied it. 0.3.4: the `session end` reminder names the wrap-up and says prompt end steps add to the skill's; leftover work goes in with `add`; `doctor` reports `conflicts`; `grind_loop --discover-first`. 120 tests pass.
