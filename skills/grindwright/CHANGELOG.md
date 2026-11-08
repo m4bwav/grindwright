@@ -1,5 +1,9 @@
 # Changelog: grindwright
 
+## 0.3.19 · 2026-11-07
+
+- crew.md: tests must pass in any order and subset, worktrees share no scratch file, database, port or account; a bug item starts with a failing test shown red before the fix; an item's test list comes first and outside ideas go to the ledger (Beck, Test-Driven Development: By Example, ch. 25 and 26).
+
 ## 0.3.18 · 2026-11-07
 
 - crew.md: keep structure and behaviour changes in separate PRs, tidy only what the next change needs, redo a tangle structure first, light checks for reversible changes and full review for irreversible ones (from Beck, Tidy First?).
