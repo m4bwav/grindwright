@@ -102,3 +102,5 @@ A single-member run on a real game stopped after one session: every open item wa
 ## 2026-11-07: 0.3.9 approval-gated issues
 
 The owner said a game owner will label issues `approved` when they may be built, and her comments are instructions; approved issues still get their comments read and may get a question first. Added `issues.require_greenlight`, `issue-question`, and the direction rule in work-sources.md. 123 tests pass. Noted for later: a demo lane (make, publish, maintain) for both games.
+
+First live sync under the rule found drafted issues ungated (drafted past the PR cap before the rule). 0.3.10 gates drafted items too. 124 tests pass.

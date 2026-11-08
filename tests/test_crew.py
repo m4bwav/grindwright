@@ -268,6 +268,29 @@ class Issues(Base):
         self.assertEqual(self.run_grw("issue-sync")[1]["reopened"], [item])
         self.assertEqual(self.run_grw("issue-accept", item)[0], 0)
 
+    def test_require_greenlight_holds_unapproved_drafts(self):
+        self.fake.issues = [issue(1, "Crash"), issue(2, "Hang")]
+        ids = self.synced()
+        store = grw.Store(self.state)
+        items = store.items()
+        for i in items:
+            i.update(state="drafted", triaged=True)
+        store.save_items(items)
+        path = self.state / "profile.json"
+        profile = json.loads(path.read_text(encoding="utf-8"))
+        profile["work"] = json.loads(json.dumps(profile["work"]))
+        profile["work"]["issues"]["require_greenlight"] = True
+        path.write_text(json.dumps(profile), encoding="utf-8")
+        self.fake.issues = [issue(1, "Crash", labels=("bug", "agent-ready")), issue(2, "Hang")]
+        self.fake.events = [{"event": "labeled", "label": {"name": "agent-ready"}, "actor": {"login": "pat"}}]
+        self.run_grw("issue-sync")
+        rows = {i["issue"]: i for i in grw.Store(self.state).items()}
+        self.assertEqual((rows[1]["state"], rows[1]["greenlit_by"]), ("drafted", "pat"))
+        self.assertEqual((rows[2]["state"], rows[2]["held_from"]), ("waiting-on-human", "drafted"))
+        self.fake.issues = [issue(1, "Crash", labels=("bug", "agent-ready")), issue(2, "Hang", labels=("bug", "agent-ready"))]
+        self.run_grw("issue-sync")
+        self.assertEqual({i["issue"]: i for i in grw.Store(self.state).items()}[2]["state"], "drafted")
+
     def test_issue_accept_takes_the_issue_number(self):
         self.fake.issues = [issue(7, "Crash on load")]
         self.synced()

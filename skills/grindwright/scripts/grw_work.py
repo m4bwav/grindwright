@@ -163,8 +163,15 @@ def issue_sync(store, items):
                 touch(item)
                 report["closed"].append(item["id"])
             continue
-        if require and item["state"] == "ready" and not item.get("greenlit_by") and not item.get("pr"):
-            item.update({"state": "waiting-on-human", "greenlight": True, "triaged": False, "waits_for": wait_label})
+        if require and item["state"] in ("ready", "drafted") and not item.get("greenlit_by") and not item.get("pr"):
+            who = greenlight in [l["name"] for l in row.get("labels", [])] and greenlit_by(repo, number, greenlight, people)
+            if who:
+                item["greenlit_by"] = who
+                report["greenlit"].append(item["id"])
+            else:  # a drafted branch is kept; it waits for approval like any other
+                if item["state"] == "ready":
+                    item["triaged"] = False
+                item.update({"state": "waiting-on-human", "greenlight": True, "waits_for": wait_label, "held_from": item["state"]})
             touch(item)
         if item["state"] != "waiting-on-human":
             continue
@@ -172,7 +179,8 @@ def issue_sync(store, items):
             who = greenlit_by(repo, number, greenlight, people + ([item["person"]] if item.get("person") else []))
             if who:
                 # under require_greenlight, approval is not triage: the agent still reads every comment and may ask first
-                item.update({"state": "ready", "triaged": not require, "untrusted": False, "greenlit_by": who, "greenlight": False, "replied": False})
+                back = item.pop("held_from", None)
+                item.update({"state": back or "ready", "triaged": not require if back != "drafted" else True, "untrusted": False, "greenlit_by": who, "greenlight": False, "replied": False})
                 item["issue_seen"] = row.get("updated_at", "")
                 touch(item)
                 report["greenlit"].append(item["id"])
