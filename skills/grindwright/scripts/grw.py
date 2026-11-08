@@ -31,7 +31,7 @@ from pathlib import Path
 import grw_work
 from grw_work import Refused
 
-VERSION = "0.3.14"
+VERSION = "0.3.15"
 FORMAT = 1
 STATES = ("ready", "running", "waiting-on-human", "waiting-on-machine", "done", "dropped")
 COST_UNITS = {"S": 1, "M": 3, "L": 8}
@@ -1055,6 +1055,12 @@ def cmd_sync(store, args):
         report["issues"] = grw_work.issue_sync(store, items)
     except Refused as failed:  # an outage on GitHub must not stop the other lanes
         report["issues"] = {"error": failed.reasons}
+    try:
+        report["prs"] = grw_work.pr_sync(store, items)
+    except Refused as failed:
+        report["prs"] = {"error": failed.reasons}
+    except (KeyError, TypeError, ValueError) as failed:  # an odd GitHub answer must not stop the other lanes either
+        report["prs"] = {"error": [f"pr-sync: {failed!r}"]}
     store.save_items(items)
     store.event("sync", answers=len(report["answers"]), machines=len(report["machines"]), recovered=len(report["recovered"]))
     return report

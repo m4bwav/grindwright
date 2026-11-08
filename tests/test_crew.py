@@ -432,3 +432,65 @@ class Crew(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class FakePrGh:
+    def __init__(self):
+        self.prs, self.comments, self.inline, self.reviews = [], [], [], []
+
+    def api(self, path):
+        if "/pulls?state=open" in path:
+            return self.prs
+        if path.endswith("/reviews?per_page=100"):
+            return self.reviews
+        if "/pulls/" in path:
+            return self.inline
+        return self.comments
+
+    def run(self, *argv, stdin=None):
+        return '{"login": "agent"}' if argv[:2] == ("api", "user") else ""
+
+
+def pr(number, author="agent"):
+    return {"number": number, "title": f"PR {number}", "user": {"login": author}, "head": {"ref": f"branch-{number}"}}
+
+
+def note(cid, assoc="OWNER", body="please rename", at="2026-01-02T00:00:00Z"):
+    return {"id": cid, "user": {"login": "owner"}, "author_association": assoc, "created_at": at,
+            "html_url": f"https://github.com/o/r/pull/1#c{cid}", "body": body}
+
+
+class PullRequestReviews(Base):
+    profile_extra = {"work": {"prs": {"repo": "o/r", "lane": "bugs"}}}
+
+    def setUp(self):
+        super().setUp()
+        self.fake = FakePrGh()
+        for name, fn in (("gh", self.fake.run), ("gh_json", self.fake.api)):
+            self.addCleanup(setattr, grw_work, name, getattr(grw_work, name))
+            setattr(grw_work, name, fn)
+
+    def items(self):
+        return [i for i in grw.Store(self.state).items() if i.get("review_of")]
+
+    def test_owner_comment_on_agent_pr_becomes_one_ready_item(self):
+        self.fake.prs = [pr(1), pr(2, author="someone")]
+        self.fake.comments = [note(10)]
+        self.assertEqual(len(self.run_grw("pr-sync")[1]["new"]), 1)
+        (item,) = self.items()
+        self.assertEqual((item["review_of"], item["pr_branch"], item["state"]), (1, "branch-1", "ready"))
+
+    def test_non_owner_and_agent_marker_comments_are_ignored(self):
+        self.fake.prs = [pr(1)]
+        self.fake.comments = [note(10, assoc="NONE"), note(11, body="done <!-- grindwright -->")]
+        self.assertEqual(self.run_grw("pr-sync")[1]["new"], [])
+
+    def test_seen_comments_do_not_repeat_and_new_ones_reopen(self):
+        self.fake.prs = [pr(1)]
+        self.fake.comments = [note(10)]
+        self.run_grw("pr-sync")
+        self.assertEqual(self.run_grw("pr-sync")[1]["new"] + self.run_grw("pr-sync")[1]["updated"], [])
+        self.fake.reviews = [{"id": 5, "user": {"login": "owner"}, "author_association": "OWNER", "state": "CHANGES_REQUESTED",
+                              "submitted_at": "2026-01-03T00:00:00Z", "html_url": "u", "body": ""}]
+        self.assertEqual(len(self.run_grw("pr-sync")[1]["updated"]), 1)
+        self.assertEqual(len(self.items()), 1)
