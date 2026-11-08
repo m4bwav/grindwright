@@ -1,5 +1,10 @@
 # Changelog: grindwright
 
+## 0.3.6 · 2026-11-07
+
+- `references/crew.md`: size a crew by its serial share (Amdahl) and pull review-side work when the review queue is full (book distill: Dooley, Software Development, Design and Coding, ch. 2 and 12).
+- RESEARCH.md: human inspection prior for review caps (ch. 17).
+
 ## 0.3.5 · 2026-11-07
 
 - Crew file `discover_first` (crew or project level): the project's first member runs and passes `--discover-first` instead of being skipped on an empty ledger.

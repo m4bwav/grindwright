@@ -57,4 +57,6 @@ Logs go to `<state>/logs/<member>-<date>.log`, the summary to `<state>/logs/crew
 
 Grow in steps: one per project first, then two on the project with the most non-overlapping lanes. Docs and practitioners put the useful count low, around 3 to 5 on a repo, with cost about linear per session. Review is usually the real limit: past a person's review cap, more sessions only pile up drafts.
 
+Size the crew by its serial share (Amdahl's law): if a share s of each item's time can only happen one at a time (the person's review, the merge, one GPU), the crew can never go faster than 1/s. Review at a quarter of each item's time caps the crew near 4x however many members run. Shrink s (smaller PRs, self-checks, tests the reviewer trusts) before adding members. Pull, do not push: when the review queue is full, members finish review-side work (tests, splitting a big PR, answering review notes) instead of claiming new items. Source: Dooley, Software Development, Design and Coding (2017), ch. 2 and 12, human teams applied by analogy.
+
 `"discover_first": true` in the crew file or one project: that project's first member runs one session even when nothing is selectable (after a person widened the rules); it is otherwise skipped.
