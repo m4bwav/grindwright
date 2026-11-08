@@ -87,3 +87,10 @@
 - Evidence: live sync output, private sidecar HANDOFF; test_require_greenlight_holds_unapproved_drafts.
 - Scope: skill
 - Status: active · helpful 0 · harmful 0 · last_confirmed 2026-11-07
+
+## L-20261107-cap-person-key: review cap looked up by the PR's GitHub login, not the profile person
+- Observed: profile `people.<name>.review_cap: 8`, but items made by `pr-sync` carry the GitHub login, so `wait-human` refused at a default cap of 3. A later `wait-human ... --person <name>` refused at 8 with 3 real PRs open, because held drafts counted toward the cap.
+- Rule: map GitHub logins to profile people (an alias field), and count only real waiting reviews toward the cap. Until that is fixed, pass the profile name with `--person`, and use `done --oracle snapshot` for a reply on an existing PR.
+- Evidence: a crew art session, grw.py output "<login>'s review queue is at its cap of 3" and "<name>'s review queue is at its cap of 8".
+- Scope: skill
+- Status: active · helpful 0 · harmful 0 · last_confirmed 2026-11-07

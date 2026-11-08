@@ -1,5 +1,9 @@
 # Changelog: grindwright
 
+## 0.3.23 (2026-11-08)
+
+- Questions go where the project already talks: issues, PR comments, discussions or the wiki on a repository; askwright when the profile sets `ask_route: askwright`, for media picks, private questions or no repository. A tailnet-served askwright page can be linked from the issue or PR.
+
 ## 0.3.22 · 2026-11-08
 
 - `done`, `checkpoint` and `redo` refuse a session whose item is now running in another session: a member whose lease expired while it was slow (not dead) could finish or re-lease an item someone else had claimed. crew.md risk row, test (Kleppmann & Riccomini, Designing Data-Intensive Applications 2nd ed., ch. 9, fencing off zombies).
