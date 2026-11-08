@@ -1,5 +1,10 @@
 # Changelog: grindwright
 
+## 0.3.12 · 2026-11-07
+
+- Road-aware discovery: `discover` lists each road milestone with no open work; `next` returns `survey` and `session check` refuses to stop while a confirmed milestone has never had an item and is not marked `met`. A 12-hour run had stopped after one session with a whole milestone never surveyed.
+- `grw.py --version` reported 0.3.8; now matches the plugin.
+
 ## 0.3.11 · 2026-11-07
 
 - crew.md: splitting a big change into shards, regenerate conflicted mechanical shards, a baseline of already-failing checks, pattern review of mechanical PRs, an anti-backslide check (Software Engineering at Google, ch. 22).
