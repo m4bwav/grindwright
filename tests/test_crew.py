@@ -245,6 +245,29 @@ class Issues(Base):
         self.fake.comments = [{"created_at": "2998-01-01T00:00:00Z", "body": "x " + grw_work.MARKER}]
         self.assertEqual(self.run_grw("issue-sync")[1]["reopened"], [])
 
+    def test_require_greenlight_waits_then_triages_with_question(self):
+        path = self.state / "profile.json"
+        profile = json.loads(path.read_text(encoding="utf-8"))
+        profile["work"] = json.loads(json.dumps(profile["work"]))
+        profile["work"]["issues"]["require_greenlight"] = True
+        path.write_text(json.dumps(profile), encoding="utf-8")
+        self.fake.issues = [issue(1, "Crash on load")]
+        item = self.synced()[0]
+        row = {i["id"]: i for i in grw.Store(self.state).items()}[item]
+        self.assertEqual(row["state"], "waiting-on-human")
+        self.assertEqual(self.run_grw("issue-accept", item)[0], 2)
+        self.fake.issues = [issue(1, "Crash on load", labels=("bug", "agent-ready"))]
+        self.fake.events = [{"event": "labeled", "label": {"name": "agent-ready"}, "actor": {"login": "pat"}}]
+        self.assertEqual(self.run_grw("issue-sync")[1]["greenlit"], [item])
+        _, nxt = self.run_grw("next", "--no-probe")
+        self.assertEqual(nxt["next"]["action"], "triage-issue")
+        self.assertEqual(self.run_grw("issue-question", item, "--question", "Which save slot?", "--person", "pat")[0], 0)
+        self.assertIn("@pat", self.fake.stdin[-1])
+        self.fake.issues = [issue(1, "Crash on load", labels=("bug", "agent-ready"), updated="2999-01-01T00:00:00Z")]
+        self.fake.comments = [{"created_at": "2998-01-01T00:00:00Z", "body": "slot 2"}]
+        self.assertEqual(self.run_grw("issue-sync")[1]["reopened"], [item])
+        self.assertEqual(self.run_grw("issue-accept", item)[0], 0)
+
     def test_issue_accept_takes_the_issue_number(self):
         self.fake.issues = [issue(7, "Crash on load")]
         self.synced()

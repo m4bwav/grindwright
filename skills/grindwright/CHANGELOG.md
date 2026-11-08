@@ -1,5 +1,11 @@
 # Changelog: grindwright
 
+## 0.3.9 · 2026-11-07
+
+- `issues.require_greenlight`: only issues a greenlighter labelled are built; the rest wait, re-checked each session start. Approval is not triage: the agent reads every comment first.
+- `issue-question`: ask on an approved issue before building; approval stays, the answer brings it back.
+- Owners' and greenlighters' comments are direction to follow (work-sources.md).
+
 ## 0.3.8 · 2026-11-07
 
 - `ticket --propose`: when everything waits on a person, file the best next work as `proposal` issues that wait for the green-light label instead of stopping; open proposals capped by `work.proposals.open` (default 3). SKILL.md stop step proposes before stopping. `grw.py --version` was stuck at 0.3.6.
