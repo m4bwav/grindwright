@@ -1,5 +1,9 @@
 # Changelog: grindwright
 
+## 0.3.20 · 2026-11-08
+
+- crew.md: a failing check gets a cause that fits every observed fact before anyone reverts or blames; checks run cheapest first; merge to main at least daily; share code within a repo, not between independently released repos (Farley, Modern Software Engineering, ch. 5, 7, 13).
+
 ## 0.3.19 · 2026-11-07
 
 - crew.md: tests must pass in any order and subset, worktrees share no scratch file, database, port or account; a bug item starts with a failing test shown red before the fix; an item's test list comes first and outside ideas go to the ledger (Beck, Test-Driven Development: By Example, ch. 25 and 26).
