@@ -1,6 +1,6 @@
 # Handoff
 
-Updated 2026-11-07. Public `m4bwav/grindwright`, v0.3.15 released and installed (0.3.14 engine-verify reference: per-worktree editors, warm pool, batchmode test rungs; 0.3.15 `pr-sync` for owner PR comments; first Arvum run found Jenny's #37 note and the test lane is PR #47 there), wiki at 0.1.0 (`ai-docs/notes/2026-11-03-github-wiki.md`). Installed locally.
+Updated 2026-11-07. Public `m4bwav/grindwright`, v0.3.16 released and installed (0.3.16: idle milestones are surveyed every window, `grw.py surveyed`; 0.3.14 engine-verify reference: per-worktree editors, warm pool, batchmode test rungs; 0.3.15 `pr-sync` for owner PR comments; first Arvum run found Jenny's #37 note and the test lane is PR #47 there), wiki at 0.1.0 (`ai-docs/notes/2026-11-03-github-wiki.md`). Installed locally.
 
 ## State
 
@@ -9,6 +9,8 @@ Updated 2026-11-07. Public `m4bwav/grindwright`, v0.3.15 released and installed 
 - Live runs: one pilot and one overnight run on the first game, one pilot on a second. The overnight run stopped on its 25-session bound in under 2 of its 10 hours and met no usage limit, so what `claude -p` does at a limit is still unknown. Drafting past the cap and `wait-human --pr` worked. 0.1.11 and 0.1.12 fix its faults; those fixes have not run in a live chain.
 
 ## Next
+
+00000000. 0.3.16 (2026-11-07): the 0.3.12 overnight run stopped after ~12 min of 12 h because milestones with only finished items never needed a survey. Fixed; next live run should survey core, feel, art and launch before stopping. Timing table: all 5 estimates high (10-40 min est vs 6-20 actual); turn that into a grw estimate-correction feature next.
 
 0000000. 0.3.12 (2026-11-07): road-aware discovery and `survey`; the overnight run on the first game was restarted on it. Read its logs: did the survey add real items, did it run near its 12 hours, and what does the estimate-vs-actual table show (owner wants self-timing turned into a grw feature).
 
