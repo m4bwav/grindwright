@@ -98,3 +98,7 @@ Crew file `discover_first` so an empty-ledger project still gets one session. Ow
 ## 2026-11-07: 0.3.8, proposals instead of stopping
 
 A single-member run on a real game stopped after one session: every open item waited on the owner's reviews. Added `ticket --propose` (labelled `proposal`, waits for the green-light label, capped by `work.proposals.open`), and the SKILL stop step now proposes before stopping. Filed four proposals on that game from its agent todo file and unbuilt design docs. Fixed `--version` stuck at 0.3.6. PR #33 merged, v0.3.8 released and installed.
+
+## 2026-11-07: 0.3.9 approval-gated issues
+
+The owner said a game owner will label issues `approved` when they may be built, and her comments are instructions; approved issues still get their comments read and may get a question first. Added `issues.require_greenlight`, `issue-question`, and the direction rule in work-sources.md. 123 tests pass. Noted for later: a demo lane (make, publish, maintain) for both games.
