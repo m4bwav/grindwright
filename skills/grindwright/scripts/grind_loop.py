@@ -46,8 +46,10 @@ def fingerprint(state, sid=None):
     for item in records(Path(state) / "ledger.jsonl"):
         if sid and item.get("session") != sid:
             continue  # another member's progress is not this member's
-        working = len(item.get("checkpoints", [])) if item.get("state") == "running" else 0
-        digest.update(repr((item.get("id"), item.get("state"), bool(item.get("answered")), working)).encode())
+        running = item.get("state") == "running"
+        working = len(item.get("checkpoints", [])) if running else 0
+        shown = "ready" if running else item.get("state")  # a claim or release alone is not progress
+        digest.update(repr((item.get("id"), shown,bool(item.get("answered")), working)).encode())
     for event in records(Path(state) / "events.jsonl"):
         if event.get("type") in PROGRESS and (not sid or event.get("session") == sid):
             digest.update(repr((event.get("type"), event.get("id"), event.get("ts"))).encode())

@@ -1,5 +1,9 @@
 # Changelog: grindwright
 
+## 0.3.24 (2026-11-08)
+
+- `grind_loop` no-progress guard: a claim or release alone (ready to running and back) no longer counts as progress. An overnight crew ran 7 and 5 sessions after its last real work because idle sessions claimed and released items.
+
 ## 0.3.23 (2026-11-08)
 
 - Questions go where the project already talks: issues, PR comments, discussions or the wiki on a repository; askwright when the profile sets `ask_route: askwright`, for media picks, private questions or no repository. A tailnet-served askwright page can be linked from the issue or PR.

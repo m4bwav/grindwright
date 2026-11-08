@@ -139,6 +139,18 @@ open({str(self.state / 'events.jsonl')!r}, "a").write(json.dumps({{"type": "disc
         code, result = self.go(agent)
         self.assertEqual(result["stopped"], "no-progress")
 
+    def test_claim_and_release_without_work_is_no_progress(self):
+        ledger = self.state / "ledger.jsonl"
+        agent = self.fake(f"""
+import json
+rows = [json.loads(l) for l in open({str(ledger)!r})]
+for r in rows:
+    r["state"] = "running" if r.get("state") != "running" else "ready"
+open({str(ledger)!r}, "w").write("".join(json.dumps(r) + chr(10) for r in rows))
+""")
+        code, result = self.go(agent)
+        self.assertEqual(result["stopped"], "no-progress")
+
     def test_checkpoints_on_running_work_are_progress(self):
         ledger = self.state / "ledger.jsonl"
         agent = self.fake(f"""

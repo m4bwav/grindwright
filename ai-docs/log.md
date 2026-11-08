@@ -136,3 +136,7 @@ Applied an owner's updated testing doc to an open game PR: three local rungs wit
 ## 2026-11-08: questions go to the repository first (0.3.23)
 
 Owner ruling: on a project with a repository (issues, PRs, discussions, wiki), questions and answers go there by default (issue-question, PR comment, discussion or proposal issue), so they sit beside the code and come back through issue-sync and pr-sync. askwright stays for owners who prefer it (`ask_route: askwright`), media picks, private or money questions and projects without a repository. A tailnet-served askwright page can be linked from the issue or PR, answer written back there. Docs only (README, SKILL, work-sources, profile). PR 48 merged, v0.3.23 released and installed. No code reads `ask_route` yet; the agent follows it as an instruction.
+
+## 2026-11-08: idle sessions no longer look like progress (0.3.24)
+
+An overnight two-member crew did all its real work in its first two sessions, then ran 5 and 3 more idle sessions before the no-progress guard fired. Cause: each idle session claimed an item and released it, and the fingerprint counted the ready/running flip as progress. The fingerprint now treats running as ready (checkpoints on running work still count). Test `test_claim_and_release_without_work_is_no_progress` fails on the old code.
