@@ -1,5 +1,9 @@
 # Changelog: grindwright
 
+## 0.3.7 · 2026-11-07
+
+- `references/crew.md`: done means the planned checks ran; flaky checks are crew defects; diff-selected tests per item, full suite before merge; a failure rate that drops to zero is a smell (book distill: Pezze and Young, Software Testing and Analysis, ch. 3, 20, 22).
+
 ## 0.3.6 · 2026-11-07
 
 - `references/crew.md`: size a crew by its serial share (Amdahl) and pull review-side work when the review queue is full (book distill: Dooley, Software Development, Design and Coding, ch. 2 and 12).
