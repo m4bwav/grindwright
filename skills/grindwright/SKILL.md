@@ -2,7 +2,7 @@
 name: grindwright
 description: "Use to keep an indie game, or a long film, video or story project, moving like a solo maker who never stops: pick the most valuable work across lanes (art, animation, writing, voices, sound, music, shots and edits, trailers, balance, testing and bugs, unfinished features, maintenance, marketing), do everything that needs no person, queue questions on a decision page and switch lanes instead of waiting, and end each session with the same start command. A ledger and a selector script rank value first, with human minutes as the discount. Use on 'grind on my game', 'keep working on the game', 'grind on my film', 'what should I work on next', 'everything is waiting on me', 'work through the backlog while I'm away', 'run unattended', or a continue prompt that names grindwright. Also 'refresh grindwright'. Not for one design question (ludowright), one juice pass (game-juice) or one asset."
 metadata:
-  version: "0.3.7"
+  version: "0.3.8"
 ---
 
 # grindwright
@@ -40,7 +40,7 @@ act on a road that is not confirmed, beyond work every road would include (bugs,
      model, hand-built) and `claim <id> --new-route "<what>"`.
    - `discover`: nothing selectable. Run `grw.py discover`, then really test and balance the game and look for gaps.
      Markers miss dead data, so also check that data rows (events, cards) have code behind them and their own feel. Before saying something does not exist, search the docs and data for it. Add only items with a real `--source`. Never invent busywork. A finding not worth an item: `grw.py reject "<finding>" --why ...`. Work already finished: `grw.py log "<title>" --lane ... --source ... --evidence ... --oracle ...`.
-   - `stop`: nothing selectable after discovery. Say so honestly.
+   - `stop`: nothing selectable after discovery. Before stopping, propose: mine the agent todo file, design docs with unbuilt sections and open issues for obvious next work, and file the best few with `grw.py ticket "<title>" --type feature --propose --body "<why, scope, risk>"` (labelled `proposal`, waits for the green-light label, limit `work.proposals.open`, default 3). Work stacked on an unmerged PR is fine where the stacking guard allows it; say it may need rework. Then say so honestly.
 3. Finish the item one of three ways:
    - `grw.py done <id> --evidence "..." --oracle <rung>`. Rungs: none (reports and research), compile, tests, boot, scripted-play, snapshot, human.
      Use the highest it passed. Only `human` proves it is good; never call machine-checked work fun or finished.

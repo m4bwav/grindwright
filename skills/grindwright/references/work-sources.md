@@ -56,3 +56,7 @@ Set `"tickets": "issues"` and `"todo": {"path": "...", "master": true, "open_tic
 ## Knowledge bases
 
 Keep what sessions learn in `knowledge.local`, per project, so a fresh session reads it instead of rediscovering. `session start` prints both paths. `knowledge.remote` is for what people should read too; update it through wikiwright or the project's docs, in PRs when the project asks. Read an index, then the one page needed.
+
+## Proposals when everything waits
+
+When nothing is selectable after discovery, file the best few ideas (agent todo items, unbuilt design sections) with `ticket "<title>" --type feature --propose --body "..."`. The issue carries the `proposal` label (`issues.proposal_label`; create it in the repository first) and asks the first greenlighter to add the green-light label. Nothing is built before that label comes from a greenlighter. `work.proposals.open` (default 3) caps how many wait at once.

@@ -276,6 +276,20 @@ class Issues(Base):
         self.fake.events = [{"event": "labeled", "label": {"name": "agent-ready"}, "actor": {"login": "pat"}}]
         self.assertEqual(self.run_grw("issue-sync")[1]["greenlit"], [item])
 
+    def test_proposal_waits_for_label_and_stops_at_limit(self):
+        path = self.state / "profile.json"
+        profile = json.loads(path.read_text(encoding="utf-8"))
+        profile["work"]["proposals"] = {"open": 1}
+        path.write_text(json.dumps(profile), encoding="utf-8")
+        code, out = self.run_grw("ticket", "Snow on roofs", "--type", "feature", "--body", "b", "--propose", "--person", "pat")
+        self.assertEqual(code, 0)
+        create = next(c for c in self.fake.calls if c[:2] == ("issue", "create"))
+        self.assertIn("proposal", create)
+        self.assertIn("@pat", self.fake.stdin[-1])
+        item = grw_work.find_item(grw.Store(self.state).items(), out["id"])
+        self.assertEqual((item["state"], item["proposal"]), ("waiting-on-human", True))
+        self.assertEqual(self.run_grw("ticket", "Animated water tiles", "--type", "feature", "--body", "b", "--propose", "--person", "pat")[0], 2)
+
     def test_todo_master_list_marks_then_strikes_and_keeps_line_endings(self):
         path = self.root / "todo.md"
         line = "2026-10-01 - **Clinic sound** never auditioned."
