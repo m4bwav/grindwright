@@ -1,5 +1,9 @@
 # Changelog: grindwright
 
+## 0.3.13 · 2026-11-07
+
+- crew.md: a red main freezes merges; the breaker owns the fix, gets about ten minutes, then reverts; rebase and rerun checks before merging; never skip a failing test to land an item; one run reports all failures; tighten gates by ratchet (Humble and Farley, Continuous Delivery, ch. 3 and 7).
+
 ## 0.3.12 · 2026-11-07
 
 - Road-aware discovery: `discover` lists each road milestone with no open work; `next` returns `survey` and `session check` refuses to stop while a confirmed milestone has never had an item and is not marked `met`. A 12-hour run had stopped after one session with a whole milestone never surveyed.
