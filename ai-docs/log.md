@@ -140,3 +140,7 @@ Owner ruling: on a project with a repository (issues, PRs, discussions, wiki), q
 ## 2026-11-08: idle sessions no longer look like progress (0.3.24)
 
 An overnight two-member crew did all its real work in its first two sessions, then ran 5 and 3 more idle sessions before the no-progress guard fired. Cause: each idle session claimed an item and released it, and the fingerprint counted the ready/running flip as progress. The fingerprint now treats running as ready (checkpoints on running work still count). Test `test_claim_and_release_without_work_is_no_progress` fails on the old code.
+
+## 2026-11-08: merge conflicts on agent PRs (0.3.25)
+
+Owner request: scan PRs grindwright opened for merge conflicts. `pr-sync` now reads each open agent PR's `mergeable_state`; `dirty` makes one ready item keyed by head..base sha, so a handled or explained conflict stays quiet until a side moves. The agent merges the base in, verifies and pushes to the PR branch, or, when a human judgement call is needed, aborts and comments on the PR with the files, both sides and the question. Docs in `references/work-sources.md`. 136 tests pass.

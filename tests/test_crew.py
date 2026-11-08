@@ -461,10 +461,14 @@ if __name__ == "__main__":
 class FakePrGh:
     def __init__(self):
         self.prs, self.comments, self.inline, self.reviews = [], [], [], []
+        self.detail = {}
 
     def api(self, path):
         if "/pulls?state=open" in path:
             return self.prs
+        tail = path.rsplit("/pulls/", 1)[-1]
+        if tail.isdigit():
+            return self.detail.get(int(tail), {"mergeable": True, "mergeable_state": "clean"})
         if path.endswith("/reviews?per_page=100"):
             return self.reviews
         if "/pulls/" in path:
@@ -518,3 +522,26 @@ class PullRequestReviews(Base):
                               "submitted_at": "2026-01-03T00:00:00Z", "html_url": "u", "body": ""}]
         self.assertEqual(len(self.run_grw("pr-sync")[1]["updated"]), 1)
         self.assertEqual(len(self.items()), 1)
+
+    def conflict(self, number, head="h1", base="b1"):
+        self.fake.detail[number] = {"mergeable": False, "mergeable_state": "dirty", "html_url": f"u{number}",
+                                    "head": {"sha": head, "ref": f"branch-{number}"}, "base": {"sha": base, "ref": "main"}}
+
+    def test_conflicting_agent_pr_becomes_one_item_until_a_side_moves(self):
+        self.fake.prs = [pr(1), pr(2)]
+        self.conflict(1)
+        self.assertEqual(len(self.run_grw("pr-sync")[1]["conflicts"]), 1)
+        self.assertEqual(self.run_grw("pr-sync")[1]["conflicts"], [])
+        items = grw.Store(self.state).items()
+        (item,) = [i for i in items if i.get("conflict_of")]
+        self.assertEqual((item["conflict_of"], item["pr_branch"], item["pr_base"], item["state"]), (1, "branch-1", "main", "ready"))
+        item["state"] = "done"  # resolved, or explained on the PR
+        grw.Store(self.state).save_items(items)
+        self.assertEqual(self.run_grw("pr-sync")[1]["conflicts"], [])
+        self.conflict(1, base="b2")
+        self.assertEqual(len(self.run_grw("pr-sync")[1]["conflicts"]), 1)
+
+    def test_unknown_mergeability_waits(self):
+        self.fake.prs = [pr(1)]
+        self.fake.detail[1] = {"mergeable": None, "mergeable_state": "unknown"}
+        self.assertEqual(self.run_grw("pr-sync")[1]["conflicts"], [])

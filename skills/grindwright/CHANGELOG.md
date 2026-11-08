@@ -1,5 +1,9 @@
 # Changelog: grindwright
 
+## 0.3.25 (2026-11-08)
+
+- `pr-sync` finds merge conflicts on open agent PRs: each conflicting PR becomes one ready item, keyed by head and base commits. Resolve, verify and push to the PR branch; when the resolution needs a person's judgement, comment on the PR explaining the conflict instead. Two tests.
+
 ## 0.3.24 (2026-11-08)
 
 - `grind_loop` no-progress guard: a claim or release alone (ready to running and back) no longer counts as progress. An overnight crew ran 7 and 5 sessions after its last real work because idle sessions claimed and released items.

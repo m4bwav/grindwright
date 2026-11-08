@@ -245,6 +245,7 @@ def pr_sync(store, items):
     open_prs = [p for p in gh_json(f"repos/{repo}/pulls?state=open&per_page=100") if p["user"]["login"] in authors]
     by_pr = {i["review_of"]: i for i in items if i.get("review_of") and i["state"] not in ("done", "dropped")}
     seen = {c for i in items for c in i.get("pr_seen", [])}
+    report["conflicts"] = pr_conflicts(store, items, config, work_block, repo, open_prs)
     for pr in open_prs:
         number = pr["number"]
         fresh = [c for c in pr_comments(repo, number)
@@ -265,6 +266,30 @@ def pr_sync(store, items):
                         value=config.get("value", 4), human_min=0, cost="S", triaged=True, untrusted=False)
         report["new"].append(item["id"])
     return report
+
+
+def pr_conflicts(store, items, config, work_block, repo, open_prs):
+    """Agent PRs GitHub reports as conflicting ("dirty") become ready items: merge the base in, resolve, push to the PR
+    branch, or explain on the PR why a person must decide. Keyed by head and base sha, so a handled or explained
+    conflict is not raised again until either side moves."""
+    found = []
+    open_items = {i["conflict_of"]: i for i in items if i.get("conflict_of") and i["state"] not in ("done", "dropped")}
+    handled = {i.get("conflict_key") for i in items if i.get("conflict_of")}
+    for pr in open_prs:
+        number = pr["number"]
+        detail = gh_json(f"repos/{repo}/pulls/{number}")
+        if detail.get("mergeable") is not False or detail.get("mergeable_state") != "dirty":
+            continue  # None means GitHub is still computing; the next sync sees it
+        key = f"{detail['head']['sha']}..{detail['base']['sha']}"
+        if number in open_items or key in handled:
+            continue
+        item = new_item(store, items, f"Resolve merge conflicts on PR #{number}: {pr['title'][:80]}",
+                        lane=config.get("lane") or work_block.get("issues", {}).get("lane_bug") or "bugs",
+                        source=detail.get("html_url", ""), conflict_of=number, conflict_key=key, pr_repo=repo,
+                        pr_branch=detail["head"]["ref"], pr_base=detail["base"]["ref"],
+                        value=config.get("conflict_value", 4), human_min=0, cost="S", triaged=True, untrusted=False)
+        found.append(item["id"])
+    return found
 
 
 def cmd_pr_sync(store, args):

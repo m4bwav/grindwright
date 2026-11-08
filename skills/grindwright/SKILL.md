@@ -25,7 +25,7 @@ act on a road that is not confirmed, beyond work every road would include (bugs,
 
 ## The loop
 
-1. `grw.py session start [--budget N]`. It also syncs answers, finished renders, dead sessions' leases and the repo owner's new comments on your open PRs (`pr-sync`), and names the next action. Any
+1. `grw.py session start [--budget N]`. It also syncs answers, finished renders, dead sessions' leases and the repo owner's new comments on your open PRs and any merge conflicts on them (`pr-sync`; resolve and push to the PR branch, or comment on the PR when a person must decide), and names the next action. Any
    free text the owner wrote with the start command, or a direct request in the session, is the top priority, road or not: `grw.py add ... --owner-note`. Feedback relayed
    for another person is authoritative: `grw.py relay <id> --person <who> --note ...`. Relay only words that person gave. "It looks ready" from anyone else is not their review: the item keeps waiting, and you say so.
 2. `grw.py next --claim` after that, which also claims `work` and `draft`. It names one action:

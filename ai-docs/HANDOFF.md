@@ -1,6 +1,6 @@
 # Handoff
 
-Updated 2026-11-08. Public `m4bwav/grindwright`, v0.3.24 (no-progress guard ignores claim and release; 0.3.23: questions go to the repository first, askwright when preferred). Earlier: v0.3.17 released and installed (0.3.17: priority tiers for bugs and issues, untagged = normal, plain work first within a tier; 0.3.16: idle milestones are surveyed every window, `grw.py surveyed`; 0.3.14 engine-verify reference: per-worktree editors, warm pool, batchmode test rungs; 0.3.15 `pr-sync` for owner PR comments; first Arvum run found Jenny's #37 note and the test lane is PR #47 there), wiki at 0.1.0 (`ai-docs/notes/2026-11-03-github-wiki.md`). Installed locally.
+Updated 2026-11-08. Public `m4bwav/grindwright`, v0.3.25 (`pr-sync` raises merge conflicts on agent PRs as items: resolve and push, or comment when a person must decide; 0.3.24: no-progress guard ignores claim and release; 0.3.23: questions go to the repository first, askwright when preferred). Earlier: v0.3.17 released and installed (0.3.17: priority tiers for bugs and issues, untagged = normal, plain work first within a tier; 0.3.16: idle milestones are surveyed every window, `grw.py surveyed`; 0.3.14 engine-verify reference: per-worktree editors, warm pool, batchmode test rungs; 0.3.15 `pr-sync` for owner PR comments; first Arvum run found Jenny's #37 note and the test lane is PR #47 there), wiki at 0.1.0 (`ai-docs/notes/2026-11-03-github-wiki.md`). Installed locally.
 
 ## State
 
