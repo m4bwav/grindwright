@@ -1,5 +1,9 @@
 # Changelog: grindwright
 
+## 0.7.2 (2026-11-08)
+
+- `ask_py` in the profile names askwright's `ask.py` when askwright is not installed. Before, a machine with askwright only as a clone made `sync` skip every decision page quietly ("askwright not found"), so answered pages never woke their items and runs stopped on "nothing selectable". `sync` and `next` now carry a `warning` naming the stuck items.
+
 ## 0.7.1 (2026-11-08)
 
 - A series is called out in every part, not only the newest: `issue-pr --series` and the new `grw.py pr-series` write one table of all parts (what each covers, which is this PR, review order) into every PR of the series, replacing the old table, and add the `series` label.
