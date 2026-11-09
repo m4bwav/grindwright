@@ -152,3 +152,7 @@ A reviewer on a private game repo got a 404 on a PR's example sheet: `raw.github
 ## 2026-11-08: 0.4.0 run report
 
 Owner asked for a report shown after every run unless turned off: chainwright session links, how far each front got and why it stopped, PRs created and updated, issues addressed or commented on, charts of work, tokens and time. Built `scripts/grind_report.py`; `grind_loop` now records each pass from the agent's JSON output; `grind_crew` builds one report per project. Tried on a real two-member crew run (12 sessions): the page found the three PRs it opened on GitHub, and the chainwright tier page built from the run file. GitHub's issue search only sees issues the account is involved in; comments by other routes may be missed.
+
+## 2026-11-08: 0.6.0 claims across computers
+
+Owner asked for two agents on two computers to stop stepping on each other's work through what the repository host provides. Researched (`ai-docs/research/2026-11-08-multi-computer-claims.md`), then built `grw_remote.py`: claims are branch refs `grind-claim/<key>` created through the GitHub API, where a second create fails, so one computer wins. Renewal and take-over are fast-forward-only. Issue label and comment for people; `ticket_first`; `grw.py remote`. Four fake-host tests; a live run on the public repo raced four creates (one winner) and ran claim, refusal, take-over and release with two machine names, leaving no refs behind. Not yet run in a real two-computer grind.

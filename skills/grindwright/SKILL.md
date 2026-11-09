@@ -14,7 +14,7 @@ when the state is not at `ai-docs/grind`. Every command prints one JSON object; 
 JSON says why. Fix the cause. There is no override for a gate except `session end --force "<why>"`.
 
 Read on demand: [loop details and lanes](references/loop.md), [profile and road](references/profile.md),
-[running unattended](references/chaining.md), [several sessions at once](references/crew.md), [issues, todo files, task lists, knowledge bases](references/work-sources.md), [saving tokens](references/tokens.md), [verifying game-engine work with per-worktree editors](references/engine-verify.md).
+[running unattended](references/chaining.md), [several sessions at once](references/crew.md), [several computers on one project](references/machines.md), [issues, todo files, task lists, knowledge bases](references/work-sources.md), [saving tokens](references/tokens.md), [verifying game-engine work with per-worktree editors](references/engine-verify.md).
 
 ## Set up once per project
 
@@ -101,7 +101,7 @@ hold <id> --evidence E [--person P] [--provenance P]   checkpoint <id> "<note>" 
 
 ## Other sessions
 
-If `GRINDWRIGHT_SESSION` is set or `next` lists `others_working`, others share this project ([crew](references/crew.md)). Name an `--area` when you claim anything touching shared files, stay on your branch, read their notes, and `note "<what changed>" --area <path>` when your work affects them. Refused for overlap: take other work. When `session check` returns `waiting_on`, say plainly that nothing can move until those decisions, and stop.
+If `GRINDWRIGHT_SESSION` is set or `next` lists `others_working`, others share this project ([crew](references/crew.md)). Name an `--area` when you claim anything touching shared files, stay on your branch, read their notes, and `note "<what changed>" --area <path>` when your work affects them. Refused for overlap, or because another computer holds it (`work.remote`, [machines](references/machines.md)): take other work. When `session check` returns `waiting_on`, say plainly that nothing can move until those decisions, and stop.
 
 ## Hard limits
 
