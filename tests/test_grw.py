@@ -91,6 +91,12 @@ class Selector(Base):
         self.add("big feature", 5, 0, "code", "--blocked-by", helper)
         self.assertEqual(self.next_id(), helper)
 
+    def test_demo_lane_dormant_until_enabled(self):
+        lanes = lambda: [x["lane"] for x in self.grw("discover", "--no-gh", "--dry-run")["signals"]]
+        self.assertNotIn("demo", lanes())
+        self.profile({"demo": {"enabled": True, "scope": "first colony"}})
+        self.assertIn("demo", lanes())
+
     def test_log_records_finished_work_and_reject_shows_in_discover(self):
         made = self.grw("log", "fixed a crash", "--lane", "code", "--source", "playtest", "--evidence", "boots", "--oracle", "boot")
         self.assertEqual(made["state"], "done")

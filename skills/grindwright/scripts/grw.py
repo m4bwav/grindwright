@@ -74,6 +74,7 @@ LANE_DEFAULTS = {
     "writing": [("everwrite", "editwright")],
     "voice": ["voicewright"],
     "edit": [("cinewright", "comfyui-gen")],
+    "demo": [],  # dormant until the profile sets demo.enabled; see references/demo.md
 }
 MAX_SET_QUESTIONS = 12
 MAINT_SHARE_CAP = 0.2
@@ -82,7 +83,7 @@ META_SHARE_CAP = 0.1
 ORACLES = ("none", "compile", "tests", "boot", "scripted-play", "snapshot", "human")
 ASSET_KINDS = ("art", "animation", "sound", "music", "video", "model", "voice")
 # Lanes whose changes a reviewer sees: their PRs, issues and PR comments carry screenshots. A lane may set "visible".
-VISIBLE_KINDS = ("art", "animation", "video", "model", "juice", "edit", "ui", "feel", "marketing")
+VISIBLE_KINDS = ("art", "animation", "video", "model", "juice", "edit", "ui", "feel", "marketing", "demo")
 CONFIDENCE = {"low": 0.7, "medium": 0.85, "high": 1.0}
 # Within one priority tier, plain work goes first: small and sure beats large and murky at equal value.
 PLAINNESS = {"S": 1.15, "M": 1.0, "L": 0.85}
@@ -1487,6 +1488,11 @@ def cmd_discover(store, args):
     scan, marketing = scan_repo(repo)
     signals.append(dict(scan, lane=gaps))
     signals.append({"lane": "marketing", "files": marketing, "note": "no plan found" if not marketing else "check its age and stats"})
+    demo = profile.get("demo") or {}
+    if demo.get("enabled"):
+        signals.append({"lane": "demo", "scope": demo.get("scope"), "build": demo.get("build"),
+                        "note": "keep the demo slice building and current with main: build it, play its path, list what main "
+                                "changed inside the slice; publishing is the owner's call (references/demo.md)"})
     if not args.no_gh and shutil.which("gh"):
         for kind, cmd in (("pr", "pr"), ("issue", "issue")):
             try:

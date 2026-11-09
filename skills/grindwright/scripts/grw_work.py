@@ -503,8 +503,17 @@ def with_series(body, block):
     return block + body
 
 
+def ensure_label(repo, label):
+    """A missing label fails gh create and edit; make it first (--force leaves an existing one as is)."""
+    try:
+        gh("label", "create", label, "-R", repo, "--force")
+    except Exception:
+        pass
+
+
 def sync_series(repo, name, parts):
     """Write the same series table into every part, so no PR in the series stands alone."""
+    ensure_label(repo, SERIES_LABEL)
     for pr, _ in parts:
         body = json.loads(gh("pr", "view", str(pr), "-R", repo, "--json", "body") or "{}").get("body", "")
         gh("pr", "edit", str(pr), "-R", repo, "--add-label", SERIES_LABEL, "--body-file", "-",
@@ -542,6 +551,8 @@ def cmd_issue_pr(store, args):
         command += ["--base", args.base]
     for person in config.get("assign", []):
         command += ["--assignee", person]
+    if args.series:
+        ensure_label(repo, SERIES_LABEL)
     for label in config.get("pr_labels", []) + ([SERIES_LABEL] if args.series else []):
         command += ["--label", label]
     url = gh(*command, stdin=body).strip()
@@ -614,11 +625,8 @@ def cmd_ticket(store, args):
             raise Refused(["looks like " + ", ".join(f"#{r['number']} ({r['state']})" for r in hits)], duplicates=[r["number"] for r in hits])
         label = config.get(f"{args.type}_label", "bug" if args.type == "bug" else "enhancement")
         labels = ["--label", label] + (["--label", config.get("proposal_label", "proposal")] if args.propose else [])
-        if args.propose:  # a missing label fails the create; make it, as for needs-review
-            try:
-                gh("label", "create", labels[-1], "-R", config["repo"], "--force")
-            except Exception:
-                pass
+        if args.propose:
+            ensure_label(config["repo"], labels[-1])
         body = f"{agent_line(store)}\n\n{args.body}\n\n<!-- grw-key: {key} -->\n{MARKER}\n"
         url = gh("issue", "create", "-R", config["repo"], "--title", args.title, *labels, "--body-file", "-", stdin=body).strip()
         number = int(url.rstrip("/").rsplit("/", 1)[-1])
