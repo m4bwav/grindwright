@@ -609,7 +609,18 @@ def cmd_skip(store, args):
     return {"skipped": args.key}
 
 
+def cmd_remote(store, args):
+    """Claims every computer holds on the host, newest first. Read-only."""
+    import grw_remote
+    block = grw_remote.config(store)
+    if not block:
+        raise Refused(['no "work.remote" block: this project runs on one computer'])
+    rows = sorted((grw_remote.public(c) | {"key": c["key"]} for c in grw_remote.claims(block)), key=lambda c: c.get("at", ""), reverse=True)
+    return {"machine": grw_remote.machine(block), "repo": block["repo"], "claims": rows}
+
+
 def add_parsers(add):
+    add("remote", cmd_remote, "list claims held on the repository host by every computer")
     add("issue-sync", cmd_issue_sync, "pull GitHub issues into the ledger")
     add("pr-sync", cmd_pr_sync, "owner comments on open agent PRs become items to address")
     p = add("issue-accept", cmd_issue_accept, "triage says an agent can fix it: make it normal work")

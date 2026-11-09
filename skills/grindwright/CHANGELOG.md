@@ -1,5 +1,13 @@
 # Changelog: grindwright
 
+## 0.6.1 (2026-11-08)
+
+- Joins the 0.5.0 screenshots work and 0.6.0 claims across computers in one release.
+
+## 0.6.0 (2026-11-08)
+
+- Several computers on one project (`work.remote`, `references/machines.md`): each claim first creates the ref `grind-claim/<key>` on the repository host. Creating an existing ref fails, so one computer wins; renewals and take-overs of expired claims are fast-forward updates, so they have one winner too. The ref's empty commit names machine, session and expiry. `next` defers items another computer holds; `checkpoint` renews; `done`, `drop` and `session release` delete the ref; `sync` marks held items and gives back stale ones of its own; `grw.py remote` lists every claim. On issues, a label (`agent-working`) and one marked comment. `ticket_first` refuses claims on items with no issue or PR, so discovery on both computers goes through the duplicate-checked tracker. Hosts that cannot be reached refuse the claim unless `"offline": "local"`. Four tests with a fake host; a live test on GitHub (four simultaneous creates, one winner). Numbered 0.6.0 because 0.5.0 is in progress on another branch.
+
 ## 0.5.0 (2026-11-08)
 
 - Screenshots of visible changes: `done` and `hold` refuse an item on a visible lane (art, animation, video, model, juice, edit, ui, feel, marketing, or a lane with `"visible": true`) without `--shots <files>` or `--no-shots "<why>"`. Shots are kept on the item and in the event, and the run report shows them as thumbnails per item (small local files embedded).

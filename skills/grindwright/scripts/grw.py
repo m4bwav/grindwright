@@ -28,10 +28,11 @@ import time
 import urllib.request
 from pathlib import Path
 
+import grw_remote
 import grw_work
 from grw_work import Refused
 
-VERSION = "0.5.0"
+VERSION = "0.6.1"
 FORMAT = 1
 STATES = ("ready", "running", "waiting-on-human", "waiting-on-machine", "done", "dropped")
 COST_UNITS = {"S": 1, "M": 3, "L": 8}
@@ -385,6 +386,10 @@ def select(profile, road, items, events, session, hosts_alive=None, hosts_idle=(
     discovered = any(e.get("type") == "discover" and e.get("ts", "") >= since for e in events)
     ranked, deferred, capped = [], [], []
     for item in items:
+        if item.get("held_remote") and item["state"] == "ready" and item["held_remote"].get("until", "") > now().isoformat(timespec="seconds"):
+            held = item["held_remote"]
+            deferred.append({"id": item["id"], "title": item["title"], "why": [f"claimed on machine {held.get('machine')} ({held.get('session')}) until {held.get('until')}: another computer is on it"]})
+            continue
         if handled_elsewhere(item, sid):
             deferred.append({"id": item["id"], "title": item["title"], "why": [f"being handled by {item['handling']['session']}"]})
             continue
@@ -846,6 +851,7 @@ def cmd_claim(store, args):
         raise Refused([f"paused by {item['paused_by']}, whose work is on its own branch: take other work, or claim --take-over and start from that branch"])
     if item.get("route_change_required") and not args.new_route:
         raise Refused([f"{item.get('redos')} failed passes on this route: name a new route with --new-route"])
+    remote = grw_remote_claim(store, item, items, args)
     item["state"] = "running"
     item["session"] = store.sid
     item.pop("paused_by", None)
@@ -865,7 +871,49 @@ def cmd_claim(store, args):
         session["used"] = session.get("used", 0) + COST_UNITS.get(item.get("cost", "M"), 3)
         store.save_session(session)
     store.event("claim", id=item["id"], lane=item.get("lane"))
-    return {"id": item["id"], "lease_until": item["lease_until"]}
+    answer = {"id": item["id"], "lease_until": item["lease_until"]}
+    if remote:
+        answer["remote"] = remote
+    return answer
+
+
+def grw_remote_claim(store, item, items, args):
+    """With work.remote set, take the claim on the host first: another computer may already be on this item."""
+    block = grw_remote.config(store)
+    if not block:
+        return None
+    if block.get("ticket_first") and not (item.get("issue") or item.get("review_of") or item.get("conflict_of")):
+        raise Refused(["ticket_first: file this as an issue first (ticket), so the other computers see it, then claim the issue's item"])
+    until = (now() + dt.timedelta(hours=block.get("lease_hours", LEASE_HOURS))).isoformat(timespec="seconds")
+    try:
+        got = grw_remote.claim(block, item, store.sid, stamp(), until, take_over=getattr(args, "take_over", False))
+    except Refused as failed:
+        if block.get("offline") == "local":
+            return {"offline": failed.reasons}
+        raise Refused(failed.reasons + ["the host could not be reached, so a claim here could duplicate another computer's work: take local-only work or retry"])
+    if not got["ok"]:
+        item["held_remote"] = got["held_by"]
+        touch(item)
+        store.save_items(items)
+        raise Refused([f"another computer holds {got['key']}: machine {got['held_by'].get('machine')} until {got['held_by'].get('until')}; take other work"], held_by=got["held_by"])
+    item.pop("held_remote", None)
+    item["remote_claim"] = got["key"]
+    try:
+        grw_remote.announce(store, block, item, until)
+    except Refused:
+        pass
+    return got
+
+
+def remote_release(store, item):
+    """Best effort: the sync on the next session start gives back anything this misses."""
+    block = grw_remote.config(store) if item.get("remote_claim") else None
+    if not block:
+        return
+    with contextlib.suppress(Refused):
+        if grw_remote.release(block, item, item.get("session") or store.sid):
+            item.pop("remote_claim", None)
+        grw_remote.unannounce(block, item)
 
 
 def cmd_checkpoint(store, args):
@@ -875,6 +923,10 @@ def cmd_checkpoint(store, args):
     item.setdefault("checkpoints", []).append({"ts": stamp(), "note": args.note})
     if item["state"] == "running":
         item["lease_until"] = (now() + dt.timedelta(hours=LEASE_HOURS)).isoformat(timespec="seconds")
+        block = grw_remote.config(store) if item.get("remote_claim") else None
+        if block:  # renew the host claim too, so the other computer does not take it over
+            with contextlib.suppress(Refused):
+                grw_remote.claim(block, item, store.sid, stamp(), item["lease_until"])
     touch(item)
     store.save_items(items)
     return {"id": item["id"], "checkpoints": len(item["checkpoints"])}
@@ -1083,6 +1135,15 @@ def cmd_sync(store, args):
         report["prs"] = {"error": failed.reasons}
     except (KeyError, TypeError, ValueError) as failed:  # an odd GitHub answer must not stop the other lanes either
         report["prs"] = {"error": [f"pr-sync: {failed!r}"]}
+    block = None
+    try:
+        block = grw_remote.config(store)
+        if block:
+            report["remote"] = grw_remote.sync(block, items, store.sid, stamp())
+    except Refused as failed:
+        report["remote"] = {"error": failed.reasons}
+    except (KeyError, TypeError, ValueError) as failed:
+        report["remote"] = {"error": [f"remote sync: {failed!r}"]}
     store.save_items(items)
     store.event("sync", answers=len(report["answers"]), machines=len(report["machines"]), recovered=len(report["recovered"]))
     return report
@@ -1170,6 +1231,7 @@ def cmd_done(store, args):
         raise Refused(["generated assets need --provenance (tool, model, seed or source) for store disclosure"])
     pictures = shots(store, item, args)
     item.update({"state": "done", "evidence": args.evidence, "oracle": args.oracle, "finished": stamp()})
+    remote_release(store, item)
     if args.provenance:
         item["provenance"] = args.provenance
     item.pop("lease_until", None)
@@ -1225,6 +1287,7 @@ def cmd_drop(store, args):
     items = store.items()
     item = find_item(items, args.id)
     item.update({"state": "dropped", "drop_why": args.why})
+    remote_release(store, item)
     touch(item)
     store.save_items(items)
     store.event("dropped", id=item["id"], lane=item.get("lane"), why=args.why)
@@ -1465,6 +1528,8 @@ def cmd_session(store, args):
                     item["paused_by"] = store.sid
                 item.setdefault("checkpoints", []).append({"ts": stamp(), "note": f"paused: {args.reason}"})
                 item.pop("lease_until", None)
+                if args.action == "release":
+                    remote_release(store, item)
                 touch(item)
         store.save_items(items)
         if args.action == "release":

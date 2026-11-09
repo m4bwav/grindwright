@@ -110,7 +110,7 @@ A 12-hour two-member run on the first game stopped after one session: the ledger
 
 ## 2026-11-07: engine-verify pattern (0.3.14)
 
-Mark asked to record the worktree-to-editor-to-e2e testing pattern after the Arvum pilot showed "drafted" items that were never compiled (no csproj, no editor for the pinned version). New `references/engine-verify.md`: one worktree and editor per session, pinned editor installed once, warm worktree pool (Mark: reuse worktrees to avoid repeated setup; the import cache is the per-worktree cost), rungs compile -> EditMode -> PlayMode -> live editor, test safety (scratch save path, reporters off), determinism, regression-test shape, follow the project test plan. Ledger evidence line defined.
+Mark asked to record the worktree-to-editor-to-e2e testing pattern after the second game's pilot showed "drafted" items that were never compiled (no csproj, no editor for the pinned version). New `references/engine-verify.md`: one worktree and editor per session, pinned editor installed once, warm worktree pool (Mark: reuse worktrees to avoid repeated setup; the import cache is the per-worktree cost), rungs compile -> EditMode -> PlayMode -> live editor, test safety (scratch save path, reporters off), determinism, regression-test shape, follow the project test plan. Ledger evidence line defined.
 
 ## 2026-11-07: pr-sync (0.3.15)
 
@@ -153,6 +153,14 @@ A reviewer on a private game repo got a 404 on a PR's example sheet: `raw.github
 
 Owner asked for a report shown after every run unless turned off: chainwright session links, how far each front got and why it stopped, PRs created and updated, issues addressed or commented on, charts of work, tokens and time. Built `scripts/grind_report.py`; `grind_loop` now records each pass from the agent's JSON output; `grind_crew` builds one report per project. Tried on a real two-member crew run (12 sessions): the page found the three PRs it opened on GitHub, and the chainwright tier page built from the run file. GitHub's issue search only sees issues the account is involved in; comments by other routes may be missed.
 
+## 2026-11-08: 0.6.0 claims across computers
+
+Owner asked for two agents on two computers to stop stepping on each other's work through what the repository host provides. Researched (`ai-docs/research/2026-11-08-multi-computer-claims.md`), then built `grw_remote.py`: claims are branch refs `grind-claim/<key>` created through the GitHub API, where a second create fails, so one computer wins. Renewal and take-over are fast-forward-only. Issue label and comment for people; `ticket_first`; `grw.py remote`. Four fake-host tests; a live run on the public repo raced four creates (one winner) and ran claim, refusal, take-over and release with two machine names, leaving no refs behind. Not yet run in a real two-computer grind.
+
 ## 2026-11-08: 0.5.0 screenshots and risk-scaled PR bodies
 
 Owner asked for screenshots on every PR, issue and PR update comment with a visible change, and for explanation that grows with a PR's size and risk ("large PRs test the risk aversion of mergers"). Built: the visible-lane gate on `done`/`hold` (`--shots` or `--no-shots`), thumbnails in the run report, `grw.py pr-brief` (breakdown by area and kind, risk score, tier, PR body skeleton), loop.md "What a reviewer gets". Tried `pr-brief` on a real 71-file art branch: tier large, flagged code without tests; caught that the very-large tier dropped the large tier's sections, fixed.
+
+## 2026-11-08: 0.6.1 joins 0.5.0 and 0.6.0
+
+The screenshots branch merged with main; released as 0.6.1 so one install carries both.
