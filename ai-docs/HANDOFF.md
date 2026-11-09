@@ -1,5 +1,7 @@
 # Handoff
 
+2026-11-08: released and installed v0.7.0 (PR 54): `grw.py pr-overlap`; `issue-pr` refuses an overlap unless `--series` (label `series` + part line, stacking allowed) or `--not-duplicate`. Owner rule: one PR of truth per concept.
+
 Updated 2026-11-08. Public `m4bwav/grindwright`, v0.6.1 (0.5.0 screenshots and pr-brief joined in; claims across computers: `work.remote`, `grind-claim/<key>` refs on the host, one winner, fast-forward renew and take-over, `ticket_first`, `grw.py remote`, `references/machines.md`; not yet run in a real two-computer grind. 0.4.0 run report: `grind_report.py` page with stop reasons, progress, PRs and issues, sessions, charts and the chainwright tier page, shown when a run ends, on by default; 0.3.26: picture links on private repos use `blob/...?raw=true`; 0.3.25: `pr-sync` raises merge conflicts on agent PRs as items: resolve and push, or comment when a person must decide; 0.3.24: no-progress guard ignores claim and release; 0.3.23: questions go to the repository first, askwright when preferred). Earlier: v0.3.17 released and installed (0.3.17: priority tiers for bugs and issues, untagged = normal, plain work first within a tier; 0.3.16: idle milestones are surveyed every window, `grw.py surveyed`; 0.3.14 engine-verify reference: per-worktree editors, warm pool, batchmode test rungs; 0.3.15 `pr-sync` for owner PR comments; first run on the second game found an owner's issue note and its test lane PR), wiki at 0.1.0 (`ai-docs/notes/2026-11-03-github-wiki.md`). Installed locally.
 
 ## State
