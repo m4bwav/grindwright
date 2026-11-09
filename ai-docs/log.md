@@ -170,3 +170,9 @@ A game run opened three PRs for one concept on one issue: a code PR, a stacked d
 
 ## 2026-11-08: 0.7.1 series callout in every part
 Owner: parallel slices of one feature are fine when needed, but every PR involved must call it out thoroughly. `issue-pr --series` and new `pr-series` now write one table of all parts into every PR of the series and label each.
+
+## 2026-11-08: second overnight on the first game; three fixes found before it started (0.7.2 to 0.7.4)
+- 0.7.2: `sync` skipped every decision page with "askwright not found" on a machine where askwright is a clone, not an installed plugin. Answered pages never woke their items, so the earlier overnight stopped on "nothing selectable" while an answer sat there. Profile key `ask_py`; `sync` and `next` carry a `warning`. Six items woke at once.
+- 0.7.3: the crew driver reused member worktrees on the previous night's branches (one dirty, one with unmerged commits). Clean merged trees now move to a fresh branch; others are left and a dated tree is made.
+- 0.7.4: two leftovers from the first pilot's notes: `ticket --propose` makes its label; `--area a,b` splits.
+- Started a two-member, 12-hour crew on 0.7.3. Results not read yet.
