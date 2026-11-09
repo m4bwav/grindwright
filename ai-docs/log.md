@@ -156,3 +156,11 @@ Owner asked for a report shown after every run unless turned off: chainwright se
 ## 2026-11-08: 0.6.0 claims across computers
 
 Owner asked for two agents on two computers to stop stepping on each other's work through what the repository host provides. Researched (`ai-docs/research/2026-11-08-multi-computer-claims.md`), then built `grw_remote.py`: claims are branch refs `grind-claim/<key>` created through the GitHub API, where a second create fails, so one computer wins. Renewal and take-over are fast-forward-only. Issue label and comment for people; `ticket_first`; `grw.py remote`. Four fake-host tests; a live run on the public repo raced four creates (one winner) and ran claim, refusal, take-over and release with two machine names, leaving no refs behind. Not yet run in a real two-computer grind.
+
+## 2026-11-08: 0.5.0 screenshots and risk-scaled PR bodies
+
+Owner asked for screenshots on every PR, issue and PR update comment with a visible change, and for explanation that grows with a PR's size and risk ("large PRs test the risk aversion of mergers"). Built: the visible-lane gate on `done`/`hold` (`--shots` or `--no-shots`), thumbnails in the run report, `grw.py pr-brief` (breakdown by area and kind, risk score, tier, PR body skeleton), loop.md "What a reviewer gets". Tried `pr-brief` on a real 71-file art branch: tier large, flagged code without tests; caught that the very-large tier dropped the large tier's sections, fixed.
+
+## 2026-11-08: 0.6.1 joins 0.5.0 and 0.6.0
+
+The screenshots branch merged with main; released as 0.6.1 so one install carries both.

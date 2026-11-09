@@ -435,7 +435,22 @@ class Proof(Base):
     def test_asset_needs_provenance(self):
         item = self.add("card", 3, 0, "art")
         self.grw("done", item, "--evidence", "wired", "--oracle", "human", expect=2)
-        self.grw("done", item, "--evidence", "wired", "--oracle", "human", "--provenance", "Klein, seed 22")
+        self.grw("done", item, "--evidence", "wired", "--oracle", "human", "--provenance", "Klein, seed 22", "--shots", "pr-media/card.png")
+
+    def test_visible_change_needs_shots(self):
+        art = self.add("card", 3, 0, "art")
+        self.grw("done", art, "--evidence", "wired", "--oracle", "human", "--provenance", "p", expect=2)
+        got = self.grw("done", art, "--evidence", "wired", "--oracle", "human", "--provenance", "p", "--shots", "a.png,b.png", "--shots", "c.gif")
+        self.assertEqual(got["state"], "done")
+        events = [json.loads(x) for x in (self.state / "events.jsonl").read_text(encoding="utf-8").splitlines() if x.strip()]
+        shown = [e for e in events if e["type"] == "done"][-1]
+        self.assertEqual(shown["shots"], ["a.png", "b.png", "c.gif"])
+
+    def test_no_shots_needs_a_reason_and_code_needs_none(self):
+        art = self.add("card", 3, 0, "art")
+        self.grw("hold", art, "--person", "P", "--evidence", "e", "--provenance", "p", "--no-shots", "audio-only change to the card's sound")
+        code = self.add("parser", 3, 0)
+        self.grw("done", code, "--evidence", "green", "--oracle", "tests")
 
     def test_low_confidence_lowers_score(self):
         self.add("sure", 4, 0)
@@ -728,6 +743,23 @@ class OvernightFaults(Base):
         self.grw("set", made, "state=waiting-on-human", "set=somewhere")
         self.assertEqual(len(self.grw("sync")["answers"]), 1)
 
+
+
+class Brief(unittest.TestCase):
+    def test_small_change_is_small(self):
+        b = grw.grw_work.pr_brief([("10", "2", "src/a.py"), ("5", "0", "tests/test_a.py")])
+        self.assertEqual(b["tier"], "small")
+        self.assertEqual(b["flags"], [])
+
+    def test_risk_grows_with_size_and_risky_paths(self):
+        rows = [("40", "10", f"Assets/Scripts/Sys{i}.cs") for i in range(30)] + [("3", "1", "ProjectSettings/x.asset")]
+        b = grw.grw_work.pr_brief(rows)
+        self.assertIn(b["tier"], ("large", "very large"))
+        self.assertTrue(any("no test" in f for f in b["flags"]))
+        self.assertTrue(any("risky" in f for f in b["flags"]))
+        md = grw.grw_work.pr_brief_markdown(b)
+        self.assertIn("How to roll it back", md)
+        self.assertEqual(md.count("## Risks"), 1)
 
 if __name__ == "__main__":
     unittest.main()

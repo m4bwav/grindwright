@@ -101,14 +101,14 @@ hold <id> --evidence E [--person P] [--provenance P]   checkpoint <id> "<note>" 
 
 ## Other sessions
 
-If `GRINDWRIGHT_SESSION` is set or `next` lists `others_working`, others share this project ([crew](references/crew.md)). Name an `--area` when you claim anything touching shared files, stay on your branch, read their notes, and `note "<what changed>" --area <path>` when your work affects them. Refused: take other work. When `session check` returns `waiting_on`, say plainly that nothing can move until those decisions, and stop.
+If `GRINDWRIGHT_SESSION` is set or `next` lists `others_working`, others share this project ([crew](references/crew.md)). Claim shared files with `--area`, stay on your branch, read their notes, `note "<what changed>" --area <path>` when it affects them. Refused: take other work. If `session check` returns `waiting_on`, say nothing can move until those decisions, and stop.
 
 ## Hard limits
 
 - Posts, outreach, store pages, publishing and deployments: draft only, a person sends. `grw.py guard` always refuses. Issue comments and PRs on the project's own tracker, once `work.issues` is in the profile, are the exception, always marked as from an agent.
 - Before merging, touching a main branch, stacking on a pending review or editing a protected file, run
   `grw.py guard merge|touch_main|stack_on_pending|touch <path>`. Another person's project follows that person's
-  rules. Run `grw.py lint-text <file>` on PR text where the profile bans terms.
+  rules. PR text: `grw.py lint-text`, bodies from `pr-brief --markdown`, screenshots for visible changes ([loop](references/loop.md#what-a-reviewer-gets)).
 - Installing hooks, schedules or settings outside the repo needs the owner's go-ahead. So does running unattended.
 - Work on grindwright itself is capped: file a learning and go back to the project.
 - Plugins are optional. Detect, use, route around. Call them, do not copy them: art and cards through artwright and

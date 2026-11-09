@@ -215,7 +215,8 @@ def collect(state, run, use_github=True):
         lanes.setdefault(lane, dict.fromkeys(WORK, 0))[kind] += 1
         row = touched.setdefault(e["id"], {"id": e["id"], "title": item.get("title") or e.get("id"), "lane": lane, "road": item.get("road"),
                                            "now": item.get("state", "?"), "pr": item.get("pr"), "issue": item.get("issue"),
-                                           "source": item.get("source"), "evidence": item.get("evidence"), "did": [], "by": set()})
+                                           "source": item.get("source"), "evidence": item.get("evidence"), "did": [], "by": set(),
+                                           "shots": item.get("shots", []), "no_shots": item.get("no_shots")})
         if kind not in row["did"]:
             row["did"].append(kind)
         row["by"].add(e.get("session") or "")
@@ -236,8 +237,32 @@ def collect(state, run, use_github=True):
     if repo and not Path(repo).is_absolute():
         repo = str((state.parent / repo).resolve())
     gh = github(repo, since, until) if use_github else None
+    roots = [Path(repo)] if repo else []
+    roots += [Path(m["cwd"]) for m in run.get("members", []) if m.get("cwd")]
+    for row in touched.values():
+        row["pictures"] = [picture(shot, roots) for shot in row["shots"]]
     return {"events": events, "lanes": lanes, "touched": list(touched.values()), "left": left, "stones": stones,
             "ends": ends, "github": gh, "road": road, "since": since, "until": until}
+
+
+IMAGE_TYPES = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".gif": "image/gif", ".webp": "image/webp"}
+MAX_EMBED = 1_500_000
+
+
+def picture(shot, roots):
+    """(src, href) for one screenshot: a URL as is; a local file embedded when small, so the page travels alone."""
+    if shot.startswith("http"):
+        return shot, shot
+    for root in roots:
+        path = (root / shot) if not Path(shot).is_absolute() else Path(shot)
+        if path.exists():
+            kind = IMAGE_TYPES.get(path.suffix.lower())
+            href = path.resolve().as_uri()
+            if kind and path.stat().st_size <= MAX_EMBED:
+                import base64
+                return f"data:{kind};base64," + base64.b64encode(path.read_bytes()).decode(), href
+            return (href if kind else None), href
+    return None, None
 
 
 def fmt_s(s):
@@ -324,7 +349,7 @@ td,th{padding:6px 10px;border-bottom:1px solid var(--line);text-align:left;verti
 .lbl{fill:var(--mute);font-size:12px}.legend{color:var(--mute);font-size:12px;display:flex;flex-wrap:wrap;gap:12px;margin-top:4px}
 .legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:middle}
 .stop{border-left:4px solid var(--wait)}.stop.bad{border-left-color:var(--bad)}code{font-size:12px}
-details summary{cursor:pointer;color:var(--mute)}ul{margin:4px 0;padding-left:20px}
+details summary{cursor:pointer;color:var(--mute)}.shots img{height:96px;max-width:100%;border:1px solid var(--line);border-radius:6px;margin:2px 6px 2px 0;object-fit:contain;background:var(--bg)}ul{margin:4px 0;padding-left:20px}
 @media (max-width:600px){td,th{padding:5px 6px}.hide-s{display:none}}
 </style></head><body><main>
 __BODY__
@@ -409,6 +434,12 @@ def render(run, data, chain_page=None):
             rows.append(f"<tr><td><code>{e(t['id'])}</code></td><td>{e(t['title'])}<div class='mute'>{e((t['evidence'] or '')[:220])}</div></td>"
                         f"<td>{e(t['lane'])}</td><td>{e(', '.join(LABEL[d] for d in t['did']))}</td><td>{e(t['now'])}</td>"
                         f"<td class='hide-s'>{e(', '.join(refs))} {src}</td></tr>")
+            thumbs = "".join(f'<a href="{e(href or shot)}"><img src="{e(src)}" alt="{e(shot)}" loading="lazy"></a>' if src else
+                             f'<span class="chip">{e(shot)} (not found)</span>' for shot, (src, href) in zip(t["shots"], t["pictures"]))
+            if t["no_shots"]:
+                thumbs += f"<span class='mute'>no screenshot: {e(t['no_shots'])}</span>"
+            if thumbs:
+                rows.append(f"<tr><td></td><td colspan='5' class='shots'>{thumbs}</td></tr>")
         body.append("<table><tr><th>Item</th><th>What</th><th>Lane</th><th>This run</th><th>Now</th><th class='hide-s'>Links</th></tr>" + "".join(rows) + "</table>")
     else:
         body.append("<p class='mute'>No item was started, finished, drafted or asked about in this run.</p>")

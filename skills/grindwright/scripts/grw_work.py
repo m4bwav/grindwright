@@ -669,3 +669,91 @@ def add_parsers(add):
     p = add("skip", cmd_skip, "a scanned line is done or stale")
     p.add_argument("key")
     p.add_argument("--why", required=True)
+
+
+# --- PR brief: a change's breakdown and how much explaining its risk asks for -------------------------------
+
+KIND_RULES = (
+    ("tests", r"(^|/)(tests?|specs?|__tests__)/|(_test|\.test|\.spec|Tests?)\.[a-z]+$"),
+    ("ci and build", r"^\.github/|(^|/)(Makefile|Dockerfile|.*\.ya?ml|.*\.csproj|.*\.sln|package\.json|pyproject\.toml|.*\.asmdef)$"),
+    ("settings", r"(^|/)(ProjectSettings|Packages/manifest\.json|\.env|.*\.config|settings[^/]*\.json)"),
+    ("docs", r"\.(md|txt|rst)$|(^|/)docs?/"),
+    ("art and media", r"\.(png|jpe?g|gif|webp|psd|aseprite|wav|ogg|mp3|mp4|fbx|glb|blend|mat|anim|controller|prefab|unity|asset)$"),
+    ("generated", r"(\.meta|\.lock|lock\.json)$"),
+    ("code", r"\.(cs|py|js|ts|tsx|jsx|lua|luau|gd|cpp|c|h|rs|go|java|shader|hlsl|compute)$"),
+)
+RISKY_PATHS = r"(^|/)(ProjectSettings|\.github/workflows|migrations?|save|Save|Serializ|Network|Auth|secrets?)"
+TIERS = (  # (name, top score, what the PR body must hold beyond a summary)
+    ("small", 3, ["what changed and why", "how it was verified"]),
+    ("medium", 8, ["a breakdown by area", "how it was verified, with commands and results", "screenshots of anything visible"]),
+    ("large", 16, ["a breakdown by area with the reason for each group", "risks and what could break, with how each was checked",
+                   "how to review it (order to read, what to skip as generated or moved)", "how to roll it back",
+                   "how it was verified, with commands and results", "screenshots of anything visible"]),
+    ("very large", None, ["everything a large change needs", "why it is one PR and not several, or a split plan",
+                          "a reviewer's checklist", "a play or test script the merger can follow in a few minutes"]),
+)
+
+
+def kind_of(path):
+    for kind, rule in KIND_RULES:
+        if re.search(rule, path, re.I):
+            return kind
+    return "other"
+
+
+def area_of(path, depth=2):
+    parts = path.split("/")[:-1]
+    return "/".join(parts[:depth]) or "(root)"
+
+
+def pr_brief(rows):
+    """rows: [(added, deleted, path)] from git diff --numstat; binary files count 0/0. Returns the breakdown and tier."""
+    groups, kinds = {}, {}
+    added = deleted = 0
+    risky = []
+    for plus, minus, path in rows:
+        plus, minus = int(plus) if str(plus).isdigit() else 0, int(minus) if str(minus).isdigit() else 0
+        kind = kind_of(path)
+        added, deleted = added + plus, deleted + minus
+        key = (area_of(path), kind)
+        g = groups.setdefault(key, {"area": key[0], "kind": kind, "files": 0, "added": 0, "deleted": 0, "examples": []})
+        g["files"] += 1
+        g["added"] += plus
+        g["deleted"] += minus
+        if len(g["examples"]) < 3:
+            g["examples"].append(path)
+        kinds[kind] = kinds.get(kind, 0) + 1
+        if re.search(RISKY_PATHS, path):
+            risky.append(path)
+    code_lines = sum(g["added"] + g["deleted"] for g in groups.values() if g["kind"] == "code")
+    score = (len(rows) / 10) + (code_lines / 150) + len(risky) * 2 + kinds.get("ci and build", 0) + kinds.get("settings", 0) * 2
+    if kinds.get("code") and not kinds.get("tests"):
+        score += 2
+    if deleted > added * 2 and deleted > 200:
+        score += 2
+    tier = next(t for t in TIERS if t[1] is None or score <= t[1])
+    if tier[1] is None:  # very large: everything large asks, then more
+        tier = (tier[0], None, TIERS[2][2] + tier[2][1:])
+    flags = []
+    if kinds.get("code") and not kinds.get("tests"):
+        flags.append("code changed with no test changed")
+    if risky:
+        flags.append(f"{len(risky)} file(s) on risky paths: " + ", ".join(risky[:5]))
+    if len({g['area'] for g in groups.values()}) > 6:
+        flags.append("touches many areas: say why it is one PR")
+    return {"files": len(rows), "added": added, "deleted": deleted, "score": round(score, 1), "tier": tier[0], "must_explain": tier[2],
+            "flags": flags, "kinds": kinds, "groups": sorted(groups.values(), key=lambda g: -(g["added"] + g["deleted"] + g["files"]))}
+
+
+def pr_brief_markdown(brief):
+    lines = [f"<!-- grindwright pr-brief: {brief['tier']} change, risk score {brief['score']} -->", "## Summary", "", "TODO: what and why, in two sentences.", ""]
+    lines += [f"## What changed ({brief['files']} files, +{brief['added']} -{brief['deleted']})", "", "| Area | Kind | Files | Lines | Why |", "|---|---|---|---|---|"]
+    for g in brief["groups"]:
+        lines.append(f"| `{g['area']}` | {g['kind']} | {g['files']} | +{g['added']} -{g['deleted']} | TODO |")
+    flags = [f"- {f}: TODO how it was checked" for f in brief["flags"]]
+    needs = [n for n in brief["must_explain"] if not n.startswith(("a breakdown", "what changed"))]
+    if flags and not any(n.startswith("risks") for n in needs):
+        lines += ["", "## Risks", ""] + flags
+    for need in needs:
+        lines += ["", f"## {need[0].upper() + need[1:]}", ""] + (flags if need.startswith("risks") and flags else ["TODO"])
+    return "\n".join(lines) + "\n"

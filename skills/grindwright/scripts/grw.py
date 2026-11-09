@@ -32,7 +32,7 @@ import grw_remote
 import grw_work
 from grw_work import Refused
 
-VERSION = "0.3.24"
+VERSION = "0.6.1"
 FORMAT = 1
 STATES = ("ready", "running", "waiting-on-human", "waiting-on-machine", "done", "dropped")
 COST_UNITS = {"S": 1, "M": 3, "L": 8}
@@ -80,6 +80,8 @@ META_SHARE_CAP = 0.1
 # Oracle ladder, weakest first. Only "human" proves a game is good; the rest prove it is not broken.
 ORACLES = ("none", "compile", "tests", "boot", "scripted-play", "snapshot", "human")
 ASSET_KINDS = ("art", "animation", "sound", "music", "video", "model", "voice")
+# Lanes whose changes a reviewer sees: their PRs, issues and PR comments carry screenshots. A lane may set "visible".
+VISIBLE_KINDS = ("art", "animation", "video", "model", "juice", "edit", "ui", "feel", "marketing")
 CONFIDENCE = {"low": 0.7, "medium": 0.85, "high": 1.0}
 # Within one priority tier, plain work goes first: small and sure beats large and murky at equal value.
 PLAINNESS = {"S": 1.15, "M": 1.0, "L": 0.85}
@@ -1201,6 +1203,25 @@ def cmd_redo(store, args):
             "reminder": "rebuild every derived review artifact before asking again"}
 
 
+def visible(profile, item):
+    lane = lane_of(profile, item)
+    return bool(lane["visible"]) if "visible" in lane else lane.get("kind") in VISIBLE_KINDS
+
+
+def shots(store, item, args):
+    """A visible change goes to its reviewer with pictures: --shots files, or --no-shots and why there are none."""
+    files = [f for group in (getattr(args, "shots", None) or []) for f in group.split(",") if f.strip()]
+    reason = getattr(args, "no_shots", None)
+    if files:
+        item["shots"] = sorted(set(item.get("shots", [])) | {f.strip() for f in files})
+    if reason:
+        item["no_shots"] = reason
+    if visible(store.profile(), item) and not item.get("shots") and not item.get("no_shots"):
+        raise Refused(["a visible change needs screenshots in its PR, issue or comment: pass --shots <files> "
+                       "(before/after, a strip or GIF for motion) or --no-shots \"<why>\" (see loop.md, Screenshots)"])
+    return item.get("shots", [])
+
+
 def cmd_done(store, args):
     items = store.items()
     item = find_item(items, args.id)
@@ -1208,6 +1229,7 @@ def cmd_done(store, args):
     kind = lane_of(store.profile(), item).get("kind")
     if kind in ASSET_KINDS and not args.provenance:
         raise Refused(["generated assets need --provenance (tool, model, seed or source) for store disclosure"])
+    pictures = shots(store, item, args)
     item.update({"state": "done", "evidence": args.evidence, "oracle": args.oracle, "finished": stamp()})
     remote_release(store, item)
     if args.provenance:
@@ -1215,7 +1237,7 @@ def cmd_done(store, args):
     item.pop("lease_until", None)
     touch(item)
     store.save_items(items)
-    store.event("done", id=item["id"], lane=item.get("lane"), evidence=args.evidence, oracle=args.oracle)
+    store.event("done", id=item["id"], lane=item.get("lane"), evidence=args.evidence, oracle=args.oracle, shots=pictures)
     return {"id": item["id"], "state": "done", "human_proven": args.oracle == "human"}
 
 
@@ -1234,13 +1256,14 @@ def cmd_hold(store, args):
     person = args.person or item.get("person")
     if not person:
         raise Refused(["say who reviews this (--person)"])
+    pictures = shots(store, item, args)
     item.update({"state": "drafted", "evidence": args.evidence, "person": person})
     if args.provenance:
         item["provenance"] = args.provenance
     item.pop("lease_until", None)
     touch(item)
     store.save_items(items)
-    store.event("drafted", id=item["id"], lane=item.get("lane"), evidence=args.evidence)
+    store.event("drafted", id=item["id"], lane=item.get("lane"), evidence=args.evidence, shots=pictures)
     return {"id": item["id"], "state": "drafted", "reminder": "next offers ask-drafted when the review queue has room"}
 
 
@@ -1292,6 +1315,19 @@ def cmd_guard(store, args):
     if allowed:
         return {"allowed": True, "why": why}
     raise Refused([why], allowed=False)
+
+
+def cmd_pr_brief(store, args):
+    """Breakdown of a branch's changes and the explanation its size and risk ask for; --markdown gives a PR body skeleton."""
+    repo = project_repo(store, args.repo or store.profile().get("repo", "."))
+    done = subprocess.run(["git", "-C", str(repo), "diff", "--numstat", f"{args.base}...{args.head}"], capture_output=True, text=True, encoding="utf-8")
+    if done.returncode:
+        raise Refused([f"git diff failed: {done.stderr.strip()[:200]}"])
+    rows = [line.split("\t", 2) for line in done.stdout.splitlines() if line.count("\t") >= 2]
+    brief = grw_work.pr_brief(rows)
+    if args.markdown:
+        brief["markdown"] = grw_work.pr_brief_markdown(brief)
+    return brief
 
 
 def cmd_lint_text(store, args):
@@ -1732,12 +1768,16 @@ def build_parser():
     p.add_argument("--evidence", required=True)
     p.add_argument("--oracle", choices=ORACLES, required=True, help="the strongest check it passed")
     p.add_argument("--provenance", help="tool, model, seed or source of a generated asset")
+    p.add_argument("--shots", action="append", help="screenshots of a visible change, comma-separated or repeated (repo-relative paths or URLs)")
+    p.add_argument("--no-shots", help="why a visible change has no screenshot")
 
     p = add("hold", cmd_hold, "a draft is made but the person's review queue is full")
     p.add_argument("id")
     p.add_argument("--person", help="who reviews it; defaults to the item's person, required when it has none")
     p.add_argument("--evidence", required=True)
     p.add_argument("--provenance")
+    p.add_argument("--shots", action="append", help="screenshots of a visible change, comma-separated or repeated (repo-relative paths or URLs)")
+    p.add_argument("--no-shots", help="why a visible change has no screenshot")
 
     p = add("log", cmd_log, "record finished work in one call")
     p.add_argument("title")
@@ -1769,6 +1809,12 @@ def build_parser():
     p = add("guard", cmd_guard, "may I? merge, touch_main, stack_on_pending, touch, post, publish, deploy...")
     p.add_argument("action")
     p.add_argument("target", nargs="?")
+
+    p = add("pr-brief", cmd_pr_brief, "breakdown of a branch's changes and how much its risk asks the PR to explain")
+    p.add_argument("--base", default="origin/HEAD")
+    p.add_argument("--head", default="HEAD")
+    p.add_argument("--repo")
+    p.add_argument("--markdown", action="store_true", help="also return a PR body skeleton with the breakdown filled in")
 
     p = add("lint-text", cmd_lint_text, "check PR or commit text against the project's text bans")
     p.add_argument("file", nargs="?")
