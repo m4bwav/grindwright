@@ -148,3 +148,7 @@ Owner request: scan PRs grindwright opened for merge conflicts. `pr-sync` now re
 ## 2026-11-08: picture links on private repos (0.3.26)
 
 A reviewer on a private game repo got a 404 on a PR's example sheet: `raw.githubusercontent.com` links to a private repository do not load in the browser. `references/loop.md` now says to link pictures as `github.com/OWNER/REPO/blob/BRANCH/PATH?raw=true`. The same session worked the four owner-comment items and one conflict item `pr-sync` raised on the second game: conflict resolved (both sides had appended hints), example links fixed, and a second art review applied.
+
+## 2026-11-08: 0.4.0 run report
+
+Owner asked for a report shown after every run unless turned off: chainwright session links, how far each front got and why it stopped, PRs created and updated, issues addressed or commented on, charts of work, tokens and time. Built `scripts/grind_report.py`; `grind_loop` now records each pass from the agent's JSON output; `grind_crew` builds one report per project. Tried on a real two-member crew run (12 sessions): the page found the three PRs it opened on GitHub, and the chainwright tier page built from the run file. GitHub's issue search only sees issues the account is involved in; comments by other routes may be missed.
