@@ -61,25 +61,25 @@
     "date": "2026-11-03"
   },
   "worth": {
-    "checked": "2026-11-06",
+    "checked": "2026-11-08",
     "skills": {
       "grindwright": {
         "verdict": "CUT",
-        "why": "no gain beyond noise (+25 points (noise margin 32)) at 1.98x the cost",
-        "body_tokens": 1920,
-        "listing_tokens": 206,
+        "why": "no gain beyond noise (+25 points (noise margin 38)) at 1.42x the cost",
+        "body_tokens": 3237,
+        "listing_tokens": 241,
         "specific_share": 0.58,
         "delta": 0.25,
-        "cost_ratio": 1.98,
+        "cost_ratio": 1.42,
         "modes": [
           4
         ],
         "gaps": 0,
-        "checked": "2026-11-06",
+        "checked": "2026-11-08",
         "uses": {
           "days": 60,
-          "interactive": 2,
-          "subagent": 0,
+          "interactive": 89,
+          "subagent": 3,
           "headless": 0
         }
       }
