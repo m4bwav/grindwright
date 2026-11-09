@@ -732,6 +732,9 @@ class OvernightFaults(Base):
         self.assertNotIn("warning", report)
         self.assertEqual(report["closed_sets"], [made])
 
+    def test_comma_areas_are_split(self):
+        self.assertEqual(grw.split_areas(["a/b, c", "d"]), ["a/b", "c", "d"])
+
     def test_part_answered_set_waits_until_answers_stop_changing(self):
         fake = Path(self.dir.name) / "ask.py"
         fake.write_text("import json;print(json.dumps({'ok':True,'answered':['q1'],'unanswered':['q2'],'open':2,'done':False}))", encoding="utf-8")

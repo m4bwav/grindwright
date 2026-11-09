@@ -539,6 +539,11 @@ def find_skill(name):
     return None
 
 
+def split_areas(areas):
+    """--area a,b means two areas, not one path with a comma."""
+    return [part.strip() for area in areas or [] for part in area.split(",") if part.strip()]
+
+
 ASK_MISSING = ("askwright's ask.py was not found, so answers on decision pages cannot come back: "
                "set ask_py in profile.json (or GRINDWRIGHT_ASK) to its path, or install askwright")
 
@@ -708,7 +713,7 @@ def cmd_add(store, args):
             raise Refused([f"--blocked-by {', '.join(unknown)}: no such item; a milestone or outside gate needs its own item (wait-human on it)"])
         item["blocked_by"] = args.blocked_by
     if getattr(args, "area", None):
-        item["areas"] = args.area
+        item["areas"] = split_areas(args.area)
     if args.owner_note:
         item["owner_note"] = True
     items.append(item)
@@ -881,7 +886,7 @@ def cmd_claim(store, args):
     item.pop("paused_by", None)
     item.pop("handling", None)
     if getattr(args, "area", None):
-        item["areas"] = sorted(set(item.get("areas", [])) | set(args.area))
+        item["areas"] = sorted(set(item.get("areas", [])) | set(split_areas(args.area)))
     if getattr(args, "branch", None):
         item["branch"] = args.branch
     item["lease_until"] = (now() + dt.timedelta(hours=LEASE_HOURS)).isoformat(timespec="seconds")

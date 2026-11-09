@@ -337,8 +337,8 @@ def cmd_issue_accept(store, args):
     item["triaged"] = True
     if args.value:
         item["value"] = args.value
-    if args.area:
-        item["areas"] = args.area
+    if args.area:  # --area a,b is two areas
+        item["areas"] = [p.strip() for a in args.area for p in a.split(",") if p.strip()]
     touch(item)
     store.save_items(items)
     return {"id": item["id"], "triaged": True}
@@ -614,6 +614,11 @@ def cmd_ticket(store, args):
             raise Refused(["looks like " + ", ".join(f"#{r['number']} ({r['state']})" for r in hits)], duplicates=[r["number"] for r in hits])
         label = config.get(f"{args.type}_label", "bug" if args.type == "bug" else "enhancement")
         labels = ["--label", label] + (["--label", config.get("proposal_label", "proposal")] if args.propose else [])
+        if args.propose:  # a missing label fails the create; make it, as for needs-review
+            try:
+                gh("label", "create", labels[-1], "-R", config["repo"], "--force")
+            except Exception:
+                pass
         body = f"{agent_line(store)}\n\n{args.body}\n\n<!-- grw-key: {key} -->\n{MARKER}\n"
         url = gh("issue", "create", "-R", config["repo"], "--title", args.title, *labels, "--body-file", "-", stdin=body).strip()
         number = int(url.rstrip("/").rsplit("/", 1)[-1])
