@@ -1,5 +1,10 @@
 # Changelog: grindwright
 
+## 0.7.4 (2026-11-08)
+
+- `ticket --propose` creates the proposal label when the repository lacks it, instead of failing the issue create.
+- `--area a,b` on claim, issue-take and add means two areas; before, it was stored as one path with a comma, so overlap checks missed both.
+
 ## 0.7.3 (2026-11-08)
 
 - The crew driver no longer starts a new run in a member's old worktree on yesterday's branch. A clean tree with nothing unmerged moves to a fresh `grind/<member>-<date>` branch off the base; a tree with uncommitted changes or unmerged commits is left as it is and the member gets a new `<member>-<date>` tree.
