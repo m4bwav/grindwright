@@ -1,5 +1,7 @@
 # Handoff
 
+2026-11-08 (23:30): v0.7.7: `pr-sync` raises stale picture links on agent PRs; `pr-images N --fix` relinks (body in place, new comment per agent comment).
+
 2026-11-08 (22:40): v0.7.6: `pr-series` makes its label; demo lane groundwork (dormant, `references/demo.md`). Evals and `worth --ab` were approved by the owner for this session (see Next 2).
 
 2026-11-08 (late): v0.7.4 released and installed. 0.7.2 `ask_py` (sync could not find askwright as a clone and silently kept every page-waiting item waiting), 0.7.3 crew members start on a fresh branch, 0.7.4 proposal label and comma areas. A 12-hour two-member crew on the first game started 21:00 on 0.7.3: next session reads its result (did it run near 12 h, timing rows, PRs) and fixes faults.
