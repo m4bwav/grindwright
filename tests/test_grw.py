@@ -719,6 +719,19 @@ class OvernightFaults(Base):
         self.assertEqual(self.grw("sync")["closed_sets"], [made])
         self.assertEqual(self.grw("show", made)["item"]["state"], "ready")
 
+    def test_sync_reads_ask_py_from_the_profile_and_warns_without_it(self):
+        made = self.grw("add", "ask", "--lane", "code", "--source", "t", "--value", "4", "--human-min", "5", "--person", "alex")["id"]
+        self.grw("set", made, "state=waiting-on-human", "set=somewhere")
+        report = self.grw("sync")
+        self.assertIn("ask_py", report["warning"])
+        self.assertIn("ask_py", self.grw("next")["warning"])
+        fake = Path(self.dir.name) / "ask.py"
+        fake.write_text("import json;print(json.dumps({'ok':True,'answered':[],'open':0}))", encoding="utf-8")
+        self.profile({"ask_py": str(fake)})
+        report = self.grw("sync")
+        self.assertNotIn("warning", report)
+        self.assertEqual(report["closed_sets"], [made])
+
     def test_part_answered_set_waits_until_answers_stop_changing(self):
         fake = Path(self.dir.name) / "ask.py"
         fake.write_text("import json;print(json.dumps({'ok':True,'answered':['q1'],'unanswered':['q2'],'open':2,'done':False}))", encoding="utf-8")

@@ -539,10 +539,25 @@ def find_skill(name):
     return None
 
 
-def find_ask():
+ASK_MISSING = ("askwright's ask.py was not found, so answers on decision pages cannot come back: "
+               "set ask_py in profile.json (or GRINDWRIGHT_ASK) to its path, or install askwright")
+
+
+def unreadable_pages(store):
+    """Items waiting on askwright pages that cannot be read on this machine."""
+    if find_ask(store.profile()):
+        return []
+    return [i["id"] for i in store.items() if i["state"] == "waiting-on-human" and i.get("set")]
+
+
+def find_ask(profile=None):
+    """askwright's ask.py: GRINDWRIGHT_ASK, then the profile's ask_py, then an installed askwright."""
     env = os.environ.get("GRINDWRIGHT_ASK")
     if env:
         return env
+    named = (profile or {}).get("ask_py")
+    if named and Path(named).is_file():
+        return named
     found = find_skill("askwright")
     if not found:
         return None
@@ -746,6 +761,14 @@ def cmd_rank(store, args):
 
 
 def cmd_next(store, args):
+    answer = next_answer(store, args)
+    stuck = unreadable_pages(store)
+    if stuck:
+        answer["warning"] = ASK_MISSING + " (" + ", ".join(stuck) + ")"
+    return answer
+
+
+def next_answer(store, args):
     result = ranking(store, args)
     if result["ranked"]:
         top = result["ranked"][0]
@@ -769,8 +792,9 @@ def cmd_next(store, args):
                                                      ": survey the game against each and add items with --road, then grw.py surveyed <id>"
                                                      " (--why if nothing is missing), or set met: true in road.json with evidence"],
                          "road": blind}, "deferred": result["deferred"]}
-    return {"next": {"action": "stop", "why": ["nothing selectable after a discovery pass; do not invent work"]},
+    stop = {"next": {"action": "stop", "why": ["nothing selectable after a discovery pass; do not invent work"]},
             "deferred": result["deferred"]}
+    return stop
 
 
 def hold_for_session(store, item_id):
@@ -1012,7 +1036,7 @@ def cmd_wait_human(store, args):
         count = len([q for q in data.get("questions", []) if not q.get("closed")])
         if count > MAX_SET_QUESTIONS:
             failures.append(f"{count} open questions: split the set; long pages go unanswered (limit {MAX_SET_QUESTIONS})")
-        ask = find_ask()
+        ask = find_ask(profile)
         if ask:
             lint = ask_call(ask, "lint", args.set)
             if lint.get("ok") is False:
@@ -1081,12 +1105,13 @@ def apply_pr_state(item, state):
 def cmd_sync(store, args):
     """Bring answers, finished renders and expired leases back into the ledger."""
     items = store.items()
-    ask = find_ask()
+    ask = find_ask(store.profile())
     report = {"answers": [], "machines": [], "recovered": [], "pr": [], "still_waiting": [], "closed_sets": [], "released": release_blocked(items)}
     for item in items:
         if item["state"] == "waiting-on-human" and item.get("set"):
             if not ask:
                 report["still_waiting"].append({"id": item["id"], "why": "askwright not found"})
+                report["warning"] = ASK_MISSING
                 continue
             status = ask_call(ask, "status", item["set"])
             answered = set(status.get("answered", []))
@@ -1344,7 +1369,7 @@ def cmd_doctor(store, args):
     closed = closed_lanes(profile)
     plugins = ["askwright", "artwright", "pixelwright", "musicwright", "sfxwright", "cinewright", "voicewright", "everwrite", "editwright", "game-juice", "polywright",
                "ludowright", "marketwright", "comfyui-gen", "unity-agent", "roblox-agent", "tokenwright", "everlast", "evergreen"]
-    return {"plugins": {p: bool(find_skill(p)) for p in plugins}, "ask_py": find_ask(), "hosts": report,
+    return {"plugins": {p: bool(find_skill(p)) for p in plugins}, "ask_py": find_ask(profile), "hosts": report,
             "closed_lanes": closed, "open_lanes": sorted(set(profile.get("lanes", {})) - set(closed)),
             "conflicts": profile_conflicts(profile),
             "repo_found": project_repo(store, profile.get("repo", ".")).exists()}
