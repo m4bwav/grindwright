@@ -110,7 +110,7 @@ A 12-hour two-member run on the first game stopped after one session: the ledger
 
 ## 2026-11-07: engine-verify pattern (0.3.14)
 
-Mark asked to record the worktree-to-editor-to-e2e testing pattern after the Arvum pilot showed "drafted" items that were never compiled (no csproj, no editor for the pinned version). New `references/engine-verify.md`: one worktree and editor per session, pinned editor installed once, warm worktree pool (Mark: reuse worktrees to avoid repeated setup; the import cache is the per-worktree cost), rungs compile -> EditMode -> PlayMode -> live editor, test safety (scratch save path, reporters off), determinism, regression-test shape, follow the project test plan. Ledger evidence line defined.
+Mark asked to record the worktree-to-editor-to-e2e testing pattern after the second game's pilot showed "drafted" items that were never compiled (no csproj, no editor for the pinned version). New `references/engine-verify.md`: one worktree and editor per session, pinned editor installed once, warm worktree pool (Mark: reuse worktrees to avoid repeated setup; the import cache is the per-worktree cost), rungs compile -> EditMode -> PlayMode -> live editor, test safety (scratch save path, reporters off), determinism, regression-test shape, follow the project test plan. Ledger evidence line defined.
 
 ## 2026-11-07: pr-sync (0.3.15)
 
