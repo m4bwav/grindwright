@@ -116,7 +116,7 @@ If `GRINDWRIGHT_SESSION` is set or `next` lists `others_working`, others share t
   comfyui-gen, sprites through pixelwright, feel through game-juice, balance through ludowright, music through
   musicwright, writing through everwrite and editwright, voices through voicewright, video through cinewright, models through polywright, marketing through marketwright.
 - Sound effects go through sfxwright when installed: hand over the game events, read its `sounds.json` for status and picked files, and keep the human listen. Without it, the sound lane keeps its musicwright route.
-- Unattended runs use `scripts/grind_loop.py`, bounded and only after the owner agrees ([chaining](references/chaining.md)). Each run ends with a [run report](references/chaining.md#run-report); quote its summary in the handoff.
+- Unattended runs use `scripts/grind_loop.py`, bounded and only after the owner agrees ([chaining](references/chaining.md)). Each run ends with a [run report](references/chaining.md#run-report); quote its summary in the handoff. While it runs, `grw.py status --serve` is the live page.
 - A lane absent from the profile is closed. If the only lanes left wait on a person and discovery is off, stopping is
   correct: say so. Start commands use absolute paths, so they work from any folder.
 - Probe machines unasked (`next` lists free hosts); start long renders detached, split batches.

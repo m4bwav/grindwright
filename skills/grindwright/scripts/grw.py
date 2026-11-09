@@ -30,9 +30,10 @@ from pathlib import Path
 
 import grw_remote
 import grw_work
+import grw_status
 from grw_work import Refused
 
-VERSION = "0.6.1"
+VERSION = "0.7.5"
 FORMAT = 1
 STATES = ("ready", "running", "waiting-on-human", "waiting-on-machine", "done", "dropped")
 COST_UNITS = {"S": 1, "M": 3, "L": 8}
@@ -1833,6 +1834,7 @@ def build_parser():
     p.add_argument("text")
     p.add_argument("--area")
     grw_work.add_parsers(add)
+    grw_status.add_parsers(add)
 
     add("queue", cmd_queue, "what each person has open, and proposed questions")
 
@@ -1876,7 +1878,7 @@ def main(argv=None):
     store = Store(args.state, args.session)
     if args.command != "init":
         store.require()
-    read_only = args.command in ("show", "rank", "next", "plan", "doctor", "list", "queue", "guard", "lint-text", "metrics", "init") and not getattr(args, "claim", False)
+    read_only = args.command in ("show", "rank", "next", "plan", "doctor", "list", "queue", "guard", "lint-text", "metrics", "status", "init") and not getattr(args, "claim", False)
     try:
         if read_only:
             result = args.func(store, args)

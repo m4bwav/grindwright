@@ -176,3 +176,6 @@ Owner: parallel slices of one feature are fine when needed, but every PR involve
 - 0.7.3: the crew driver reused member worktrees on the previous night's branches (one dirty, one with unmerged commits). Clean merged trees now move to a fresh branch; others are left and a dated tree is made.
 - 0.7.4: two leftovers from the first pilot's notes: `ticket --propose` makes its label; `--area a,b` splits.
 - Started a two-member, 12-hour crew on 0.7.3. Results not read yet.
+
+## 2026-11-08: 0.7.5 live status page
+Mark asked for a page to follow a run while it goes. New `grw_status.py` behind `grw.py status` (JSON) and `status --serve` (127.0.0.1 page, polls /api every 15 s). It reads BOARD/WAITING/events/ledger/timing/logs and the process list (grind_loop members match by state path; the crew line names only its crew file, so any grind_crew counts; the page's own Get-CimInstance query must be skipped or it matches itself). Open claims = claim events with no later done/released/skip/dropped/rejected/drafted/asked/detached/resolved. Cost and sessions come from the member logs' result lines. Tested live on the second SpaceDeckBuilder2 overnight: 2 members, 2 agents, 22 done, about $14.64 by 21:26. tests/test_status.py (4); suite 169 pass.
