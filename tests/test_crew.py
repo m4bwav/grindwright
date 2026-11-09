@@ -552,3 +552,40 @@ class PullRequestReviews(Base):
         self.fake.prs = [pr(1)]
         self.fake.detail[1] = {"mergeable": None, "mergeable_state": "unknown"}
         self.assertEqual(self.run_grw("pr-sync")[1]["conflicts"], [])
+
+
+class FreshWorktree(unittest.TestCase):
+    """A member tree left by an earlier run must not start a new night on the old branch."""
+
+    def git(self, cwd, *argv):
+        import subprocess
+        subprocess.run(["git", "-C", str(cwd), *argv], check=True, capture_output=True)
+
+    def setUp(self):
+        self.dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.dir.cleanup)
+        self.repo = Path(self.dir.name) / "game"
+        self.repo.mkdir()
+        self.git(self.repo, "init", "-q", "-b", "main")
+        self.git(self.repo, "-c", "user.email=a@b", "-c", "user.name=a", "commit", "-q", "--allow-empty", "-m", "one")
+        self.project = {"repo": str(self.repo), "worktree_root": str(Path(self.dir.name) / "crew"), "base": "main"}
+
+    def head(self, path):
+        import subprocess
+        return subprocess.run(["git", "-C", str(path), "rev-parse", "--abbrev-ref", "HEAD"], capture_output=True, text=True).stdout.strip()
+
+    def test_clean_merged_tree_moves_to_a_fresh_branch(self):
+        first = grind_crew.worktree(self.project, "m-1", "2026-01-01")
+        self.git(self.repo, "-c", "user.email=a@b", "-c", "user.name=a", "commit", "-q", "--allow-empty", "-m", "two")
+        second = grind_crew.worktree(self.project, "m-1", "2026-01-02")
+        self.assertEqual(first, second)
+        self.assertEqual(self.head(second), "grind/m-1-2026-01-02")
+
+    def test_dirty_tree_is_left_and_a_dated_tree_made(self):
+        first = grind_crew.worktree(self.project, "m-1", "2026-01-01")
+        (Path(first) / "left.txt").write_text("x", encoding="utf-8")
+        second = grind_crew.worktree(self.project, "m-1", "2026-01-02")
+        self.assertNotEqual(first, second)
+        self.assertTrue(second.endswith("m-1-2026-01-02"))
+        self.assertEqual(self.head(first), "grind/m-1-2026-01-01")
+        self.assertEqual(grind_crew.worktree(self.project, "m-1", "2026-01-02"), second)

@@ -1,5 +1,9 @@
 # Changelog: grindwright
 
+## 0.7.3 (2026-11-08)
+
+- The crew driver no longer starts a new run in a member's old worktree on yesterday's branch. A clean tree with nothing unmerged moves to a fresh `grind/<member>-<date>` branch off the base; a tree with uncommitted changes or unmerged commits is left as it is and the member gets a new `<member>-<date>` tree.
+
 ## 0.7.2 (2026-11-08)
 
 - `ask_py` in the profile names askwright's `ask.py` when askwright is not installed. Before, a machine with askwright only as a clone made `sync` skip every decision page quietly ("askwright not found"), so answered pages never woke their items and runs stopped on "nothing selectable". `sync` and `next` now carry a `warning` naming the stuck items.

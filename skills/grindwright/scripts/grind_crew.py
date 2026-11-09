@@ -60,13 +60,29 @@ def worktree(project, member, today):
     repo = Path(project["repo"]).resolve()
     root = Path(project["worktree_root"]) if project.get("worktree_root") else repo.parent / f"{repo.name}-grind"
     path = root / member
-    if path.exists():
-        return str(path)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    subprocess.run(["git", "-C", str(repo), "fetch", "-q", "origin"], check=False)
+    branch = f"grind/{member}-{today}"
     base = project.get("base", "origin/HEAD")
-    subprocess.run(["git", "-C", str(repo), "worktree", "add", "-q", "-b", f"grind/{member}-{today}", str(path), base], check=True)
+    subprocess.run(["git", "-C", str(repo), "fetch", "-q", "origin"], check=False)
+    if path.exists():
+        current = git_out(path, "rev-parse", "--abbrev-ref", "HEAD")
+        if current == branch or not current:  # today's tree, or a folder set up by hand
+            return str(path)
+        # A tree left by an earlier run: move it to a fresh branch only when nothing in it would be lost.
+        clean = not git_out(path, "status", "--porcelain")
+        if clean and git_out(path, "rev-parse", "--verify", base) and not git_out(path, "rev-list", f"{base}..HEAD"):
+            subprocess.run(["git", "-C", str(path), "checkout", "-q", "-B", branch, base], check=True)
+            return str(path)
+        path = root / f"{member}-{today}"
+        if path.exists():
+            return str(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    subprocess.run(["git", "-C", str(repo), "worktree", "add", "-q", "-B", branch, str(path), base], check=True)
     return str(path)
+
+
+def git_out(path, *argv):
+    done = subprocess.run(["git", "-C", str(path), *argv], capture_output=True, text=True)
+    return done.stdout.strip() if done.returncode == 0 else ""
 
 
 def plan(crew):
