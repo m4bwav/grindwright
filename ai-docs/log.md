@@ -152,3 +152,7 @@ A reviewer on a private game repo got a 404 on a PR's example sheet: `raw.github
 ## 2026-11-08: 0.4.0 run report
 
 Owner asked for a report shown after every run unless turned off: chainwright session links, how far each front got and why it stopped, PRs created and updated, issues addressed or commented on, charts of work, tokens and time. Built `scripts/grind_report.py`; `grind_loop` now records each pass from the agent's JSON output; `grind_crew` builds one report per project. Tried on a real two-member crew run (12 sessions): the page found the three PRs it opened on GitHub, and the chainwright tier page built from the run file. GitHub's issue search only sees issues the account is involved in; comments by other routes may be missed.
+
+## 2026-11-08: 0.5.0 screenshots and risk-scaled PR bodies
+
+Owner asked for screenshots on every PR, issue and PR update comment with a visible change, and for explanation that grows with a PR's size and risk ("large PRs test the risk aversion of mergers"). Built: the visible-lane gate on `done`/`hold` (`--shots` or `--no-shots`), thumbnails in the run report, `grw.py pr-brief` (breakdown by area and kind, risk score, tier, PR body skeleton), loop.md "What a reviewer gets". Tried `pr-brief` on a real 71-file art branch: tier large, flagged code without tests; caught that the very-large tier dropped the large tier's sections, fixed.

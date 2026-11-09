@@ -1,5 +1,11 @@
 # Changelog: grindwright
 
+## 0.5.0 (2026-11-08)
+
+- Screenshots of visible changes: `done` and `hold` refuse an item on a visible lane (art, animation, video, model, juice, edit, ui, feel, marketing, or a lane with `"visible": true`) without `--shots <files>` or `--no-shots "<why>"`. Shots are kept on the item and in the event, and the run report shows them as thumbnails per item (small local files embedded).
+- `grw.py pr-brief [--base] [--head] [--markdown]`: breakdown of a branch's changes by area and kind, a risk score and tier (small, medium, large, very large), and a PR body skeleton whose required sections grow with the tier (risks, reading order, rollback, reviewer checklist, split plan). loop.md "What a reviewer gets" holds both rules.
+- `VERSION` string caught up. Four tests.
+
 ## 0.4.0 (2026-11-08)
 
 - Run report: when `grind_loop` (alone) or `grind_crew` ends, `scripts/grind_report.py` writes `logs/run-ID.json` and a self-contained page `logs/run-ID-report.html` (plus a markdown summary) and opens it. It shows why each member stopped, in plain words, with its last session's own reason; how far each road milestone and lane got; the PRs opened and updated and the issues opened or touched, from GitHub over the run window; every item worked, with evidence; and every session with time, cost, tokens and a link to its Claude transcript and `claude --resume` id. It also includes charts (work by lane, cost and agent minutes by member, a session timeline). When chainwright is installed it also builds the chainwright tier page for the run and links it.

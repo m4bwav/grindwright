@@ -108,7 +108,7 @@ If `GRINDWRIGHT_SESSION` is set or `next` lists `others_working`, others share t
 - Posts, outreach, store pages, publishing and deployments: draft only, a person sends. `grw.py guard` always refuses. Issue comments and PRs on the project's own tracker, once `work.issues` is in the profile, are the exception, always marked as from an agent.
 - Before merging, touching a main branch, stacking on a pending review or editing a protected file, run
   `grw.py guard merge|touch_main|stack_on_pending|touch <path>`. Another person's project follows that person's
-  rules. Run `grw.py lint-text <file>` on PR text where the profile bans terms.
+  rules. Run `grw.py lint-text <file>` on PR text where the profile bans terms. PR bodies start from `grw.py pr-brief --markdown`; visible changes carry screenshots ([loop](references/loop.md#what-a-reviewer-gets)).
 - Installing hooks, schedules or settings outside the repo needs the owner's go-ahead. So does running unattended.
 - Work on grindwright itself is capped: file a learning and go back to the project.
 - Plugins are optional. Detect, use, route around. Call them, do not copy them: art and cards through artwright and

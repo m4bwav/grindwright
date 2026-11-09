@@ -37,6 +37,35 @@ a question kind recurring three times should be a rule, so stop asking it.
 
 Pictures in a pull request or issue on a private repository: link them as `https://github.com/OWNER/REPO/blob/BRANCH/PATH?raw=true`. A `raw.githubusercontent.com` link to a private repository shows the reviewer a 404.
 
+## What a reviewer gets
+
+Every PR, issue and PR update comment is written for a person deciding whether to merge. Two rules:
+
+**Screenshots of every visible change.** Art, animation, UI, scenes, effects, layouts, video, models, store pages:
+attach pictures to the PR, the issue and every update comment that changes what shows. Before and after when a before
+exists (same camera, same crop), a strip or GIF for motion, one contact sheet for a batch. Capture with what the
+project already has: the engine in batchmode or a scripted play-mode capture ([engine-verify](engine-verify.md)), a
+browser screenshot for web pages, the contact sheet the batch cycle made. Commit them under `pr-media/<item>/` on the
+branch and link them (private repositories: the `blob/...?raw=true` form above). `grw.py done` and `hold` refuse an
+item on a visible lane without `--shots <files>` or `--no-shots "<why>"`; the run report shows them per item. A lane
+sets `"visible": true|false` in the profile to override its kind.
+
+**Explanation grows with risk.** Large PRs test a merger's nerve, so the bigger and riskier the change, the more the
+body must explain. Start every PR body from `grw.py pr-brief --base <base> --head <branch> --markdown`: it groups the
+changed files by area and kind (code, tests, art and media, docs, settings, CI and build, generated), scores the risk
+(files, code lines, risky paths such as settings, workflows and save formats, code without tests, mass deletions) and
+gives a tier with what the body must hold:
+
+| Tier | Must explain |
+|---|---|
+| small | what changed and why; how it was verified |
+| medium | plus a breakdown by area, verification commands and results, screenshots |
+| large | plus the reason for each group, risks and how each was checked, a reading order (what to skip as generated or moved), how to roll back |
+| very large | plus why it is one PR or a split plan, a reviewer's checklist, a few-minute play or test script for the merger |
+
+Fill every TODO; replace the table's "Why" column with real reasons. A change that scores very large and is not one
+idea should be split before it is opened.
+
 ## Lanes and what to do in them
 
 | Lane | Tool when installed | Verify with |
