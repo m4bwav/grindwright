@@ -1,5 +1,7 @@
 # Handoff
 
+2026-11-08 (23:50): v0.7.8: `session end --lesson/--no-lessons` required after productive sessions; loop.md 'Learn from the work'. Next: show session lessons in the run report.
+
 2026-11-08 (23:30): v0.7.7: `pr-sync` raises stale picture links on agent PRs; `pr-images N --fix` relinks (body in place, new comment per agent comment).
 
 2026-11-08 (22:40): v0.7.6: `pr-series` makes its label; demo lane groundwork (dormant, `references/demo.md`). Evals and `worth --ab` were approved by the owner for this session (see Next 2).

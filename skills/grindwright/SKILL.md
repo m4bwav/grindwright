@@ -51,7 +51,7 @@ act on a road that is not confirmed, beyond work every road would include (bugs,
 4. Failed pass: `grw.py redo <id> "<what was wrong>"`.
 5. Work you find but leave ("needs a plan first", "left for later") goes in with `grw.py add` before you stop, so the next session can select it; a summary line is not a ledger item.
    Repeat until `grw.py session check` allows stopping. It refuses while anything is selectable. Then
-   `grw.py session end` (`--force "<why>"` when a fresh session would do the next item better), run evergreen-wrapup if it is installed (skip quietly if not; a failed wrap-up never blocks), update `HANDOFF.md`, and print the same one-line start command.
+   `grw.py session end --lesson "<plugin>: <lesson> -> <where>"` ([improve the plugins you used](references/loop.md#learn-from-the-work); `--force "<why>"` when a fresh session would do the next item better), run evergreen-wrapup if it is installed (skip quietly if not; a failed wrap-up never blocks), update `HANDOFF.md`, and print the same one-line start command.
 
 ## Keep the bookkeeping small
 
@@ -124,6 +124,5 @@ If `GRINDWRIGHT_SESSION` is set or `next` lists `others_working`, others share t
 
 ## Maintenance
 
-Evergreen unit: `evergreen.json` beside this file, with RESEARCH, CHANGELOG, LEARNINGS, TESTS and MAINTENANCE. Read
-`evergreen.json` at each use; if due or contradicted, say so, do the task, then refresh. Refreshes read the everscout
-beat `indie-ai-games` for leads. Lessons go to LEARNINGS.md as they happen.
+Evergreen unit (`evergreen.json` here): if due or contradicted, say so, do the task, then refresh; leads in the
+everscout beat `indie-ai-games`. Lessons go to LEARNINGS.md as they happen.

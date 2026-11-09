@@ -597,6 +597,14 @@ class Crash(Base):
         flag.write_text("x")
         self.assertEqual(self.grw("sync")["machines"], [item])
 
+    def test_session_that_made_something_must_name_its_lessons(self):
+        self.grw("session", "start")
+        self.grw("log", "fixed a crash", "--lane", "code", "--source", "playtest", "--evidence", "boots", "--oracle", "boot")
+        self.grw("discover", "--no-gh")
+        self.grw("session", "end", "--no-probe", expect=2)
+        ended = self.grw("session", "end", "--no-probe", "--lesson", "artwright: judge missed halos -> its LEARNINGS")
+        self.assertTrue(ended["ended"])
+
     def test_session_cannot_end_while_work_is_selectable(self):
         self.add("work", 4)
         self.grw("session", "start")

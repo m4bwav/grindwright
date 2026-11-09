@@ -1,5 +1,9 @@
 # Changelog: grindwright
 
+## 0.7.8 (2026-11-08)
+
+- Learn from the work: `session end` after a session that made something refuses until it gets `--lesson "<plugin or project>: <lesson> -> <where it went>"` or `--no-lessons "<why>"`. New loop.md section: lessons about plugins the grind used (pixelwright, artwright, comfyui-gen, ...) go to that plugin's LEARNINGS through evergreen-learn or a small fix PR; bigger plugin work becomes a meta-lane item; evergreen-wrapup (run by chainwright) harvests what was missed. Lessons are kept in the session_end event.
+
 ## 0.7.7 (2026-11-08)
 
 - Stale picture links on agent PRs: `pr-sync` finds image links in the agent's PR body and comments that no longer load (raw links on private repositories, files gone at their ref) and raises one item per PR; `grw.py pr-images N [--fix]` relinks the body in place and posts a new comment with the pictures for each agent comment, pinned to a commit sha. First live run fixed a body and two comments on a game PR.
