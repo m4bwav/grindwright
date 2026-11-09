@@ -41,7 +41,7 @@ act on a road that is not confirmed, beyond work every road would include (bugs,
    - `discover`: nothing selectable. Run `grw.py discover`, then really test and balance the game and look for gaps.
      Markers miss dead data, so also check that data rows (events, cards) have code behind them and their own feel. Before saying something does not exist, search the docs and data for it. Add only items with a real `--source`. Never invent busywork. A finding not worth an item: `grw.py reject "<finding>" --why ...`. Work already finished: `grw.py log "<title>" --lane ... --source ... --evidence ... --oracle ...`.
    - `survey`: an unmet milestone of a confirmed road has no open work and no survey this window (a session, or a crew's shared hours), even if earlier items on it are done. Survey the game against it (play, read its systems and design docs), `add` an item per gap with `--road <id>`, then `grw.py surveyed <id>` (`--why` saying what you checked when nothing is missing), or set `"met": true` in `road.json` with the evidence. The run does not stop until each is done.
-   - `stop`: nothing selectable after discovery. Before stopping, propose: mine the agent todo file, design docs with unbuilt sections and open issues for obvious next work, and file the best few with `grw.py ticket "<title>" --type feature --propose --body "<why, scope, risk>"` (labelled `proposal`, waits for the green-light label, limit `work.proposals.open`, default 3). Work stacked on an unmerged PR is fine where the stacking guard allows it; say it may need rework. Then say so honestly.
+   - `stop`: nothing selectable after discovery. Before stopping, propose: mine the agent todo file, design docs with unbuilt sections and open issues for obvious next work, and file the best few with `grw.py ticket "<title>" --type feature --propose --body "<why, scope, risk>"` (labelled `proposal`, waits for the green-light label, limit `work.proposals.open`, default 3). Stacking is fine where the guard allows (`--series`; may need rework). Then say so honestly.
 3. Finish the item one of three ways:
    - `grw.py done <id> --evidence "..." --oracle <rung>`. Rungs: none (reports and research), compile, tests, boot, scripted-play, snapshot, human.
      Use the highest it passed. Only `human` proves it is good; never call machine-checked work fun or finished.
@@ -106,20 +106,21 @@ If `GRINDWRIGHT_SESSION` is set or `next` lists `others_working`, others share t
 ## Hard limits
 
 - Posts, outreach, store pages, publishing and deployments: draft only, a person sends. `grw.py guard` always refuses. Issue comments and PRs on the project's own tracker, once `work.issues` is in the profile, are the exception, always marked as from an agent.
+- One concept, one PR or series: `grw.py pr-overlap <id>` before work and before `issue-pr`.
 - Before merging, touching a main branch, stacking on a pending review or editing a protected file, run
   `grw.py guard merge|touch_main|stack_on_pending|touch <path>`. Another person's project follows that person's
   rules. PR text: `grw.py lint-text`, bodies from `pr-brief --markdown`, screenshots for visible changes ([loop](references/loop.md#what-a-reviewer-gets)).
 - Installing hooks, schedules or settings outside the repo needs the owner's go-ahead. So does running unattended.
 - Work on grindwright itself is capped: file a learning and go back to the project.
-- Plugins are optional. Detect, use, route around. Call them, do not copy them: art and cards through artwright and
+- Plugins are optional; call them, never copy them: art and cards through artwright and
   comfyui-gen, sprites through pixelwright, feel through game-juice, balance through ludowright, music through
   musicwright, writing through everwrite and editwright, voices through voicewright, video through cinewright, models through polywright, marketing through marketwright.
 - Sound effects go through sfxwright when installed: hand over the game events, read its `sounds.json` for status and picked files, and keep the human listen. Without it, the sound lane keeps its musicwright route.
 - Unattended runs use `scripts/grind_loop.py`, bounded and only after the owner agrees ([chaining](references/chaining.md)). Each run ends with a [run report](references/chaining.md#run-report); quote its summary in the handoff.
 - A lane absent from the profile is closed. If the only lanes left wait on a person and discovery is off, stopping is
   correct: say so. Start commands use absolute paths, so they work from any folder.
-- Probe machines without being told (`next` lists free hosts). Start long renders detached and split batches.
-- Record `--provenance` on generated assets; stores ask about them.
+- Probe machines unasked (`next` lists free hosts); start long renders detached, split batches.
+- Record `--provenance` on generated assets.
 
 ## Maintenance
 

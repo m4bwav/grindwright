@@ -402,14 +402,107 @@ def cmd_issue_ask(store, args):
     return {"id": item["id"], "comment": url}
 
 
+BRANCH_NOISE = {"feat", "feature", "fix", "art", "chore", "docs", "test", "tests", "agent", "grind", "wip", "debug", "b1", "b2", "b3", "v2", "v3"}
+SERIES_LABEL = "series"
+
+
+def branch_tokens(name):
+    return {w for w in re.findall(r"[a-z0-9]+", name.lower()) if w not in STOPWORDS and w not in BRANCH_NOISE}
+
+
+def series_of(text):
+    found = re.search(r"Series: ([^\n(]+?) \(part (\d+)", text or "")
+    return (found.group(1).strip(), int(found.group(2))) if found else None
+
+
+def overlaps(open_prs, branches, title, issue=None, base=None, head=None):
+    """Open PRs and unmerged branches that already cover this work. One concept gets one PR, or one labelled series."""
+    want = tokens(title)
+    hits, pr_heads = [], set()
+    for pr in open_prs:
+        pr_heads.add(pr["headRefName"])
+        if pr["headRefName"] == head:
+            continue
+        why = []
+        text = (pr.get("body") or "") + " " + pr["title"]
+        if issue and re.search(r"#%d(?!\d)" % int(issue), text):
+            why.append(f"references #{issue}")
+        if base and pr["headRefName"] == base:
+            why.append("this PR would stack on it")
+        if similar(pr["title"], title):
+            why.append("similar title")
+        bt = branch_tokens(pr["headRefName"])
+        if len(bt) >= 2 and bt <= want:
+            why.append("its branch names this concept")
+        if why:
+            hit = {"pr": pr["number"], "branch": pr["headRefName"], "title": pr["title"], "why": why}
+            if series_of(pr.get("body")):
+                hit["series"] = series_of(pr.get("body"))[0]
+            hits.append(hit)
+    for name in branches:
+        if name in pr_heads or name == head or name == base:
+            continue
+        bt = branch_tokens(name)
+        if len(bt) >= 2 and bt <= want:
+            hits.append({"branch": name, "why": ["unmerged branch names this concept"]})
+    return hits
+
+
+def find_overlaps(repo, title, issue=None, base=None, head=None):
+    prs = json.loads(gh("pr", "list", "-R", repo, "--state", "open", "--limit", "100",
+                        "--json", "number,title,body,headRefName,baseRefName") or "[]")
+    default = json.loads(gh("repo", "view", repo, "--json", "defaultBranchRef") or "{}").get("defaultBranchRef", {}).get("name")
+    branches = [b["name"] for b in gh_json(f"repos/{repo}/branches?per_page=100") if b["name"] != default]
+    return overlaps(prs, branches, title, issue, base, head)
+
+
+def overlap_repo(store):
+    block = store.profile().get("work", {})
+    repo = (block.get("prs") or {}).get("repo") or (block.get("issues") or {}).get("repo")
+    if not repo:
+        raise Refused(['no "work.prs.repo" or "work.issues.repo" in profile.json'])
+    return repo
+
+
+OVERLAP_NEXT = ("same work (a redo, a fix, more of the same batch): push to that PR's branch and update its body. "
+                "A deliberate next slice of a bigger change: issue-pr --series \"<name>\" labels it and every part says which part it is. "
+                "Different concept after all: --not-duplicate \"<why>\".")
+
+
+def cmd_pr_overlap(store, args):
+    """Before starting work and before opening a PR: is this concept already in an open PR or branch?"""
+    title, issue = args.title, args.issue
+    if args.id:
+        item = find_item(store.items(), args.id)
+        title, issue = title or item["title"], issue or item.get("issue")
+    if not title:
+        raise Refused(["give an item id or --title"])
+    hits = find_overlaps(overlap_repo(store), title, issue, args.base, args.head)
+    return {"title": title, "issue": issue, "overlaps": hits,
+            "next": OVERLAP_NEXT if hits else "none: a new branch and PR are fine"}
+
+
+def series_note(name, part, hits):
+    others = ", ".join(f"#{h['pr']}" for h in hits if h.get("pr"))
+    return f"**Series: {name} (part {part})**. One change split into several PRs" + (f"; other parts: {others}." if others else ".")
+
+
 def cmd_issue_pr(store, args):
     """Open the PR for human review, with both cases argued, and link PR and issue both ways."""
     config = work(store, "issues")
     items = store.items()
     item = issue_item(items, args.id)
     repo, number = config["repo"], item["issue"]
+    hits = find_overlaps(repo, args.title, number, args.base, args.branch)
+    series = ""
+    if args.series:
+        parts = [h for h in hits if h.get("series") == args.series]
+        series = series_note(args.series, len(parts) + 1, hits) + "\n\n"
+    elif hits and not args.not_duplicate:
+        raise Refused(["this concept already has an open PR or branch: " + OVERLAP_NEXT] +
+                      [f"#{h.get('pr', '-')} {h['branch']}: {', '.join(h['why'])}" for h in hits])
     # GitHub honours the closing keyword only for a PR into the default branch; the comment below links it either way.
-    body = (f"Closes #{number}\n\nOpened by an AI agent (session `{store.sid}`) for human review. Nothing merges without a person.\n\n"
+    body = (f"Closes #{number}\n\n{series}Opened by an AI agent (session `{store.sid}`) for human review. Nothing merges without a person.\n\n"
             f"## Why this is a good idea\n{args.why}\n\n## Why it may not be\n{args.why_not}\n\n## What was checked\n{args.evidence}\n\n{MARKER}\n")
     refuse_banned(store, body + " " + args.title, "PR text")
     command = ["pr", "create", "-R", repo, "--head", args.branch, "--title", args.title, "--body-file", "-"]
@@ -417,7 +510,7 @@ def cmd_issue_pr(store, args):
         command += ["--base", args.base]
     for person in config.get("assign", []):
         command += ["--assignee", person]
-    for label in config.get("pr_labels", []):
+    for label in config.get("pr_labels", []) + ([SERIES_LABEL] if args.series else []):
         command += ["--label", label]
     url = gh(*command, stdin=body).strip()
     pr = url.rstrip("/").rsplit("/", 1)[-1]
@@ -648,6 +741,14 @@ def add_parsers(add):
     p.add_argument("--evidence", required=True)
     p.add_argument("--base")
     p.add_argument("--person")
+    p.add_argument("--series", help="one part of a bigger change split on purpose: labels it and names the part in the body")
+    p.add_argument("--not-duplicate", help="pr-overlap matched, but this is a different concept because...")
+    p = add("pr-overlap", cmd_pr_overlap, "open PRs or branches already covering this work; run before starting and before issue-pr")
+    p.add_argument("id", nargs="?")
+    p.add_argument("--title")
+    p.add_argument("--issue", type=int)
+    p.add_argument("--base")
+    p.add_argument("--head")
     p = add("ticket", cmd_ticket, "file a bug or feature; refuses duplicates")
     p.add_argument("title")
     p.add_argument("--type", required=True, choices=["bug", "feature"])

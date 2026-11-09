@@ -164,3 +164,6 @@ Owner asked for screenshots on every PR, issue and PR update comment with a visi
 ## 2026-11-08: 0.6.1 joins 0.5.0 and 0.6.0
 
 The screenshots branch merged with main; released as 0.6.1 so one install carries both.
+
+## 2026-11-08: 0.7.0 one PR of truth
+A game run opened three PRs for one concept on one issue: a code PR, a stacked debug-sliders PR and a stacked art batch that also redid layers the first PR had added. The slices were defensible, but the redo belonged on the first PR's branch and nothing labelled the three as one series. Added `grw.py pr-overlap` (issue reference, stacking, similar title, branch words over open PRs and unmerged branches), run before work and before `issue-pr`; `issue-pr` now refuses an overlap unless `--series "<name>"` (label `series`, "Series: name (part N)" line naming the other parts, stacking allowed) or `--not-duplicate`. Owner's rule: one PR of truth per concept; a series is fine when labelled; stack when it makes sense. Tests 156 pass; budget yellow (SKILL.md trimmed to 3498 tokens).
