@@ -1,5 +1,9 @@
 # Changelog: grindwright
 
+## 0.7.7 (2026-11-08)
+
+- Stale picture links on agent PRs: `pr-sync` finds image links in the agent's PR body and comments that no longer load (raw links on private repositories, files gone at their ref) and raises one item per PR; `grw.py pr-images N [--fix]` relinks the body in place and posts a new comment with the pictures for each agent comment, pinned to a commit sha. First live run fixed a body and two comments on a game PR.
+
 ## 0.7.6 (2026-11-08)
 
 - `pr-series` and `issue-pr --series` create the `series` label when the repository lacks it (the first live use failed with "'series' not found"). `ticket --propose` shares the same helper.

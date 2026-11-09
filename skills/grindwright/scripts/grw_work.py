@@ -246,6 +246,8 @@ def pr_sync(store, items):
     by_pr = {i["review_of"]: i for i in items if i.get("review_of") and i["state"] not in ("done", "dropped")}
     seen = {c for i in items for c in i.get("pr_seen", [])}
     report["conflicts"] = pr_conflicts(store, items, config, work_block, repo, open_prs)
+    if config.get("images", True):
+        report["images"] = pr_image_items(store, items, config, work_block, repo, open_prs, authors)
     for pr in open_prs:
         number = pr["number"]
         fresh = [c for c in pr_comments(repo, number)
@@ -288,6 +290,156 @@ def pr_conflicts(store, items, config, work_block, repo, open_prs):
                         source=detail.get("html_url", ""), conflict_of=number, conflict_key=key, pr_repo=repo,
                         pr_branch=detail["head"]["ref"], pr_base=detail["base"]["ref"],
                         value=config.get("conflict_value", 4), human_min=0, cost="S", triaged=True, untrusted=False)
+        found.append(item["id"])
+    return found
+
+
+# Image links in agent PR text. raw.githubusercontent.com does not load for a private repository in the browser, and
+# a link to a deleted branch 404s anywhere. Fixed links use github.com/O/R/blob/<sha>/PATH?raw=true: the blob route
+# carries the viewer's login, and a commit sha survives the branch being deleted.
+IMG_RE = re.compile(r'!\[[^\]]*\]\((\S+?)\)|<img[^>]*?src="([^"]+)"', re.I)
+GH_IMG = [re.compile(r"https://raw\.githubusercontent\.com/([^/]+)/([^/]+)/([^/]+)/([^?#)\s]+)"),
+          re.compile(r"https://github\.com/([^/]+)/([^/]+)/(?:blob|raw)/([^/]+)/([^?#)\s]+)")]
+IMG_FIX_TAG = "<!-- grw-images: {} -->"
+
+
+def image_urls(body):
+    return [a or b for a, b in IMG_RE.findall(body or "")]
+
+
+def parse_image(url):
+    for pattern in GH_IMG:
+        m = pattern.match(url)
+        if m:
+            return {"owner": m.group(1), "repo": m.group(2), "ref": m.group(3), "path": m.group(4),
+                    "raw": "raw.githubusercontent" in url}
+    return None  # uploads (user-attachments) and other hosts are left alone
+
+
+def _exists(slug, path, ref):
+    try:
+        gh("api", f"repos/{slug}/contents/{path}?ref={ref}", "--silent")
+        return True
+    except Refused:
+        return False
+
+
+def _sha(slug, ref):
+    if re.fullmatch(r"[0-9a-f]{40}", ref or ""):
+        return ref
+    try:
+        return json.loads(gh("api", f"repos/{slug}/commits/{ref}")).get("sha")
+    except (Refused, ValueError):
+        return None
+
+
+def check_image(url, refs, cache):
+    """None when the link loads for a reviewer; else {"old", "new"}, new None when no ref still has the file."""
+    if url in cache:
+        return cache[url]
+    info, result = parse_image(url), None
+    if info:
+        slug = f"{info['owner']}/{info['repo']}"
+        if slug not in cache:
+            cache[slug] = bool(json.loads(gh("api", f"repos/{slug}") or "{}").get("private"))
+        here = _exists(slug, info["path"], info["ref"])
+        if not here or (info["raw"] and cache[slug]):
+            new = None
+            for ref in ([info["ref"]] if here else []) + list(refs):
+                if ref and (here and ref == info["ref"] or _exists(slug, info["path"], ref)):
+                    sha = _sha(slug, ref)
+                    if sha:
+                        new = f"https://github.com/{slug}/blob/{sha}/{info['path']}?raw=true"
+                        break
+            result = {"old": url, "new": new}
+    cache[url] = result
+    return result
+
+
+def pr_image_scan(repo, number, authors, cache=None):
+    """Stale image links in an agent PR's body and in conversation comments the agent left on it."""
+    cache = {} if cache is None else cache
+    pr = gh_json(f"repos/{repo}/pulls/{number}")
+    default = json.loads(gh("api", f"repos/{repo}") or "{}").get("default_branch", "main")
+    refs = [pr["head"]["ref"], pr["head"]["sha"], default]
+    texts = []
+    if pr["user"]["login"] in authors:
+        texts.append({"where": "body", "url": pr["html_url"], "body": pr.get("body") or ""})
+    comments = pr_comments(repo, number)
+    done = {m for c in comments for m in re.findall(r"<!-- grw-images: (\S+) -->", c["body"])}
+    for c in comments:
+        if c["who"] in authors and c["id"].startswith("c") and c["id"] not in done and "<!-- grw-images:" not in c["body"]:
+            texts.append({"where": c["id"], "url": c["url"], "body": c["body"]})
+    found = []
+    for text in texts:
+        bad = [r for r in (check_image(u, refs, cache) for u in dict.fromkeys(image_urls(text["body"]))) if r]
+        if bad:
+            found.append(dict(text, links=bad))
+    return found
+
+
+def fix_pr_images(store, repo, number, found):
+    """Rewrite the agent's own PR body in place; for each agent comment post a new comment with the pictures again."""
+    posted = []
+    for text in found:
+        good = [b for b in text["links"] if b["new"]]
+        gone = [b["old"] for b in text["links"] if not b["new"]]
+        if text["where"] == "body":
+            body = text["body"]
+            for b in good:
+                body = body.replace(b["old"], b["new"])
+            if good:
+                gh("pr", "edit", str(number), "-R", repo, "--body-file", "-", stdin=body)
+                posted.append("body")
+            continue
+        lines = [f"Pictures in [this earlier comment]({text['url']}) no longer load. Here they are again:", ""]
+        lines += [f"![image]({b['new']})" for b in good]
+        if gone:
+            lines += ["", "No longer in the repository, so not relinked: " + ", ".join(f"`{g}`" for g in gone)]
+        body = (agent_line(store) + "\n\n" + "\n".join(lines) + "\n\n" + IMG_FIX_TAG.format(text["where"]) + "\n" + MARKER + "\n")
+        gh("pr", "comment", str(number), "-R", repo, "--body-file", "-", stdin=body)
+        posted.append(text["where"])
+    return posted
+
+
+def pr_authors(store):
+    config = store.profile().get("work", {}).get("prs") or {}
+    return set(config.get("authors") or [json.loads(gh("api", "user"))["login"]])
+
+
+def cmd_pr_images(store, args):
+    repo = overlap_repo(store)
+    found = pr_image_scan(repo, args.pr, pr_authors(store))
+    out = {"pr": args.pr, "stale": [{"where": t["where"], "url": t["url"], "links": t["links"]} for t in found]}
+    if args.fix and found:
+        out["fixed"] = fix_pr_images(store, repo, args.pr, found)
+        items = store.items()
+        for item in items:
+            if item.get("images_of") == args.pr and item["state"] not in ("done", "dropped"):
+                item.update({"state": "done", "evidence": "pr-images --fix: " + ", ".join(out["fixed"])})
+                touch(item)
+        store.save_items(items)
+    return out
+
+
+def pr_image_items(store, items, config, work_block, repo, open_prs, authors):
+    """Agent PRs whose pictures no longer load become small ready items: grw.py pr-images N --fix."""
+    found, cache = [], {}
+    handled = {i.get("images_key") for i in items if i.get("images_of")}
+    for pr in open_prs:
+        try:
+            stale = pr_image_scan(repo, pr["number"], authors, cache)
+        except (Refused, KeyError, TypeError, ValueError):
+            continue  # an image check never stops the rest of the sync
+        if not stale:
+            continue
+        key = hashlib.sha1(" ".join(sorted(b["old"] for t in stale for b in t["links"])).encode()).hexdigest()[:12]
+        if key in handled:
+            continue
+        item = new_item(store, items, f"Fix stale image links on PR #{pr['number']}: grw.py pr-images {pr['number']} --fix",
+                        lane=config.get("lane") or work_block.get("issues", {}).get("lane_bug") or "bugs",
+                        source=pr.get("html_url", ""), images_of=pr["number"], images_key=key, pr_repo=repo,
+                        value=config.get("images_value", 3), human_min=0, cost="S", triaged=True, untrusted=False)
         found.append(item["id"])
     return found
 
@@ -791,6 +943,9 @@ def add_parsers(add):
     p.add_argument("--person")
     p.add_argument("--series", help="one part of a bigger change split on purpose: labels it and names the part in the body")
     p.add_argument("--not-duplicate", help="pr-overlap matched, but this is a different concept because...")
+    p = add("pr-images", cmd_pr_images, "image links in an agent PR's body and comments that no longer load; --fix relinks them")
+    p.add_argument("pr", type=int)
+    p.add_argument("--fix", action="store_true", help="edit the agent's PR body; post a new comment for each agent comment")
     p = add("pr-series", cmd_pr_series, "call out open PRs as one series in every part: label and the same parts table")
     p.add_argument("name")
     p.add_argument("prs", nargs="+", type=int, help="PR numbers in part order")
