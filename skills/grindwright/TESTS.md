@@ -8,6 +8,12 @@ Runners set `ASKWRIGHT_HOME` to a throwaway folder on every command. Fixture pro
 
 ## Runs
 
+### T-20261108-1 · 2026-11-08 · `evergreen.py worth --ab`, value-* cases, Sonnet, 3 runs per arm, native Windows, isolated inbox · plugin 0.7.5
+- Passes with / without: cap 3/3 and 3/3, many 3/3 and 2/3, rank 3/3 and 1/3, other 0/3 and 0/3. Total 9/12 and 6/12 (75% vs 50%). Cost x1.42, turns x1.32, time x1.21 (was x1.98, x1.87, x1.52 before the 0.1.7 trim).
+- Tool verdict: CUT again, +25 points inside a noise margin of 38. Recorded in evergreen.json. The owner ruled keep-and-trim on 2026-11-06; this run measures the trim: same gain, cost premium down from about 2x to 1.4x.
+- value-other: the skill never fired in the with arm ("PR 12 on Tiny Colony looks ready. Clean up the queue so the next batch can start." names no grind), so the case measured nothing. Either tune the description for queue clean-up requests or reword the case; open.
+- Same limits as before: one-session cases cannot measure chaining; fixtures hand the baseline a ranked ledger.
+
 ### 0.1.7 · 2026-11-06 · unit tests and CI only
 - The trim changed SKILL.md and the session commands. Evals and the A/B have not been re-run, so the saving is not measured.
 
