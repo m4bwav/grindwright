@@ -461,10 +461,6 @@ class Crew(unittest.TestCase):
         self.assertEqual(grind_crew.problems(dict(bounds, projects=[dict(base, name="a", state="s", sessions=2)])), [])
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class FakePrGh:
     def __init__(self):
         self.prs, self.comments, self.inline, self.reviews = [], [], [], []
@@ -589,3 +585,15 @@ class FreshWorktree(unittest.TestCase):
         self.assertTrue(second.endswith("m-1-2026-01-02"))
         self.assertEqual(self.head(first), "grind/m-1-2026-01-01")
         self.assertEqual(grind_crew.worktree(self.project, "m-1", "2026-01-02"), second)
+
+
+class BoundWarningTest(unittest.TestCase):
+    def test_warns_when_sessions_end_the_run_early(self):
+        self.assertIn("raise it to about 48", grind_crew.bound_warning({"max_hours": 12, "max_sessions_each": 10}))
+
+    def test_quiet_when_sessions_cover_the_hours(self):
+        self.assertIsNone(grind_crew.bound_warning({"max_hours": 2, "max_sessions_each": 10}))
+
+
+if __name__ == "__main__":
+    unittest.main()

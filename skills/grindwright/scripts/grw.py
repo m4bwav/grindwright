@@ -1639,7 +1639,10 @@ def stop_verdict(store, args):
         return {"may_stop": True, "why": [f"paused: {session['paused']}"]}
     running = [i["id"] for i in items if i["state"] == "running" and owner_of(i) == store.sid and not unfinished_blockers(i, items)]
     if running:
-        return {"may_stop": False, "why": ["still running: " + ", ".join(running) + ": finish, wait or checkpoint them"]}
+        return {"may_stop": False, "why": ["still running: " + ", ".join(running) + ": finish them (done, drafted, hold), hand them to a wait (wait-human, wait-machine), or give them back "
+                                   "with session release. Game code rarely needs an open editor: batchmode compile and tests "
+                                   "run headless on the worktree (references/engine-verify.md), so try that before calling it blocked. "
+                                   "--force is for a real fault, not for open items"]}
     result = ranking(store, args)
     if result["ranked"]:
         top = result["ranked"][0]

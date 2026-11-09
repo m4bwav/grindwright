@@ -21,6 +21,19 @@ sys.path.insert(0, str(HERE))
 import grind_report  # noqa: E402
 
 
+TYPICAL_SESSION_MINUTES = 15  # live runs on 2026-11-08: most sessions ended in 1 to 20 minutes
+
+
+def bound_warning(crew):
+    """The session bound, not the hours, ends most runs: say so before the start."""
+    hours, sessions = crew.get("max_hours") or 0, crew.get("max_sessions_each") or 0
+    if hours and sessions and sessions * TYPICAL_SESSION_MINUTES < hours * 60 / 2:
+        return (f"max_sessions_each {sessions} at about {TYPICAL_SESSION_MINUTES} min a session runs out after about "
+                f"{sessions * TYPICAL_SESSION_MINUTES / 60:.1f} h of the {hours} h; raise it to about "
+                f"{int(hours * 60 / TYPICAL_SESSION_MINUTES)} if the hours are what should end the run")
+    return None
+
+
 def problems(crew):
     found, states = [], {}
     if not crew.get("max_hours") or not crew.get("max_sessions_each"):
@@ -178,7 +191,8 @@ def main(argv=None):
         return 2
     if not args.go:
         rows = [{"member": member, "project": project["name"], "state": project["state"], "now": rank(project, member)} for project, member in plan(crew)]
-        print(json.dumps({"ok": True, "dry_run": True, "members": rows, "max_hours": crew["max_hours"], "max_sessions_each": crew["max_sessions_each"]}, indent=1, ensure_ascii=False))
+        print(json.dumps({"ok": True, "dry_run": True, "members": rows, "max_hours": crew["max_hours"], "max_sessions_each": crew["max_sessions_each"],
+                          "warning": bound_warning(crew)}, indent=1, ensure_ascii=False))
         return 0
     print(json.dumps(run(crew), indent=1, ensure_ascii=False))
     return 0

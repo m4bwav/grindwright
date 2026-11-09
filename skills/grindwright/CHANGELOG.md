@@ -1,5 +1,10 @@
 # Changelog: grindwright
 
+## 0.7.9 (2026-11-08)
+
+- `session end` refusing over open items now names the ways out (finish, a wait, `session release`), says batchmode compile and tests run headless with no open editor, and that `--force` is for real faults. A live member forced its way out of six sessions in a row believing its items needed an open Unity Editor; its last session found a headless compile took two minutes.
+- `grind_crew.py` dry run warns when `max_sessions_each` will end the run long before `max_hours` (live: 10 sessions ended a 12-hour member after about 2 hours).
+
 ## 0.7.8 (2026-11-08)
 
 - Learn from the work: `session end` after a session that made something refuses until it gets `--lesson "<plugin or project>: <lesson> -> <where it went>"` or `--no-lessons "<why>"`. New loop.md section: lessons about plugins the grind used (pixelwright, artwright, comfyui-gen, ...) go to that plugin's LEARNINGS through evergreen-learn or a small fix PR; bigger plugin work becomes a meta-lane item; evergreen-wrapup (run by chainwright) harvests what was missed. Lessons are kept in the session_end event.
