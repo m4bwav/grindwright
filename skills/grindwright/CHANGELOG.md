@@ -1,5 +1,10 @@
 # Changelog: grindwright
 
+## 0.7.6 (2026-11-08)
+
+- `pr-series` and `issue-pr --series` create the `series` label when the repository lacks it (the first live use failed with "'series' not found"). `ticket --propose` shares the same helper.
+- Demo lane groundwork: lane kind `demo`, dormant until the profile sets `demo.enabled`; then `discover` raises it. `references/demo.md` covers scope, make, check, maintain and feedback; publishing stays the owner's call.
+
 ## 0.7.5 (2026-11-08)
 
 - `grw.py status` prints a running crew's live status; `status --serve` opens a self-refreshing local page (127.0.0.1) showing live members and agent sessions, open claims and how long each has run, a timeline of the run's events, done/claimed/asked counts, agent sessions finished and their cost from the member logs, what waits on people, notes between members and estimate vs actual. Read-only: no lock, no writes, safe beside a running crew.

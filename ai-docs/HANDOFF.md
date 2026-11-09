@@ -1,5 +1,7 @@
 # Handoff
 
+2026-11-08 (22:40): v0.7.6: `pr-series` makes its label; demo lane groundwork (dormant, `references/demo.md`). Evals and `worth --ab` were approved by the owner for this session (see Next 2).
+
 2026-11-08 (late): v0.7.4 released and installed. 0.7.2 `ask_py` (sync could not find askwright as a clone and silently kept every page-waiting item waiting), 0.7.3 crew members start on a fresh branch, 0.7.4 proposal label and comma areas. A 12-hour two-member crew on the first game started 21:00 on 0.7.3: next session reads its result (did it run near 12 h, timing rows, PRs) and fixes faults.
 
 2026-11-08: released and installed v0.7.0 (PR 54): `grw.py pr-overlap`; `issue-pr` refuses an overlap unless `--series` (label `series` + part line, stacking allowed) or `--not-duplicate`. Owner rule: one PR of truth per concept. 0.7.1 (PR 55, released, installed): `pr-series` and `issue-pr --series` write the parts table into every PR of a series.

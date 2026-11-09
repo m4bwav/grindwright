@@ -49,6 +49,20 @@ class OverlapTests(unittest.TestCase):
         self.assertIn("#12", again)
         self.assertTrue(again.endswith("Original text"))
 
+    def test_sync_series_makes_the_label_first(self):
+        calls = []
+
+        def fake_gh(*args, stdin=None):
+            calls.append(args[:2])
+            return '{"body": ""}'
+        old, grw_work.gh = grw_work.gh, fake_gh
+        try:
+            grw_work.sync_series("o/r", "wall frost", [(10, "Render"), (11, "Sliders")])
+        finally:
+            grw_work.gh = old
+        self.assertEqual(calls[0], ("label", "create"))
+        self.assertEqual(calls.count(("pr", "edit")), 2)
+
 
 if __name__ == "__main__":
     unittest.main()

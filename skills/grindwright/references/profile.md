@@ -25,13 +25,14 @@ its rules restrict what may appear there, keep the state outside it and pass `--
 ```
 
 - `review_cap`: open review sets or PRs a person may have before the plugin does other work.
-- `kind`: art, animation, sound, music, video, edit, voice, writing, tests, juice, balance, marketing, model, code, maintenance, meta. It sets the
+- `kind`: art, animation, sound, music, video, edit, voice, writing, tests, juice, balance, marketing, model, demo, code, maintenance, meta. It sets the
   default plugin and the share cap. `needs` overrides the plugin list (a nested list means any one of them; sound defaults to sfxwright or musicwright); `share_cap` overrides the cap.
 - `batch_min`: smallest batch per person. `stack_on_pending`: `false` defers the lane while a review is open.
 - Guard values start with `allow` or `deny: reason`. Anything unset is denied.
 - `ask_py`: path to askwright's `ask.py` when askwright is not installed as a plugin or skill (a clone, say). Without it `sync` cannot read any decision page and every item waiting on one stays waiting; `sync` and `next` then carry a `warning`. `GRINDWRIGHT_ASK` overrides it.
 - `ask_route`: where questions go. Default `"repo"` (issue, PR comment or discussion when the project has a repository); `"askwright"` when the owner prefers decision pages.
 - `text_bans`: words PR and commit text must not use.
+- `demo`: off unless `{"enabled": true, "scope": ..., "build": ...}`; then `discover` raises the demo lane ([demo.md](demo.md)).
 
 Project specifics (snapshot suites, slots, required skills) stay here or in the project's own docs, never in the plugin.
 
