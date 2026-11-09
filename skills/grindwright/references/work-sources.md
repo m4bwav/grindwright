@@ -28,7 +28,7 @@ table with `issues.priority_labels` (`{"label": tier}`) and the untagged tier wi
 One concept gets one PR, or one labelled series. Run `grw.py pr-overlap <id>` (or `--title T [--issue N]`) twice: before starting the work and again right before opening the PR. It lists open PRs and unmerged branches that reference the same issue, would be stacked on, have a similar title, or whose branch name is made of the item's words.
 
 - **Same work** (a redo, a review fix, more of the same batch, redoing files another open PR added): push to that PR's branch and update its body. Do not open a second PR.
-- **A deliberate next slice** of a bigger change (code, then debug tools, then art batches): open it with `issue-pr ... --series "<name>"`. It adds the `series` label and a `Series: <name> (part N)` line listing the other parts. Stack it on the earlier part's branch when the slice needs that code; otherwise base it on main.
+- **A deliberate next slice** of a bigger change (code, then debug tools, then art batches): open it with `issue-pr ... --series "<name>"`. It adds the `series` label and a `Series: <name> (part N)` line listing the other parts. Stack it on the earlier part's branch when the slice needs that code; otherwise base it on main. Split only when one PR would be too big or the slices run in parallel, and then call it out in every part: `issue-pr --series` rewrites the same table (all parts, what each covers, "this PR", review order) into every open PR of the series and labels each one. `grw.py pr-series "<name>" <pr> <pr> ...` does the same for PRs opened earlier.
 - **A different concept** that only looks alike: `--not-duplicate "<why>"`.
 
 `issue-pr` runs the same check and refuses an overlap that has neither flag.

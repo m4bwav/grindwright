@@ -482,9 +482,41 @@ def cmd_pr_overlap(store, args):
             "next": OVERLAP_NEXT if hits else "none: a new branch and PR are fine"}
 
 
+SERIES_START, SERIES_END = "<!-- grw-series -->", "<!-- /grw-series -->"
+
+
 def series_note(name, part, hits):
     others = ", ".join(f"#{h['pr']}" for h in hits if h.get("pr"))
     return f"**Series: {name} (part {part})**. One change split into several PRs" + (f"; other parts: {others}." if others else ".")
+
+
+def series_block(name, me, parts):
+    """The callout every PR of a series carries: all parts, which one this is, what each covers, review order."""
+    rows = [f"| {n} | #{pr} | {title}{' (this PR)' if pr == me else ''} |" for n, (pr, title) in enumerate(parts, 1)]
+    return (f"{SERIES_START}\n> **Series: {name}.** This PR is one of {len(parts)} parallel or stacked slices of one change. "
+            "Review them together, in part order; each covers only its own slice.\n>\n> | Part | PR | Covers |\n> |---|---|---|\n"
+            + "\n".join("> " + r for r in rows) + f"\n{SERIES_END}\n\n")
+
+
+def with_series(body, block):
+    body = re.sub(re.escape(SERIES_START) + r".*?" + re.escape(SERIES_END) + r"\n*", "", body or "", flags=re.S)
+    return block + body
+
+
+def sync_series(repo, name, parts):
+    """Write the same series table into every part, so no PR in the series stands alone."""
+    for pr, _ in parts:
+        body = json.loads(gh("pr", "view", str(pr), "-R", repo, "--json", "body") or "{}").get("body", "")
+        gh("pr", "edit", str(pr), "-R", repo, "--add-label", SERIES_LABEL, "--body-file", "-",
+           stdin=with_series(body, series_block(name, pr, parts)))
+
+
+def cmd_pr_series(store, args):
+    """Mark open PRs as one series (or refresh the callout after a part is added)."""
+    repo = overlap_repo(store)
+    parts = [(int(n), json.loads(gh("pr", "view", str(n), "-R", repo, "--json", "title") or "{}").get("title", "")) for n in args.prs]
+    sync_series(repo, args.name, parts)
+    return {"series": args.name, "parts": [n for n, _ in parts]}
 
 
 def cmd_issue_pr(store, args):
@@ -522,6 +554,9 @@ def cmd_issue_pr(store, args):
     touch(item)
     store.save_items(items)
     store.event("asked", id=item["id"], pr=pr)
+    if args.series:
+        earlier = [(h["pr"], h["title"]) for h in hits if h.get("series") == args.series or h.get("pr")]
+        sync_series(repo, args.series, sorted(earlier) + [(int(pr), args.title)])
     return {"id": item["id"], "pr": url}
 
 
@@ -743,6 +778,9 @@ def add_parsers(add):
     p.add_argument("--person")
     p.add_argument("--series", help="one part of a bigger change split on purpose: labels it and names the part in the body")
     p.add_argument("--not-duplicate", help="pr-overlap matched, but this is a different concept because...")
+    p = add("pr-series", cmd_pr_series, "call out open PRs as one series in every part: label and the same parts table")
+    p.add_argument("name")
+    p.add_argument("prs", nargs="+", type=int, help="PR numbers in part order")
     p = add("pr-overlap", cmd_pr_overlap, "open PRs or branches already covering this work; run before starting and before issue-pr")
     p.add_argument("id", nargs="?")
     p.add_argument("--title")

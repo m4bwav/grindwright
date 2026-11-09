@@ -1,5 +1,9 @@
 # Changelog: grindwright
 
+## 0.7.1 (2026-11-08)
+
+- A series is called out in every part, not only the newest: `issue-pr --series` and the new `grw.py pr-series` write one table of all parts (what each covers, which is this PR, review order) into every PR of the series, replacing the old table, and add the `series` label.
+
 ## 0.7.0 (2026-11-08)
 
 - One PR of truth: `grw.py pr-overlap` lists open PRs and unmerged branches covering the same issue or concept (issue reference, stacking, similar title, branch words). Run before starting and before opening a PR.

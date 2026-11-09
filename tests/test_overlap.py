@@ -40,6 +40,15 @@ class OverlapTests(unittest.TestCase):
         self.assertIn("Series: wall frost (part 3)", note)
         self.assertEqual(grw_work.series_of(note), ("wall frost", 3))
 
+    def test_series_block_in_every_part_replaces_old(self):
+        parts = [(10, "Render half"), (11, "Sliders")]
+        body = grw_work.with_series("Original text", grw_work.series_block("wall frost", 11, parts))
+        again = grw_work.with_series(body, grw_work.series_block("wall frost", 11, parts + [(12, "Art")]))
+        self.assertEqual(again.count(grw_work.SERIES_START), 1)
+        self.assertIn("| 2 | #11 | Sliders (this PR) |", again)
+        self.assertIn("#12", again)
+        self.assertTrue(again.endswith("Original text"))
+
 
 if __name__ == "__main__":
     unittest.main()
