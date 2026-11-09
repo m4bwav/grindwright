@@ -39,3 +39,7 @@ Every run ends with a report unless the owner turned it off. `grind_loop` run al
 - the chainwright tier page for the same run (`run-ID.chain.json` drawn by `chain_report.py`) when chainwright is installed (`$CHAINWRIGHT_REPORT`, the plugin cache, or a clone beside this plugin).
 
 Switches, most specific first: `--no-report` on the driver, `GRINDWRIGHT_REPORT=off`, `"report"` in the crew file, `"report"` in the profile. `"open_report": false` builds without opening (an unattended machine). A failed report never fails the run. Rebuild: `python scripts/grind_report.py build --state <folder> [--run logs/run-ID.json] [--open]`.
+
+## Live status
+
+While a run goes, `grw.py --state <folder> status --serve` opens a read-only local page that refreshes itself: live members and agent sessions, open claims and their age, the run's events, counts, agent cost from the member logs, and what waits on people. `status` alone prints the same as JSON.

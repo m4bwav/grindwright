@@ -70,28 +70,19 @@ class Status(unittest.TestCase):
         self.assertEqual(before, after)
 
     def test_server_serves_page_and_api(self):
-        from http.server import ThreadingHTTPServer
-        captured = {}
-        real = ThreadingHTTPServer.__init__
-
-        def keep(server, *args, **kwargs):
-            real(server, *args, **kwargs)
-            captured["server"] = server
-        with mock.patch.object(grw_status, "_processes", return_value=NO_PROCS), \
-                mock.patch.object(ThreadingHTTPServer, "__init__", keep), contextlib.redirect_stdout(io.StringIO()):
-            thread = threading.Thread(target=grw_status.serve, args=(self.state, 0, False), daemon=True)
-            thread.start()
-            for _ in range(50):
-                if "server" in captured:
-                    break
-                threading.Event().wait(0.05)
-            server = captured["server"]
-            base = f"http://127.0.0.1:{server.server_address[1]}/"
-            try:
-                self.assertIn("Grind status", urllib.request.urlopen(base, timeout=5).read().decode("utf-8"))
-                self.assertEqual(json.loads(urllib.request.urlopen(base + "api", timeout=5).read())["project"], "Tiny Colony")
-            finally:
-                server.shutdown()
+        server = grw_status.make_server(self.state, 0)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        base = f"http://127.0.0.1:{server.server_address[1]}/"
+        try:
+            with mock.patch.object(grw_status, "_processes", return_value=NO_PROCS):
+                with urllib.request.urlopen(base, timeout=10) as page:
+                    self.assertIn("Grind status", page.read().decode("utf-8"))
+                with urllib.request.urlopen(base + "api", timeout=10) as api:
+                    self.assertEqual(json.loads(api.read())["project"], "Tiny Colony")
+        finally:
+            server.shutdown()
+            server.server_close()
 
 
 if __name__ == "__main__":

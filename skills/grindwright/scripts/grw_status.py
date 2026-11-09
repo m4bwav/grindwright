@@ -238,7 +238,7 @@ tick();setInterval(tick,15000);
 </script></body></html>"""
 
 
-def serve(state, port=0, open_browser=True):
+def make_server(state, port=0):
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, *args):
             pass
@@ -259,7 +259,11 @@ def serve(state, port=0, open_browser=True):
             self.end_headers()
             self.wfile.write(body)
 
-    server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
+    return ThreadingHTTPServer(("127.0.0.1", port), Handler)
+
+
+def serve(state, port=0, open_browser=True):
+    server = make_server(state, port)
     url = f"http://127.0.0.1:{server.server_address[1]}/"
     print(json.dumps({"ok": True, "url": url, "state": str(Path(state).resolve())}), flush=True)
     if open_browser:
