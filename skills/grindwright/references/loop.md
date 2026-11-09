@@ -93,6 +93,16 @@ Compile, tests, headless boot, scripted play, screenshot diff, human taste. Engi
 cheapest rung that can catch the mistake. A game can run and still be wrong: a green rung proves only what it checks.
 Agents dodge checks, so never weaken a test or a gate to pass, and treat a written excuse as a failure.
 
+## Learn from the work
+
+A grind is only as good as the plugins it drives, so every session leaves them better. Lessons come from the work and from people: a render the owner rejected and why, a reviewer's PR comment, a redo, a command that failed or needed a workaround, a step that cost many turns, an estimate far off its timing row.
+
+- **A plugin you used** (pixelwright, artwright, comfyui-gen, sfxwright, musicwright, voicewright, cinewright, polywright, ludowright, game-juice, marketwright, askwright, chainwright, grindwright itself): write the lesson to that plugin's `LEARNINGS.md` through evergreen-learn, or fix the plugin when the fix is small and clear (its own branch and PR, under its repository's rules). Never put the game's private details in a public plugin; keep the lesson general.
+- **The project**: its own docs, skills or HANDOFF.
+- **Bigger plugin work** (a missing feature, a broken script): `grw.py add` an item in a `meta` lane, so it competes for time under the meta share cap instead of being forgotten.
+
+`grw.py session end` refuses after a session that made something until it gets `--lesson "<plugin or project>: <lesson> -> <where it went>"` (repeatable) or `--no-lessons "<why>"`. Then evergreen-wrapup (chainwright runs it as every chained session's last step) harvests the transcript for anything missed and sends it to the same homes. The lessons are kept in the session_end event for the run report.
+
 ## Session end and limits
 
 Only files and commits survive. Commit at each checkpoint. On a usage-limit warning: `grw.py checkpoint`, commit,

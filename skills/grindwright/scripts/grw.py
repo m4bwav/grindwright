@@ -1583,7 +1583,12 @@ def cmd_session(store, args):
         raise Refused(verdict["why"], **verdict)
     started = session.get("started", "")
     made = [e for e in store.events() if e.get("ts", "") >= started and e["type"] in ("done", "asked", "detached", "resolved", "redo", "drafted")]
-    store.event("session_end", made=len(made), nothing_made=not made, forced=bool(args.force), reason=args.force)
+    if made and not (args.lesson or args.no_lessons):
+        raise Refused(["say what this session learned before ending: --lesson '<plugin or project>: <lesson> -> <where it went>' "
+                       "(repeatable), or --no-lessons '<why nothing>'. Lessons about a plugin you used (pixelwright, artwright, "
+                       "...) go to that plugin's LEARNINGS or a fix: references/loop.md#learn-from-the-work"])
+    store.event("session_end", made=len(made), nothing_made=not made, forced=bool(args.force), reason=args.force,
+                lessons=args.lesson or [], no_lessons=args.no_lessons)
     return {"ended": True, "made": len(made), "nothing_made": not made,
             "reminder": ("run evergreen-wrapup if installed (skip quietly if not), then update HANDOFF.md and print the "
                          "one-line start command; a project prompt's own end steps add to these, never replace them")}
@@ -1874,6 +1879,8 @@ def build_parser():
     p.add_argument("--reason", default="usage limit")
     p.add_argument("--until")
     p.add_argument("--force", help="end anyway; say why")
+    p.add_argument("--lesson", action="append", help="end: '<plugin or project>: <lesson> -> <where it was saved>'")
+    p.add_argument("--no-lessons", help="end: why this session taught nothing worth keeping")
     return parser
 
 
