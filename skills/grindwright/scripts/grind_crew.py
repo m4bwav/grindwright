@@ -17,6 +17,8 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 GRW = HERE / "grw.py"
 LOOP = HERE / "grind_loop.py"
+sys.path.insert(0, str(HERE))
+import grind_report  # noqa: E402
 
 
 def problems(crew):
@@ -82,7 +84,7 @@ def discover_first(crew, project, member):
 
 def loop_command(crew, project, member, cwd, log):
     command = [sys.executable, str(LOOP), project["prompt"], "--state", project["state"], "--cwd", cwd, "--session-id", member,
-               "--max-sessions", str(crew["max_sessions_each"]), "--max-hours", str(crew["max_hours"]), "--log", str(log), "--go"]
+               "--max-sessions", str(crew["max_sessions_each"]), "--max-hours", str(crew["max_hours"]), "--log", str(log), "--no-report", "--go"]
     if crew.get("session_minutes"):
         command += ["--session-minutes", str(crew["session_minutes"])]
     if crew.get("require_text"):
@@ -96,6 +98,7 @@ def loop_command(crew, project, member, cwd, log):
 
 def run(crew, sleep=time.sleep):
     today = dt.date.today().isoformat()
+    started = grind_report.stamp()
     running, skipped = [], []
     for index, (project, member) in enumerate(plan(crew)):
         if index:
@@ -110,20 +113,41 @@ def run(crew, sleep=time.sleep):
         cwd = worktree(project, member, today)
         env = dict(os.environ, GRINDWRIGHT_STATE=str(Path(project["state"]).resolve()), GRINDWRIGHT_SESSION=member)
         process = subprocess.Popen(loop_command(crew, project, member, cwd, log), env=env, stdout=subprocess.PIPE, text=True, encoding="utf-8", errors="replace")
-        running.append((member, project, process))
+        running.append((member, project, process, cwd))
     results = []
-    for member, project, process in running:
+    for member, project, process, cwd in running:
         out, _ = process.communicate()
         try:
-            results.append(dict(json.loads(out), member=member))
+            results.append(dict(json.loads(out), member=member, project=project["name"], cwd=cwd))
         except ValueError:
-            results.append({"member": member, "ok": False, "stopped": "driver-output", "tail": (out or "")[-300:]})
+            results.append({"member": member, "project": project["name"], "cwd": cwd, "ok": False, "stopped": "driver-output", "tail": (out or "")[-300:]})
     summary = {"ok": True, "started": len(running), "skipped": skipped, "results": results}
     for project in crew["projects"]:
         logs = Path(project["state"]) / "logs"
         logs.mkdir(parents=True, exist_ok=True)
         (logs / f"crew-{today}.json").write_text(json.dumps(summary, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+    summary["reports"] = reports(crew, started, results, skipped)
     return summary
+
+
+def reports(crew, started, results, skipped):
+    """One run file and run report per project, shown once every member has ended, unless switched off."""
+    made = {}
+    ended = grind_report.stamp()
+    run_id = "run-" + started.replace(":", "").replace("T", "-")[:15]
+    for project in crew["projects"]:
+        members = [{"member": r["member"], "cwd": r.get("cwd"), "passes": r.get("passes", []),
+                    "result": {k: v for k, v in r.items() if k not in ("passes", "member", "project", "cwd")}}
+                   for r in results if r.get("project") == project["name"]]
+        members += [{"member": x["member"], "passes": [], "result": {"ok": True, "stopped": "skipped", "why": x.get("why"), "waiting_on": x.get("waiting_on")}}
+                    for x in skipped if x["member"].startswith(project["name"] + "-")]
+        profile = grind_report.read_json(Path(project["state"]) / "profile.json", {}) or {}
+        run = {"id": run_id, "project": profile.get("project") or project["name"], "prompt": project.get("prompt"), "crew": True,
+               "started": started, "ended": ended, "members": members}
+        path = Path(project["state"]) / "logs" / f"{run_id}.json"
+        grind_report.write_run(path, run)
+        made[project["name"]] = grind_report.finish(project["state"], path, crew)
+    return made
 
 
 def main(argv=None):

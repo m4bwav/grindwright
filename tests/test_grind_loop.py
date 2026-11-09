@@ -7,6 +7,7 @@ import sys
 import tempfile
 import time
 import unittest
+os.environ.setdefault("GRINDWRIGHT_REPORT", "off")  # tests never open a browser
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "skills" / "grindwright" / "scripts"))

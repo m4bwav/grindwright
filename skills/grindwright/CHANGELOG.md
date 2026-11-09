@@ -1,5 +1,11 @@
 # Changelog: grindwright
 
+## 0.4.0 (2026-11-08)
+
+- Run report: when `grind_loop` (alone) or `grind_crew` ends, `scripts/grind_report.py` writes `logs/run-ID.json` and a self-contained page `logs/run-ID-report.html` (plus a markdown summary) and opens it. It shows why each member stopped, in plain words, with its last session's own reason; how far each road milestone and lane got; the PRs opened and updated and the issues opened or touched, from GitHub over the run window; every item worked, with evidence; and every session with time, cost, tokens and a link to its Claude transcript and `claude --resume` id. It also includes charts (work by lane, cost and agent minutes by member, a session timeline). When chainwright is installed it also builds the chainwright tier page for the run and links it.
+- On by default. Off: `--no-report` on `grind_loop`, `GRINDWRIGHT_REPORT=off`, `"report": false` in the crew file or profile; `"open_report": false` builds without opening. Rebuild any time: `grind_report.py build --state <folder> [--run logs/run-ID.json]`.
+- `grind_loop` records each pass (start, seconds, outcome worked, idle or failed, and the session's id, cost, tokens and model from the JSON output) and returns them as `passes`. Five tests.
+
 ## 0.3.25 (2026-11-08)
 
 - `pr-sync` finds merge conflicts on open agent PRs: each conflicting PR becomes one ready item, keyed by head and base commits. Resolve, verify and push to the PR branch; when the resolution needs a person's judgement, comment on the PR explaining the conflict instead. Two tests.

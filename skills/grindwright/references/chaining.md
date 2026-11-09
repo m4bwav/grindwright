@@ -25,3 +25,17 @@ Why an outer driver (survey, 2026-11-03, `ai-docs/research/` in the plugin repo)
   `--require-text` so a session without the plugin stops the run.
 - What `claude -p` does at a subscription usage limit was not documented when checked. The driver's limit detection
   is a text match; test it before trusting a long run.
+
+## Run report
+
+Every run ends with a report unless the owner turned it off. `grind_loop` run alone and `grind_crew` (one per project) write `logs/run-ID.json`, then `grind_report.py` writes `logs/run-ID-report.html` and `.md` and opens the page:
+
+- why each member stopped, in plain words, with the last session's own `session_end` reason;
+- how far each road milestone and each lane got: this run's finished, drafted, asked and added items, and what is still open;
+- PRs opened and updated, issues opened and touched, read from GitHub (`gh`, the run's account, the run's window); skipped quietly without `gh`;
+- every item worked, with its evidence and links;
+- every session: time, cost, tokens, outcome, a link to its transcript and its `claude --resume` id;
+- charts: work by lane, cost and agent minutes by member, sessions on a timeline;
+- the chainwright tier page for the same run (`run-ID.chain.json` drawn by `chain_report.py`) when chainwright is installed (`$CHAINWRIGHT_REPORT`, the plugin cache, or a clone beside this plugin).
+
+Switches, most specific first: `--no-report` on the driver, `GRINDWRIGHT_REPORT=off`, `"report"` in the crew file, `"report"` in the profile. `"open_report": false` builds without opening (an unattended machine). A failed report never fails the run. Rebuild: `python scripts/grind_report.py build --state <folder> [--run logs/run-ID.json] [--open]`.

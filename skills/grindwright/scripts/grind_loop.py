@@ -21,6 +21,8 @@ import time
 from pathlib import Path
 
 GRW = Path(__file__).with_name("grw.py")
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import grind_report  # noqa: E402
 LIMIT = re.compile(r"usage limit|rate limit|limit reached|hit your limit|overloaded|\b429\b", re.I)
 DEFAULT_COMMAND = ["claude", "-p", "--permission-mode", "auto", "--output-format", "json"]
 
@@ -108,14 +110,38 @@ def run(args, sleep=time.sleep, clock=time.monotonic):
     """A crew member gives back what it held however it stops, so its areas do not stay locked for the lease.
     Its stop reason goes to its own log at once: the crew prints results only when every member has ended."""
     result = {"ok": False, "stopped": "crashed"}
+    args.passes = []
+    started = grind_report.stamp()
     try:
         result = drive(args, sleep, clock)
         return result
     finally:
+        result["passes"] = args.passes
         if args.go:
-            note(args, "stopped: " + json.dumps(result, ensure_ascii=False))
+            note(args, "stopped: " + json.dumps({k: v for k, v in result.items() if k != "passes"}, ensure_ascii=False))
+            if not getattr(args, "no_report", False):
+                result["report"] = report(args, result, started)
         if args.session_id and args.go:
             subprocess.run([sys.executable, str(GRW), "--state", str(args.state), "--session", args.session_id, "session", "release", "--reason", "driver stopped"], capture_output=True)
+
+
+def report(args, result, started):
+    """A loop run on its own writes logs/run-ID.json and shows the run report; a crew member leaves that to the crew."""
+    profile = grind_report.read_json(Path(args.state) / "profile.json", {}) or {}
+    member = args.session_id or "solo"
+    run = {"id": "run-" + started.replace(":", "").replace("T", "-")[:15], "project": profile.get("project"),
+           "prompt": str(Path(args.prompt).resolve()), "started": started, "ended": grind_report.stamp(),
+           "members": [{"member": member, "cwd": str(Path(args.cwd or ".").resolve()),
+                        "result": {k: v for k, v in result.items() if k != "passes"}, "passes": args.passes}]}
+    path = Path(args.state) / "logs" / f"{run['id']}.json"
+    grind_report.write_run(path, run)
+    return grind_report.finish(args.state, path)
+
+
+def record(args, started, seconds, outcome, stdout):
+    entry = {"n": len(args.passes) + 1, "started": started, "ended": grind_report.stamp(), "seconds": round(seconds), "outcome": outcome}
+    entry.update({k: v for k, v in grind_report.usage_of(stdout).items() if v is not None})
+    args.passes.append(entry)
 
 
 def drive(args, sleep, clock):
@@ -141,9 +167,11 @@ def drive(args, sleep, clock):
         allowed = deadline - clock()
         if args.session_minutes:
             allowed = min(allowed, args.session_minutes * 60)
+        began, began_at = clock(), grind_report.stamp()
         try:
             done = session(command + [prompt], args.cwd, allowed)
         except subprocess.TimeoutExpired:
+            record(args, began_at, clock() - began, "failed", "")
             return {"ok": False, "stopped": "session-timeout", "seconds": round(allowed), "sessions": sessions}
         output = (done.stdout or "") + (done.stderr or "")
         if args.log:
@@ -156,6 +184,7 @@ def drive(args, sleep, clock):
             sleep(args.limit_wait)
             continue
         if done.returncode != 0:
+            record(args, began_at, clock() - began, "failed", done.stdout)
             return {"ok": False, "stopped": "session-failed", "code": done.returncode, "tail": output[-500:], "sessions": sessions}
         sessions += 1
         if not plugins_loaded(output, args.require_text):
@@ -165,7 +194,9 @@ def drive(args, sleep, clock):
             note(args, f"marker {args.require_text!r} missing from pass {sessions}; one more miss stops this member")
         else:
             missing = 0
-        idle = idle + 1 if fingerprint(args.state, args.session_id) == before else 0
+        same = fingerprint(args.state, args.session_id) == before
+        record(args, began_at, clock() - began, "idle" if same else "worked", done.stdout)
+        idle = idle + 1 if same else 0
         if idle >= 2:
             return {"ok": False, "stopped": "no-progress", "sessions": sessions}
 
@@ -185,6 +216,7 @@ def main(argv=None):
     parser.add_argument("--session-id", help="this member's name when several sessions share the state")
     parser.add_argument("--discover-first", action="store_true",
                         help="run session 1 even when the ledger has nothing selectable, after a person widened the rules")
+    parser.add_argument("--no-report", action="store_true", help="do not build or show the run report (a crew builds its own)")
     parser.add_argument("--go", action="store_true", help="really run; without it, print what would run")
     argv = list(sys.argv[1:] if argv is None else argv)
     command = []
