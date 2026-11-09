@@ -103,7 +103,7 @@ def usage_of(stdout):
 
 def write_run(path, run):
     Path(path).parent.mkdir(parents=True, exist_ok=True)
-    Path(path).write_text(json.dumps(run, indent=1, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
+    Path(path).write_bytes((json.dumps(run, indent=1, ensure_ascii=False) + "\n").encode("utf-8"))
 
 
 def chain_ledger(run, path):
@@ -459,9 +459,9 @@ def build(state, run_path, out=None, open_page=False, use_github=True):
         if not chain_page.exists():
             chain_page = None
     out = Path(out) if out else Path(run_path).with_name(Path(run_path).stem + "-report.html")
-    out.write_text(render(run, data, chain_page), encoding="utf-8", newline="\n")
+    out.write_bytes(render(run, data, chain_page).encode("utf-8"))
     md = summary_md(run, data)
-    out.with_suffix(".md").write_text(md + "\n", encoding="utf-8", newline="\n")
+    out.with_suffix(".md").write_bytes((md + "\n").encode("utf-8"))
     if open_page:
         webbrowser.open(out.resolve().as_uri())
     return {"ok": True, "report": str(out), "summary": md, "chain_report": str(chain_page) if chain_page else None,
