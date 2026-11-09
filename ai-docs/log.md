@@ -188,3 +188,6 @@ Owner: reviewers met 404 pictures in agent PR comments; scan PRs, fix stale link
 
 ## 2026-11-08: 0.7.8 learn from the work
 Owner: make sure grind runs improve the plugins they use (pixelwright, artwright and the rest), through chainwright and evergreen-wrapup but also reinforced in grindwright. The wrap-up step already existed; added a hard step: `session end` refuses after productive sessions without `--lesson` or `--no-lessons`, and a loop.md section routing lessons (plugin LEARNINGS or fix PR, project docs, meta-lane items). SKILL.md trimmed to stay under 3500 tokens. 173 tests pass. Not yet shown in the run report.
+
+## 2026-11-08: 0.7.9 stop advice and session-bound warning
+Read the first game's second 12-hour crew mid-run. Member one ended after 10 sessions in about 2 hours; six of those sessions forced their end because five claimed items "needed an open editor", until the last session found a headless compile took two minutes. `session end`'s refusal now names finish, waits and `session release`, points at headless batchmode, and says `--force` is for faults. `grind_crew.py` dry run warns when the session bound ends a run long before its hours. 175 tests pass.
