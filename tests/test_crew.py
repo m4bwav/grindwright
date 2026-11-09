@@ -189,6 +189,8 @@ class FakeGh:
             return self.events
         if path.endswith("/comments?per_page=100"):
             return self.comments
+        if "/branches" in path:
+            return [{"name": "main"}]
         tail = path.rsplit("/", 1)[-1]
         if tail.isdigit():
             return next(r for r in self.issues if r["number"] == int(tail))
@@ -199,6 +201,10 @@ class FakeGh:
         self.stdin.append(stdin)
         if argv[:2] == ("pr", "create"):
             return "https://github.com/o/r/pull/9\n"
+        if argv[:2] == ("pr", "list"):
+            return "[]"
+        if argv[:2] == ("repo", "view"):
+            return '{"defaultBranchRef": {"name": "main"}}'
         if argv[:2] == ("issue", "create"):
             return "https://github.com/o/r/issues/77\n"
         return "https://github.com/o/r/issues/1#c\n"

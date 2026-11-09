@@ -23,11 +23,21 @@ table with `issues.priority_labels` (`{"label": tier}`) and the untagged tier wi
 
 `tickets` is where new tickets go: `issues` or `todo`. Issues work the same on private repositories. Project owners decide the labels; create any that are missing, or their commands fail.
 
+## One PR of truth
+
+One concept gets one PR, or one labelled series. Run `grw.py pr-overlap <id>` (or `--title T [--issue N]`) twice: before starting the work and again right before opening the PR. It lists open PRs and unmerged branches that reference the same issue, would be stacked on, have a similar title, or whose branch name is made of the item's words.
+
+- **Same work** (a redo, a review fix, more of the same batch, redoing files another open PR added): push to that PR's branch and update its body. Do not open a second PR.
+- **A deliberate next slice** of a bigger change (code, then debug tools, then art batches): open it with `issue-pr ... --series "<name>"`. It adds the `series` label and a `Series: <name> (part N)` line listing the other parts. Stack it on the earlier part's branch when the slice needs that code; otherwise base it on main.
+- **A different concept** that only looks alike: `--not-duplicate "<why>"`.
+
+`issue-pr` runs the same check and refuses an overlap that has neither flag.
+
 ## GitHub issues
 
 `session start` syncs them. Each open issue becomes an item whose first action is `triage-issue`. Read it with `gh issue view`. Then one of:
 
-- **Can fix:** `issue-accept <id> [--area P]`, then normal work on your own branch. Finish with
+- **Can fix:** `issue-accept <id> [--area P]`, then run `pr-overlap <id>` (see "One PR of truth" below) and work on that PR's branch when it matches, else on your own branch. Finish with
   `issue-pr <id> --branch B --title T --why "..." --why-not "..." --evidence "..."`. It opens the PR for human review with `Closes #N`, argues both sides, and comments the PR link on the issue. A closing keyword only works for a PR into the default branch; the comment links it either way. Never merge unless the project's guard allows it.
 - **Cannot fix:** `issue-reply <id> --why "..." --tips "..."`. The comment says it comes from an agent, why, and what may help. Say what you checked. A new human comment brings the item back; your own never does.
 - **Needs a decision:** `issue-ask <id> --person P --why "..."`, which tags them and waits for their label.

@@ -1,5 +1,10 @@
 # Changelog: grindwright
 
+## 0.7.0 (2026-11-08)
+
+- One PR of truth: `grw.py pr-overlap` lists open PRs and unmerged branches covering the same issue or concept (issue reference, stacking, similar title, branch words). Run before starting and before opening a PR.
+- `issue-pr` refuses an overlap unless `--series "<name>"` (adds the `series` label and a "Series: name (part N)" line naming the other parts; stacking allowed) or `--not-duplicate "<why>"`.
+
 ## 0.6.1 (2026-11-08)
 
 - Joins the 0.5.0 screenshots work and 0.6.0 claims across computers in one release.
