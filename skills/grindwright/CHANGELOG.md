@@ -1,5 +1,9 @@
 # Changelog: grindwright
 
+## 0.6.0 (2026-11-08)
+
+- Several computers on one project (`work.remote`, `references/machines.md`): each claim first creates the ref `grind-claim/<key>` on the repository host. Creating an existing ref fails, so one computer wins; renewals and take-overs of expired claims are fast-forward updates, so they have one winner too. The ref's empty commit names machine, session and expiry. `next` defers items another computer holds; `checkpoint` renews; `done`, `drop` and `session release` delete the ref; `sync` marks held items and gives back stale ones of its own; `grw.py remote` lists every claim. On issues, a label (`agent-working`) and one marked comment. `ticket_first` refuses claims on items with no issue or PR, so discovery on both computers goes through the duplicate-checked tracker. Hosts that cannot be reached refuse the claim unless `"offline": "local"`. Four tests with a fake host; a live test on GitHub (four simultaneous creates, one winner). Numbered 0.6.0 because 0.5.0 is in progress on another branch.
+
 ## 0.4.0 (2026-11-08)
 
 - Run report: when `grind_loop` (alone) or `grind_crew` ends, `scripts/grind_report.py` writes `logs/run-ID.json` and a self-contained page `logs/run-ID-report.html` (plus a markdown summary) and opens it. It shows why each member stopped, in plain words, with its last session's own reason; how far each road milestone and lane got; the PRs opened and updated and the issues opened or touched, from GitHub over the run window; every item worked, with evidence; and every session with time, cost, tokens and a link to its Claude transcript and `claude --resume` id. It also includes charts (work by lane, cost and agent minutes by member, a session timeline). When chainwright is installed it also builds the chainwright tier page for the run and links it.

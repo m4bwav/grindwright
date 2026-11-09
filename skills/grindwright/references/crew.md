@@ -2,6 +2,8 @@
 
 Start simple. One session per project needs nothing here but separate state folders. Add a second session on a project only when it has work that does not overlap and the owner has the tokens.
 
+Sessions on different computers cannot share a state folder: see [several computers on one project](machines.md).
+
 ## Layout
 
 - **One state folder per project.** Ledger, events, board, logs and knowledge never mix. `grind_crew.py` refuses two projects sharing one.
