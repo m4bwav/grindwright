@@ -191,3 +191,6 @@ Owner: make sure grind runs improve the plugins they use (pixelwright, artwright
 
 ## 2026-11-08: 0.7.9 stop advice and session-bound warning
 Read the first game's second 12-hour crew mid-run. Member one ended after 10 sessions in about 2 hours; six of those sessions forced their end because five claimed items "needed an open editor", until the last session found a headless compile took two minutes. `session end`'s refusal now names finish, waits and `session release`, points at headless batchmode, and says `--force` is for faults. `grind_crew.py` dry run warns when the session bound ends a run long before its hours. 175 tests pass.
+
+## 2026-11-09 v0.8.0 master page
+Owner asked for one page linking every earlier grind session and its project, woven into the plugin. grind_index.py: transcript scan (cached), run registry, profile-based project names (own state, profile repo, crew member). Pitfalls met: grep/heredoc commands that contain the words "grw.py session start", crew members whose state comes from GRINDWRIGHT_STATE, eval sandboxes in Temp. SKILL.md sits at its token cap, so the docs live in references/chaining.md.
