@@ -422,6 +422,10 @@ class Gates(Base):
         self.assertEqual(self.grw("lint-text", str(text), expect=2)["hits"], ["Alex"])
         text.write_text("Remark on marking sprites", encoding="utf-8")
         self.grw("lint-text", str(text))
+        text.write_text("![gif](https://raw.githubusercontent.com/o/r/pr-media/a.gif)", encoding="utf-8")
+        self.assertEqual(len(self.grw("lint-text", str(text), expect=2)["raw_images"]), 1)
+        text.write_text("![gif](https://github.com/o/r/blob/abc/a.gif?raw=true)", encoding="utf-8")
+        self.grw("lint-text", str(text))
 
     def test_outward_actions_refused_even_if_profile_allows(self):
         self.profile({"guards": {"post": "allow"}})

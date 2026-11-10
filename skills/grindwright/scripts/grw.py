@@ -1368,8 +1368,11 @@ def cmd_pr_brief(store, args):
 def cmd_lint_text(store, args):
     text = Path(args.file).read_text(encoding="utf-8") if args.file else sys.stdin.read()
     hits = text_ban_hits(store.profile(), text)
-    if hits:
-        raise Refused([f"text names a banned term: {h}" for h in hits], hits=hits)
+    raw = [u for u in grw_work.image_urls(text) if "raw.githubusercontent" in u]
+    if hits or raw:
+        raise Refused([f"text names a banned term: {h}" for h in hits]
+                      + [f"image link 404s on a private repo, use github.com/O/R/blob/<sha>/PATH?raw=true: {u}" for u in raw],
+                      hits=hits, raw_images=raw)
     return {"clean": True}
 
 
