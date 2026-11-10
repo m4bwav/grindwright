@@ -182,9 +182,14 @@ class WorktreeRoot(unittest.TestCase):
 class FakeGh:
     def __init__(self):
         self.calls, self.stdin, self.issues, self.events, self.comments = [], [], [], [], []
+        self.pulls, self.open_prs = {}, []
 
     def api(self, *argv):
         path = argv[0]
+        if "/pulls?state=open" in path:
+            return self.open_prs
+        if "/pulls/" in path:
+            return self.pulls.get(int(path.rsplit("/", 1)[-1]), {})
         if path.endswith("/events?per_page=100"):
             return self.events
         if path.endswith("/comments?per_page=100"):
@@ -338,6 +343,43 @@ class Issues(Base):
             self.assertIn(text, self.fake.stdin[-2])
         self.assertIn(out["pr"], self.fake.stdin[-1])
         self.assertEqual(self.fake.calls[-1][:3], ("issue", "comment", "1"))
+
+    def opened_pr(self):
+        self.fake.issues = [issue(1, "Crash on load")]
+        item = self.synced()[0]
+        self.run_grw("issue-accept", item)
+        self.run_grw("claim", item)
+        self.run_grw("issue-pr", item, "--branch", "b", "--title", "Fix crash", "--why", "g", "--why-not", "r", "--evidence", "t")
+        return item
+
+    def test_merged_pr_turns_into_closeout_then_close(self):
+        item = self.opened_pr()
+        self.assertEqual(self.run_grw("issue-close", item, "--evidence", "x")[0], 2)  # nothing merged yet
+        self.fake.pulls[9] = {"merged_at": None}
+        self.assertEqual(self.run_grw("issue-sync")[1]["closeout"], [])
+        self.fake.pulls[9] = {"merged_at": "2026-01-02T00:00:00Z"}
+        self.fake.open_prs = [{"title": "Part two", "body": "Refs #1"}]
+        self.assertEqual(self.run_grw("issue-sync")[1]["closeout"], [])  # another open PR still works on it
+        self.fake.open_prs = [{"title": "Other", "body": "Closes #12"}]
+        self.assertEqual(self.run_grw("issue-sync")[1]["closeout"], [item])
+        _, nxt = self.run_grw("next", "--no-probe")
+        self.assertEqual(nxt["next"]["action"], "close-out-issue")
+        self.assertEqual(self.run_grw("issue-close", item, "--evidence", "all three steps play")[0], 0)
+        self.assertIn("all three steps play", self.fake.stdin[-2])
+        self.assertEqual(self.fake.calls[-1][:3], ("issue", "close", "1"))
+        self.assertEqual(grw_work.find_item(grw.Store(self.state).items(), item)["state"], "done")
+
+    def test_mostly_done_asks_once_and_answer_returns_to_triage(self):
+        item = self.opened_pr()
+        self.fake.pulls[9] = {"merged_at": "2026-01-02T00:00:00Z"}
+        self.run_grw("issue-sync")
+        self.assertEqual(self.run_grw("issue-finalize", item, "--done", "save works", "--left", "cloud sync", "--person", "pat")[0], 0)
+        for text in ("@pat", "save works", "cloud sync", "Final direction"):
+            self.assertIn(text, self.fake.stdin[-1])
+        self.assertEqual(self.run_grw("issue-sync")[1]["closeout"], [])  # not asked twice for the same PR
+        self.fake.issues = [issue(1, "Crash on load", updated="2999-01-01T00:00:00Z")]
+        self.fake.comments = [{"created_at": "2998-01-01T00:00:00Z", "body": "close it"}]
+        self.assertEqual(self.run_grw("issue-sync")[1]["reopened"], [item])
 
     def test_task_ticket_needs_check_mentions_person_and_waits_for_their_label(self):
         ticket = ("ticket", "Add soil fertility", "--type", "feature", "--body", "b", "--from-task", "Add soil fertility")

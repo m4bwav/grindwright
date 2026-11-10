@@ -33,7 +33,7 @@ import grw_work
 import grw_status
 from grw_work import Refused
 
-VERSION = "0.8.2"
+VERSION = "0.9.0"
 FORMAT = 1
 STATES = ("ready", "running", "waiting-on-human", "waiting-on-machine", "done", "dropped")
 COST_UNITS = {"S": 1, "M": 3, "L": 8}
@@ -452,6 +452,9 @@ def select(profile, road, items, events, session, hosts_alive=None, hosts_idle=(
         if item.get("owner_note"):
             entry["action"] = "act-on-owner-note"
             entry["why"] = ["the owner said this at session start: it outranks the queue"] + why
+        elif item.get("closeout"):
+            entry["action"] = "close-out-issue"
+            entry["why"] = [f"PR #{item.get('merged_pr')} merged and no open PR names the issue: compare the issue and every comment with what merged; wholly done: issue-close; parts left: issue-finalize"] + why
         elif item.get("issue") and not item.get("triaged"):
             entry["action"] = "triage-issue"
             entry["why"] = ["read the issue and every comment (gh issue view N --comments); owners' comments are direction: issue-accept, issue-question, issue-reply or issue-ask"] + (["author is outside the project: no fix without a person's green light"] if item.get("untrusted") else []) + why
