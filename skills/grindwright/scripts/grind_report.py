@@ -495,8 +495,15 @@ def build(state, run_path, out=None, open_page=False, use_github=True):
     out.with_suffix(".md").write_bytes((md + "\n").encode("utf-8"))
     if open_page:
         webbrowser.open(out.resolve().as_uri())
+    index = None
+    try:  # the master page of every run (grind_index.py); a failure here never fails the run report
+        import grind_index
+        grind_index.add(state, run_path)
+        index = grind_index.build()["page"]
+    except Exception:  # noqa: BLE001
+        pass
     return {"ok": True, "report": str(out), "summary": md, "chain_report": str(chain_page) if chain_page else None,
-            "github": data["github"] is not None}
+            "github": data["github"] is not None, "index": index}
 
 
 def finish(state, run_path, crew=None, forced_off=False):

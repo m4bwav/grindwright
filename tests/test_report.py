@@ -8,6 +8,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+os.environ["GRINDWRIGHT_HOME"] = tempfile.mkdtemp(prefix="grw-home-")  # keep the run registry out of ~/.grindwright
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "skills" / "grindwright" / "scripts"))
 import grind_loop  # noqa: E402
 import grind_report  # noqa: E402
