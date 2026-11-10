@@ -30,6 +30,7 @@ class IndexTest(unittest.TestCase):
         os.environ["GRINDWRIGHT_HOME"] = os.path.join(self.tmp, "home")
         self.cp = Path(self.tmp) / "claude-projects"
         os.environ["GRINDWRIGHT_CLAUDE_PROJECTS"] = str(self.cp)
+        os.environ["STEERWRIGHT_HOME"] = os.path.join(self.tmp, "steer")
 
     def transcript(self, name, cwd, command):
         folder = self.cp / "proj"
@@ -50,6 +51,14 @@ class IndexTest(unittest.TestCase):
         for text in ("GameA", "GameB", "claude --resume run-1-s0", "run-1-report.html", "$5.00", "Sessions per day"):
             self.assertIn(text, page)
         self.assertNotIn(".chain.json", page)
+
+    def test_steerwright_link_only_when_installed(self):
+        self.assertNotIn("steerwright", Path(grind_index.build()["page"]).read_text(encoding="utf-8"))
+        steer = Path(self.tmp) / "steer"
+        steer.mkdir()
+        (steer / "server.json").write_text('{"url": "http://127.0.0.1:47630/"}', encoding="utf-8")
+        page = Path(grind_index.build()["page"]).read_text(encoding="utf-8")
+        self.assertIn('href="http://127.0.0.1:47630/" title="all projects">steerwright</a>', page)
 
     def test_empty_page(self):
         r = grind_index.build()

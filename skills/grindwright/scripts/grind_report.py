@@ -44,6 +44,20 @@ WORK = ("done", "drafted", "asked", "add", "claim")
 LABEL = {"done": "finished", "drafted": "drafted", "asked": "asked a person", "add": "added", "claim": "started"}
 
 
+def steerwright_link():
+    """A header link to the steerwright hub when ~/.steerwright/server.json has a url, else ''."""
+    home = os.environ.get("STEERWRIGHT_HOME") or os.path.join(os.path.expanduser("~"), ".steerwright")
+    try:
+        with open(os.path.join(home, "server.json"), encoding="utf-8") as f:
+            url = json.load(f).get("url")
+    except (OSError, ValueError, AttributeError):
+        return ""
+    if not isinstance(url, str) or not re.match(r"https?://", url):
+        return ""
+    return (f'<nav style="float:right;font-size:13px"><a href="{html.escape(url, quote=True)}" '
+            'title="all projects">steerwright</a></nav>')
+
+
 def read_json(path, default=None):
     try:
         return json.loads(Path(path).read_text(encoding="utf-8"))
@@ -359,7 +373,7 @@ td,th{padding:6px 10px;border-bottom:1px solid var(--line);text-align:left;verti
 .stop{border-left:4px solid var(--wait)}.stop.bad{border-left-color:var(--bad)}code{font-size:12px}
 details summary{cursor:pointer;color:var(--mute)}.shots img{height:96px;max-width:100%;border:1px solid var(--line);border-radius:6px;margin:2px 6px 2px 0;object-fit:contain;background:var(--bg)}ul{margin:4px 0;padding-left:20px}
 @media (max-width:600px){td,th{padding:5px 6px}.hide-s{display:none}}
-</style></head><body><main>
+</style></head><body><main>__STEER__
 __BODY__
 </main></body></html>"""
 
@@ -463,7 +477,7 @@ def render(run, data, chain_page=None):
                         f"<td>${p.get('usd') or 0:.2f}</td><td class='hide-s'>{(p.get('tokens') or 0):,}</td><td>{ref}{resume}</td></tr>")
     body.append("</table>")
     title = f"{run.get('project') or 'Grind'} Run Report"
-    return PAGE.replace("__TITLE__", e(title)).replace("__BODY__", "".join(body))
+    return PAGE.replace("__TITLE__", e(title)).replace("__BODY__", "".join(body)).replace("__STEER__", steerwright_link())
 
 
 def summary_md(run, data):

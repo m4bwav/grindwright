@@ -197,3 +197,6 @@ Owner asked for one page linking every earlier grind session and its project, wo
 
 ## 2026-11-09 v0.8.1 tab icon
 Owner asked for a favicon on the grindwright page. FAVICON_LINK in grind_report.py: inline SVG data URI (white gear on an amber tile, after askwright's served favicon.svg tile), used by the report and index template (PAGE) and the status page (grw_status imports it). Inline because the report and index open from file://. In the data URI, quote, #, < and > are encoded. tests/test_favicon.py. 181 tests pass.
+
+## 2026-11-09 v0.8.2 steerwright link
+grind_report.steerwright_link() reads the steerwright server.json and bakes an absolute link into the index and run report headers at build time (steerwright serves the index at /sib/grindwright, so relative links break). Tests point STEERWRIGHT_HOME at a temp folder. 182 tests pass.

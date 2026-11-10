@@ -1,5 +1,9 @@
 # Changelog: grindwright
 
+## 0.8.2 (2026-11-09)
+
+- The master page and run reports carry a small "steerwright" link (title "all projects") to the steerwright hub url when `~/.steerwright/server.json` (or `$STEERWRIGHT_HOME/server.json`) has one; no file, no link.
+
 ## 0.8.1 (2026-11-09)
 
 - Tab icon on every page grindwright makes: the run report, the master index and the live status page. The owner asked for a favicon. It is an inline SVG data URI (a white gear on an amber tile, askwright's tile style), so it works from file:// and when served. `tests/test_favicon.py` checks each page.

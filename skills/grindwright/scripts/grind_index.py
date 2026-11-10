@@ -25,7 +25,7 @@ from collections import defaultdict
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from grind_report import PAGE, fmt_s, read_json, span_seconds, svg_bars  # noqa: E402
+from grind_report import PAGE, fmt_s, read_json, span_seconds, steerwright_link, svg_bars  # noqa: E402
 
 SKIP = {"node_modules", ".git", "Library", "Temp", "obj", "bin", "venv", ".venv", "__pycache__", "Logs", "Packages"}
 START = re.compile(r"grw\.py.*\bsession\s+start\b")
@@ -310,7 +310,7 @@ def render(runs, sessions):
             "<div class='kpis'>" + "".join(f"<div class='kpi'><b>{esc(v)}</b><span>{esc(k)}</span></div>" for v, k in kpis) + "</div>"]
     if not sessions and not runs:
         body.append("<p class='mute'>Nothing found yet. Grind sessions show here once a session runs <code>grw.py session start</code>.</p>")
-        return PAGE.replace("__TITLE__", "Grindwright").replace("__BODY__", "\n".join(body))
+        return PAGE.replace("__TITLE__", "Grindwright").replace("__BODY__", "\n".join(body)).replace("__STEER__", steerwright_link())
     body.append("<div class='grid'>")
     body.append("<div class='card'><h2>Sessions by project</h2>" + svg_bars(
         [(p, {"sessions": projects_d[p]["sessions"]}) for p in projects], ["sessions"], ["var(--t)"]) + "</div>")
@@ -342,7 +342,7 @@ def render(runs, sessions):
                     f"<td>{fmt_s(s['seconds']) if s['seconds'] else '?'}</td><td class='hide-s'><code>{esc(s['cwd'])}</code></td>"
                     f"<td>{esc(s.get('run', ''))}</td><td><code class='sid' title='{esc(cmd)}' data-cmd='{esc(cmd)}'>{esc(s['id'][:8])}</code></td></tr>")
     body.append("</table><script>document.querySelectorAll('.sid').forEach(e=>{e.style.cursor='copy';e.onclick=()=>{try{navigator.clipboard.writeText(e.dataset.cmd);e.textContent='copied'}catch(x){}}})</script>")
-    return PAGE.replace("__TITLE__", "Grindwright").replace("__BODY__", "\n".join(body))
+    return PAGE.replace("__TITLE__", "Grindwright").replace("__BODY__", "\n".join(body)).replace("__STEER__", steerwright_link())
 
 
 def build(scan_roots=(), out=None, open_page=False, transcripts=True, include_temp=False):
