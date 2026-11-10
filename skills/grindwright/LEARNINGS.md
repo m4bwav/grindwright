@@ -94,3 +94,9 @@
 - Evidence: a crew art session, grw.py output "<login>'s review queue is at its cap of 3" and "<name>'s review queue is at its cap of 8".
 - Scope: skill
 - Status: active · helpful 0 · harmful 0 · last_confirmed 2026-11-07
+
+## L-20261110-shots-on-hold: a visible item held at the review cap takes its GIF on `hold`
+- Lesson: `wait-human` has no `--shots`; when the review cap refuses it, pass the PR GIF to `hold --shots` so the run report still shows it. This repo's CI is not a required check, so `gh pr merge` succeeds while checks are pending: watch the run (`gh pr checks N --watch`) before merging, or a red size budget lands on main.
+- Evidence: Arvum session 2026-11-10 (PR 54, PR 79 held at cap 3); grindwright PR 69 merged pending, budget red, fixed in PR 70.
+- Scope: skill
+- Status: active · helpful 0 · harmful 0 · last_confirmed 2026-11-10
