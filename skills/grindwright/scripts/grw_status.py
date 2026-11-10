@@ -21,7 +21,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from grind_report import FAVICON_LINK  # noqa: E402
+from grind_report import FAVICON_LINK, open_asks  # noqa: E402
 
 ENDS = {"done", "released", "skip", "dropped", "rejected", "drafted", "asked", "detached", "resolved"}
 
@@ -185,6 +185,7 @@ def collect(state, since=None):
         "working": working,
         "timeline": list(reversed(timeline[-80:])),
         "notes": _section(board, "Notes")[-8:],
+        "asks": [dict(a, since=a["since"][:16]) for a in open_asks(root)],
         "waiting": [line[2:] for line in waiting.splitlines() if line.startswith("- ")],
         "timing": timing_rows[-10:],
         "logs": _log_stats(root / "logs", since),
@@ -215,6 +216,7 @@ ul{margin:0;padding-left:18px}li{margin:3px 0;overflow-wrap:anywhere}.scroll{max
 <section class="card"><h2>Members</h2><div id="members"></div></section>
 <section class="card"><h2>Working now</h2><div id="working"></div></section>
 <section class="card wide"><h2>Timeline (this run)</h2><div class="scroll" id="timeline"></div></section>
+<section class="card"><h2>Askwright pages waiting</h2><div id="asks"></div></section>
 <section class="card"><h2>Waiting on you</h2><div id="waiting"></div></section>
 <section class="card"><h2>Notes between members</h2><div id="notes"></div></section>
 <section class="card wide"><h2>Estimate vs actual (minutes)</h2><div id="timing"></div></section>
@@ -235,6 +237,7 @@ const p=d.processes;members.innerHTML=(p.error?`<p class="mute">process list fai
  (Object.values(d.logs).some(l=>l.last)?'<h2 style="margin-top:10px">Last agent result</h2>'+Object.entries(d.logs).filter(([,l])=>l.last).map(([n,l])=>`<pre><b>${e(n)}</b>: ${e(l.last.slice(-300))}</pre>`).join(''):'');
 working.innerHTML=d.working.length?'<table><tr><th>member</th><th>item</th><th>for</th></tr>'+d.working.map(w=>`<tr><td>${e(w.member)}</td><td>${e(w.title)} <span class="mute">${e(w.lane||'')} · <code>${e(w.id)}</code></span></td><td class="t">${ago(w.minutes)}</td></tr>`).join('')+'</table>':'<p class="mute">nothing claimed</p>';
 timeline.innerHTML=d.timeline.length?'<table>'+d.timeline.map(v=>`<tr><td class="t">${hm(v.ts)}</td><td class="k-${e(v.type)}"><b>${e(v.type)}</b></td><td>${e(v.session||'')}</td><td>${e(v.title||v.text||v.source||'')} <span class="mute">${e(v.lane||'')} ${v.id?'<code>'+e(v.id)+'</code>':''}</span>${v.evidence?'<div class="mute">'+e(v.evidence)+'</div>':''}${v.why?'<div class="mute">'+e(v.why)+'</div>':''}</td></tr>`).join('')+'</table>':'<p class="mute">no events since the run started</p>';
+asks.innerHTML=d.asks.length?'<ul>'+d.asks.map(a=>'<li><code>'+e(a.set)+'</code> ('+e(a.people.join(', ')||'anyone')+'): '+a.items.map(i=>e(i.id+' '+i.title)).join('; ')+'</li>').join('')+'</ul>':'<p class="mute">none open</p>';
 waiting.innerHTML=d.waiting.length?'<ul>'+d.waiting.map(w=>'<li>'+link(w)+'</li>').join('')+'</ul>':'<p class="mute">nothing</p>';
 notes.innerHTML=d.notes.length?'<ul>'+d.notes.slice().reverse().map(n=>'<li>'+e(n)+'</li>').join('')+'</ul>':'<p class="mute">none</p>';
 timing.innerHTML=d.timing.length?'<table><tr><th>date</th><th>member</th><th>item</th><th>est</th><th>actual</th><th>why</th></tr>'+d.timing.slice().reverse().map(t=>`<tr><td class="t">${e(t.date)}</td><td>${e(t.member)}</td><td>${e(t.title)}</td><td>${e(t.estimate)}</td><td>${e(t.actual)}</td><td class="mute">${e(t.why)}</td></tr>`).join('')+'</table>':'<p class="mute">none</p>';}

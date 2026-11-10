@@ -25,7 +25,7 @@ from collections import defaultdict
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from grind_report import PAGE, fmt_s, read_json, span_seconds, steerwright_link, svg_bars  # noqa: E402
+from grind_report import PAGE, fmt_s, open_asks, read_json, span_seconds, steerwright_link, svg_bars  # noqa: E402
 
 SKIP = {"node_modules", ".git", "Library", "Temp", "obj", "bin", "venv", ".venv", "__pycache__", "Logs", "Packages"}
 START = re.compile(r"grw\.py.*\bsession\s+start\b")
@@ -287,7 +287,7 @@ def merge(runs, sessions):
     return sorted(by_id.values(), key=lambda s: s["started"], reverse=True)
 
 
-def render(runs, sessions):
+def render(runs, sessions, asks=None):
     projects_d = defaultdict(lambda: {"sessions": 0, "hours": 0.0, "usd": 0.0, "runs": 0, "first": "9", "last": ""})
     by_day = defaultdict(lambda: defaultdict(int))
     for s in sessions:
@@ -325,6 +325,18 @@ def render(runs, sessions):
         body.append(f"<tr><td><i style='display:inline-block;width:10px;height:10px;border-radius:2px;background:{colors[p]}'></i> {esc(p)}</td>"
                     f"<td>{v['sessions']}</td><td>{v['hours']:.1f}</td><td>{v['runs']}</td><td>{esc(v['first'] if v['first'] != '9' else '')}</td><td>{esc(v['last'])}</td></tr>")
     body.append("</table>")
+    asks = asks or {}
+    if any(asks.values()):
+        body.append("<h2>Askwright pages waiting</h2><p class='mute'>Every question set still open, by project.</p>"
+                    "<table><tr><th>Project</th><th>Set</th><th>Person</th><th>Items</th></tr>")
+        for proj in sorted(asks):
+            for a in asks[proj]:
+                items = "; ".join(f"{esc(i['id'])} {esc(i['title'])}" for i in a["items"])
+                body.append(f"<tr><td>{esc(proj)}</td><td><code>{esc(a['set'])}</code></td>"
+                            f"<td>{esc(', '.join(a['people']) or 'anyone')}</td><td>{items}</td></tr>")
+        body.append("</table>")
+    else:
+        body.append("<h2>Askwright pages waiting</h2><p class='mute'>None open.</p>")
     if runs:
         body.append("<h2>Driven runs</h2><table><tr><th>Started</th><th>Project</th><th>Members</th><th>Stopped</th><th>Length</th><th>Cost</th><th>Report</th></tr>")
         for r in sorted(runs, key=lambda r: r["started"], reverse=True):
@@ -358,7 +370,12 @@ def build(scan_roots=(), out=None, open_page=False, transcripts=True, include_te
     sessions = merge(runs, scan_transcripts(include_temp, states) if transcripts else [])
     out = Path(out) if out else home() / "index.html"
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_bytes(render(runs, sessions).encode("utf-8"))
+    asks = defaultdict(list)
+    named = Projects(states)
+    for st in {norm(x): Path(x) for x in states}.values():
+        prof = read_json(st / "profile.json") or {}
+        asks[prof.get("project") or named.of(str(st))].extend(open_asks(st))
+    out.write_bytes(render(runs, sessions, asks).encode("utf-8"))
     if open_page:
         webbrowser.open(out.resolve().as_uri())
     return {"ok": True, "page": str(out), "runs": len(runs), "sessions": len(sessions), "added": added,

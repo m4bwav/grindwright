@@ -203,3 +203,6 @@ grind_report.steerwright_link() reads the steerwright server.json and bakes an a
 
 ## 2026-11-10 v0.9.0 issue close-out
 Owner: when a scan sees an issue's last PR merged and the issue is wholly complete, close it; mostly complete, post and ask for final direction. issue_sync now checks item["pr"] (via repos/R/pulls/N merged_at) for waiting items, plus one open-PR list per sync for other PRs naming #N; a hit sets closeout and the selector returns close-out-issue. New commands issue-close (comment + gh issue close --reason completed) and issue-finalize (done/left/question, closeout_asked = PR so it asks once). Both refuse without a closeout mark. Tests in test_crew.py Issues. 184 tests pass.
+
+## 2026-11-10 v0.9.1 GIFs in PRs, askwright pages on project pages
+Owner: PRs should prefer animated GIFs, graphics or gameplay; the project page should list every outstanding askwright page. loop.md "What a reviewer gets" and SKILL.md now say prefer an animated GIF (still only when nothing moves); grw.py shots() sets item["shots_hint"] when visible shots have no .gif. New grind_report.open_asks(state): ledger items waiting-on-human with a set, plus sets in the project's ask/ folder with unanswered questions. grind_index shows an "Askwright pages waiting" table by project; grw_status page and JSON gain "asks". Test in test_index.py. 185 tests pass.

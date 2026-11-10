@@ -81,6 +81,34 @@ def jsonl(path):
     return rows
 
 
+def open_asks(state):
+    """Askwright sets still waiting on a person for this state folder: one row per set, its items and people."""
+    sets = {}
+    for i in jsonl(Path(state) / "ledger.jsonl"):
+        if i.get("state") == "waiting-on-human" and i.get("set"):
+            row = sets.setdefault(str(i["set"]), {"set": str(i["set"]), "items": [], "people": set(), "since": ""})
+            row["items"].append({"id": i.get("id"), "title": i.get("title", "")})
+            if i.get("person"):
+                row["people"].add(str(i["person"]))
+            row["since"] = max(row["since"], str(i.get("updated") or i.get("ts") or ""))
+    # Sets on disk (the project's ask/ folder) with questions nobody has answered yet.
+    root = Path(state).resolve()
+    for base in {root.parent.parent / "ask", root / "ask"}:
+        for qf in sorted(base.glob("*/questions.json")) if base.is_dir() else []:
+            q = read_json(qf, {}) or {}
+            qs = q.get("questions", []) if isinstance(q, dict) else []
+            ans = read_json(qf.parent / "answers.json", {}) or {}
+            ans = ans.get("answers", ans) if isinstance(ans, dict) else {}
+            open_q = [x for x in qs if isinstance(x, dict) and x.get("id") not in ans]
+            if open_q:
+                row = sets.setdefault(qf.parent.name, {"set": qf.parent.name, "items": [], "people": set(), "since": ""})
+                row["open_questions"] = len(open_q)
+                row["title"] = q.get("title", "")
+                if not row["items"]:
+                    row["items"] = [{"id": x.get("id"), "title": x.get("title") or x.get("question", "")} for x in open_q]
+    return [dict(r, people=sorted(r["people"])) for r in sorted(sets.values(), key=lambda r: r["set"])]
+
+
 def enabled(state, crew=None):
     """Return (build, open)."""
     if (os.environ.get("GRINDWRIGHT_REPORT") or "").lower() in ("off", "0", "false", "no"):

@@ -1253,7 +1253,11 @@ def shots(store, item, args):
         item["no_shots"] = reason
     if visible(store.profile(), item) and not item.get("shots") and not item.get("no_shots"):
         raise Refused(["a visible change needs screenshots in its PR, issue or comment: pass --shots <files> "
-                       "(before/after, a strip or GIF for motion) or --no-shots \"<why>\" (see loop.md, Screenshots)"])
+                       "(prefer an animated GIF of the graphics or gameplay; before/after stills otherwise) or --no-shots \"<why>\" (see loop.md, Screenshots)"])
+    if item.get("shots") and visible(store.profile(), item) and not any(str(f).lower().endswith(".gif") for f in item["shots"]):
+        item["shots_hint"] = "no animated GIF: PRs prefer a GIF of the graphics or gameplay in motion (loop.md, What a reviewer gets)"
+    else:
+        item.pop("shots_hint", None)
     return item.get("shots", [])
 
 
