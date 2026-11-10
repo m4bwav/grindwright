@@ -1,5 +1,9 @@
 # Changelog: grindwright
 
+## Unreleased
+
+- `lint-text` refuses `raw.githubusercontent.com` image links, which 404 on a private repository (an Arvum PR shipped one past lint-text on 2026-11-10); use `github.com/O/R/blob/<sha>/PATH?raw=true` or run `pr-images --fix`.
+
 ## 0.9.0 (2026-11-10)
 
 - Issue close-out. The owner asked that a scan notice when an issue's last PR merged and the work is wholly complete, close it then, and otherwise post and ask for final direction. `issue-sync` now marks an item `close-out-issue` once its agent PR merged and no open PR names the issue. `issue-close` comments what merged and the evidence, then closes it as completed; `issue-finalize` posts what is done and left and asks for direction, once per PR. Whether it is wholly done stays the agent's judgement, read against the issue and its comments; closing keywords miss PRs into other branches and issues only partly covered.
