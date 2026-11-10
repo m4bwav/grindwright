@@ -3,6 +3,7 @@
 ## 0.8.1 (2026-11-09)
 
 - Tab icon on every page grindwright makes: the run report, the master index and the live status page. The owner asked for a favicon. It is an inline SVG data URI (a white gear on an amber tile, askwright's tile style), so it works from file:// and when served. `tests/test_favicon.py` checks each page.
+- Master index no longer registers a run twice where the temp folder is a link or a short name (macOS `/var`, Windows CI): the registry check compared `abspath` with the stored `resolve()` path. It turned CI red on macOS and Windows since 0.8.0.
 
 ## 0.8.0 (2026-11-09)
 

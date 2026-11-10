@@ -46,7 +46,7 @@ def registry():
 
 
 def norm(p):
-    return os.path.normcase(os.path.abspath(str(p)))
+    return os.path.normcase(str(Path(p).resolve())) if p else ""
 
 
 def load_registry():
