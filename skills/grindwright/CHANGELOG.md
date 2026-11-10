@@ -1,5 +1,9 @@
 # Changelog: grindwright
 
+## 0.9.0 (2026-11-10)
+
+- Issue close-out. The owner asked that a scan notice when an issue's last PR merged and the work is wholly complete, close it then, and otherwise post and ask for final direction. `issue-sync` now marks an item `close-out-issue` once its agent PR merged and no open PR names the issue. `issue-close` comments what merged and the evidence, then closes it as completed; `issue-finalize` posts what is done and left and asks for direction, once per PR. Whether it is wholly done stays the agent's judgement, read against the issue and its comments; closing keywords miss PRs into other branches and issues only partly covered.
+
 ## 0.8.2 (2026-11-09)
 
 - The master page and run reports carry a small "steerwright" link (title "all projects") to the steerwright hub url when `~/.steerwright/server.json` (or `$STEERWRIGHT_HOME/server.json`) has one; no file, no link.

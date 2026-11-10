@@ -142,8 +142,9 @@ def issue_sync(store, items):
     if not config:
         return None
     repo = config["repo"]
-    report = {"new": [], "reopened": [], "closed": [], "greenlit": []}
+    report = {"new": [], "reopened": [], "closed": [], "greenlit": [], "closeout": []}
     rows = [r for r in gh_json(f"repos/{repo}/issues?state=open&per_page=100") if "pull_request" not in r]
+    open_prs = None
     live = {r["number"]: r for r in rows}
     known = {i["issue"]: i for i in items if i.get("issue")}
     skip = {s.lower() for s in config.get("skip_labels", SKIP_LABELS)}
@@ -175,6 +176,15 @@ def issue_sync(store, items):
                 touch(item)
                 report["closed"].append(item["id"])
             continue
+        if item.get("pr") and item["state"] == "waiting-on-human" and not item.get("closeout") and str(item.get("closeout_asked")) != str(item["pr"]):
+            if open_prs is None:
+                open_prs = gh_json(f"repos/{repo}/pulls?state=open&per_page=100")
+            if closeout_due(repo, number, item["pr"], open_prs):
+                item.update({"state": "ready", "triaged": True, "closeout": True, "merged_pr": item["pr"], "replied": False})
+                item.pop("waits_for", None)
+                touch(item)
+                report["closeout"].append(item["id"])
+                continue
         tier = issue_priority([l["name"] for l in row.get("labels", [])], config)
         if item.get("priority") != tier and not item.get("priority_pinned"):
             item["priority"] = tier
@@ -210,6 +220,14 @@ def issue_sync(store, items):
                 report["reopened"].append(item["id"])
             touch(item)
     return report
+
+
+def closeout_due(repo, number, pr, open_prs):
+    """The agent's last PR for the issue merged and no open PR still names the issue: time to close it or ask what is left."""
+    if not gh_json(f"repos/{repo}/pulls/{pr}").get("merged_at"):
+        return False
+    ref = re.compile(rf"#{number}\b")
+    return not any(ref.search((p.get("title") or "") + " " + (p.get("body") or "")) for p in open_prs)
 
 
 PR_TRUST = ("OWNER",)
@@ -551,6 +569,49 @@ def cmd_issue_ask(store, args):
     item = issue_item(items, args.id)
     url = ask_person(store, config, item, args.person, args.why)
     store.save_items(items)
+    return {"id": item["id"], "comment": url}
+
+
+def closeout_item(items, item_id):
+    item = issue_item(items, item_id)
+    if not item.get("closeout"):
+        raise Refused(["no merged agent PR is waiting on this issue: issue-sync marks it once the last PR merges"])
+    return item
+
+
+def cmd_issue_close(store, args):
+    """Wholly done: say what merged and what was checked, then close the issue as completed."""
+    config = work(store, "issues")
+    items = store.items()
+    item = closeout_item(items, args.id)
+    repo, number = config["repo"], item["issue"]
+    url = post_issue_comment(store, repo, number, f"**Done.** PR #{item['merged_pr']} merged. {args.evidence}\n\nClosing as completed. Reopen it if anything is missing.")
+    gh("issue", "close", str(number), "-R", repo, "--reason", "completed")
+    item.update({"state": "done", "closeout": False, "evidence": f"closed after PR #{item['merged_pr']} merged: {args.evidence}",
+                 "oracle": "agent", "finished": stamp()})
+    item.pop("lease_until", None)
+    touch(item)
+    store.save_items(items)
+    store.event("closed", id=item["id"], issue=number)
+    return {"id": item["id"], "closed": number, "comment": url}
+
+
+def cmd_issue_finalize(store, args):
+    """Mostly done: list what merged and what is left, and ask for final direction. The answer brings it back to triage."""
+    config = work(store, "issues")
+    items = store.items()
+    item = closeout_item(items, args.id)
+    who = " ".join(f"@{p}" for p in args.person or [])
+    text = ((who + " " if who else "") + f"**Mostly done.** PR #{item['merged_pr']} merged.\n\n**Done:** {args.done}\n\n"
+            f"**Left:** {args.left}\n\n**Final direction?** Close it as is, have me finish what is left, or split the rest into a new issue.")
+    url = post_issue_comment(store, config["repo"], item["issue"], text)
+    item.update({"state": "waiting-on-human", "waits_for": "final direction on the issue", "replied": True, "triaged": False,
+                 "closeout": False, "closeout_asked": item["merged_pr"]})
+    seen_now(item)
+    item.pop("lease_until", None)
+    touch(item)
+    store.save_items(items)
+    store.event("asked", id=item["id"], issue=item["issue"])
     return {"id": item["id"], "comment": url}
 
 
@@ -943,6 +1004,14 @@ def add_parsers(add):
     p.add_argument("--person")
     p.add_argument("--series", help="one part of a bigger change split on purpose: labels it and names the part in the body")
     p.add_argument("--not-duplicate", help="pr-overlap matched, but this is a different concept because...")
+    p = add("issue-close", cmd_issue_close, "the last agent PR merged and the issue is wholly done: comment and close it")
+    p.add_argument("id")
+    p.add_argument("--evidence", required=True, help="how you checked every part of the issue is done")
+    p = add("issue-finalize", cmd_issue_finalize, "the last agent PR merged but parts are left: ask the owner for final direction")
+    p.add_argument("id")
+    p.add_argument("--done", required=True)
+    p.add_argument("--left", required=True)
+    p.add_argument("--person", action="append")
     p = add("pr-images", cmd_pr_images, "image links in an agent PR's body and comments that no longer load; --fix relinks them")
     p.add_argument("pr", type=int)
     p.add_argument("--fix", action="store_true", help="edit the agent's PR body; post a new comment for each agent comment")

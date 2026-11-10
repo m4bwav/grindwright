@@ -200,3 +200,6 @@ Owner asked for a favicon on the grindwright page. FAVICON_LINK in grind_report.
 
 ## 2026-11-09 v0.8.2 steerwright link
 grind_report.steerwright_link() reads the steerwright server.json and bakes an absolute link into the index and run report headers at build time (steerwright serves the index at /sib/grindwright, so relative links break). Tests point STEERWRIGHT_HOME at a temp folder. 182 tests pass.
+
+## 2026-11-10 v0.9.0 issue close-out
+Owner: when a scan sees an issue's last PR merged and the issue is wholly complete, close it; mostly complete, post and ask for final direction. issue_sync now checks item["pr"] (via repos/R/pulls/N merged_at) for waiting items, plus one open-PR list per sync for other PRs naming #N; a hit sets closeout and the selector returns close-out-issue. New commands issue-close (comment + gh issue close --reason completed) and issue-finalize (done/left/question, closeout_asked = PR so it asks once). Both refuse without a closeout mark. Tests in test_crew.py Issues. 184 tests pass.
