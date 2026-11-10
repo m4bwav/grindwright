@@ -96,3 +96,23 @@ class IndexTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def test_open_asks_lists_waiting_sets_and_unanswered_disk_sets(tmp_path):
+    import json, sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "skills" / "grindwright" / "scripts"))
+    from grind_report import open_asks
+    state = tmp_path / "ai-docs" / "grind"
+    state.mkdir(parents=True)
+    (state / "ledger.jsonl").write_text(json.dumps({"id": "g1", "title": "Roof", "state": "waiting-on-human", "set": "s-a", "person": "Jenny"}) + "\n" +
+                                        json.dumps({"id": "g2", "title": "Done", "state": "done", "set": "s-b"}) + "\n", encoding="utf-8")
+    ask = tmp_path / "ask"
+    for name, answers in (("s-c", {}), ("s-d", {"q1": "yes"})):
+        (ask / name).mkdir(parents=True)
+        (ask / name / "questions.json").write_text(json.dumps({"title": name, "questions": [{"id": "q1", "title": "Pick"}]}), encoding="utf-8")
+        (ask / name / "answers.json").write_text(json.dumps({"answers": answers}), encoding="utf-8")
+    sets = {a["set"]: a for a in open_asks(state)}
+    assert set(sets) == {"s-a", "s-c"}
+    assert sets["s-a"]["people"] == ["Jenny"]
+    assert sets["s-c"]["open_questions"] == 1

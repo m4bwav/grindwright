@@ -43,7 +43,10 @@ Every PR, issue and PR update comment is written for a person deciding whether t
 
 **Screenshots of every visible change.** Art, animation, UI, scenes, effects, layouts, video, models, store pages:
 attach pictures to the PR, the issue and every update comment that changes what shows. Before and after when a before
-exists (same camera, same crop), a strip or GIF for motion, one contact sheet for a batch. Capture with what the
+exists (same camera, same crop), one contact sheet for a batch. **Prefer an animated GIF** in every PR, for graphics
+and gameplay alike: a looping GIF of the sprite, effect, UI or scene in motion, or a short gameplay capture of the
+change in play (a few seconds, small enough to show inline, under about 10 MB). A still is the fallback only when
+nothing moves or no capture route exists; say why in the PR. Capture with what the
 project already has: the engine in batchmode or a scripted play-mode capture ([engine-verify](engine-verify.md)), a
 browser screenshot for web pages, the contact sheet the batch cycle made. Commit them under `pr-media/<item>/` on the
 branch and link them (private repositories: the `blob/...?raw=true` form above). `grw.py done` and `hold` refuse an
