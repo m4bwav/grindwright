@@ -1,6 +1,6 @@
 {
   "name": "grindwright",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "Grinds on an indie game like a solo dev who never stops: a work ledger and selector rank lanes by value first with human minutes as the discount, questions queue on askwright pages while work moves to another lane, gates stop stale review media and placeholder guesses, and every session ends with the same start command. Plugs into artwright, pixelwright, musicwright, cinewright, game-juice, polywright, ludowright, comfyui-gen and marketwright when present. Evergreen.",
   "author": {
     "name": "Mark Rogers"

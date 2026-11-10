@@ -194,3 +194,6 @@ Read the first game's second 12-hour crew mid-run. Member one ended after 10 ses
 
 ## 2026-11-09 v0.8.0 master page
 Owner asked for one page linking every earlier grind session and its project, woven into the plugin. grind_index.py: transcript scan (cached), run registry, profile-based project names (own state, profile repo, crew member). Pitfalls met: grep/heredoc commands that contain the words "grw.py session start", crew members whose state comes from GRINDWRIGHT_STATE, eval sandboxes in Temp. SKILL.md sits at its token cap, so the docs live in references/chaining.md.
+
+## 2026-11-09 v0.8.1 tab icon
+Owner asked for a favicon on the grindwright page. FAVICON_LINK in grind_report.py: inline SVG data URI (white gear on an amber tile, after askwright's served favicon.svg tile), used by the report and index template (PAGE) and the status page (grw_status imports it). Inline because the report and index open from file://. In the data URI, quote, #, < and > are encoded. tests/test_favicon.py. 181 tests pass.

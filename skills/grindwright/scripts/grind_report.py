@@ -333,7 +333,15 @@ def gh_rows(rows):
     return "<ul>" + "".join(f'<li>{link(r["url"], "#" + str(r["number"]))} {html.escape(r["title"])} <span class="chip">{html.escape(r["state"].lower())}</span></li>' for r in rows) + "</ul>"
 
 
+# Tab icon, inline so it works from file:// and served: a white gear on an amber tile (askwright's tile style).
+FAVICON_SVG = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect x="1" y="1" width="30" height="30" rx="8" fill="#c9821f"/>'
+               '<circle cx="16" cy="16" r="9" fill="none" stroke="#fff" stroke-width="4" stroke-dasharray="3.53 3.53"/>'
+               '<circle cx="16" cy="16" r="5.5" fill="none" stroke="#fff" stroke-width="3.5"/></svg>')
+FAVICON_LINK = '<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,' + FAVICON_SVG.replace('"', "'").replace("#", "%23").replace("<", "%3C").replace(">", "%3E") + '">'
+
+
 PAGE = """<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+""" + FAVICON_LINK + """
 <title>__TITLE__</title><style>
 :root{--bg:#f7f7f5;--card:#fff;--ink:#1d1d1b;--mute:#6b6b66;--line:#e2e1dc;--t:#3b6fd8;--m:#c9821f;--ok:#2f9e5a;--bad:#d04848;--wait:#8a6fd1;--add:#9aa3ad}
 @media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#17181a;--card:#212226;--ink:#ecebe6;--mute:#9a9a94;--line:#34353a;--t:#6c9bff;--m:#e7a64a;--add:#6b737c}}
