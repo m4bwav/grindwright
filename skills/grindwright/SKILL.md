@@ -109,7 +109,7 @@ If `GRINDWRIGHT_SESSION` is set or `next` lists `others_working`, others share t
 - One concept, one PR or series: `grw.py pr-overlap <id>` before work and before `issue-pr`.
 - Before merging, touching a main branch, stacking on a pending review or editing a protected file, run
   `grw.py guard merge|touch_main|stack_on_pending|touch <path>`. Another person's project follows that person's
-  rules. PR text: `grw.py lint-text`, bodies from `pr-brief --markdown`, animated GIFs in PRs for visible changes, graphics or gameplay, stills only when nothing moves ([loop](references/loop.md#what-a-reviewer-gets)).
+  rules. PR text: `grw.py lint-text`, bodies from `pr-brief --markdown`, GIFs of visible changes ([loop](references/loop.md#what-a-reviewer-gets)).
 - Installing hooks, schedules or settings outside the repo needs the owner's go-ahead. So does running unattended.
 - Work on grindwright itself is capped: file a learning and go back to the project.
 - Plugins are optional; call them, never copy them: art and cards through artwright and
