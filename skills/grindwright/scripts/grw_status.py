@@ -20,6 +20,9 @@ import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from grind_report import FAVICON_LINK  # noqa: E402
+
 ENDS = {"done", "released", "skip", "dropped", "rejected", "drafted", "asked", "detached", "resolved"}
 
 
@@ -189,6 +192,7 @@ def collect(state, since=None):
 
 
 PAGE = r"""<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+""" + FAVICON_LINK + r"""
 <title>Grind status</title><style>
 :root{--bg:#f6f7f9;--card:#fff;--ink:#1d2330;--mute:#6b7280;--line:#e3e6ec;--ok:#15803d;--warn:#b45309;--bad:#b91c1c;--acc:#2563eb}
 @media (prefers-color-scheme:dark){:root{--bg:#12151b;--card:#1b2029;--ink:#e6e9ef;--mute:#9aa3b2;--line:#2a313d;--ok:#4ade80;--warn:#fbbf24;--bad:#f87171;--acc:#60a5fa}}

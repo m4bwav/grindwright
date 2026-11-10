@@ -1,5 +1,7 @@
 # Handoff
 
+2026-11-09: v0.8.1: tab icon (inline SVG gear) on the run report, master index and status page.
+
 2026-11-08 (23:40): v0.7.9: clearer `session end` refusal (no --force over open items; headless engine checks), crew dry-run warns when max_sessions_each ends the run early. Next: read the first game's 12 h crew at its end; lessons in the run report.
 
 2026-11-08 (23:50): v0.7.8: `session end --lesson/--no-lessons` required after productive sessions; loop.md 'Learn from the work'. Next: show session lessons in the run report.

@@ -1,5 +1,10 @@
 # Changelog: grindwright
 
+## 0.8.1 (2026-11-09)
+
+- Tab icon on every page grindwright makes: the run report, the master index and the live status page. The owner asked for a favicon. It is an inline SVG data URI (a white gear on an amber tile, askwright's tile style), so it works from file:// and when served. `tests/test_favicon.py` checks each page.
+- Master index no longer registers a run twice where the temp folder is a link or a short name (macOS `/var`, Windows CI): the registry check compared `abspath` with the stored `resolve()` path. It turned CI red on macOS and Windows since 0.8.0.
+
 ## 0.8.0 (2026-11-09)
 
 - Master page, `scripts/grind_index.py build [--scan DIR] [--open]` (`~/.grindwright/index.html`): every grind session and run on the computer by project, with totals, sessions and hours per project, sessions per day, run report links and a copyable `claude --resume` per session. The owner asked for one page linking every earlier grind session and its project. Sessions come from Claude transcripts that ran `grw.py session start` (search commands, heredocs, temp sandboxes and grindwright's own clone are left out); projects from the grind profiles (own state, profile `repo`, crew member in `sessions/`). `grind_report.py build` registers each run and rebuilds the page. First build on the owner's machine: 91 sessions, 3 projects (Arvum Electrum, SpaceDeckBuilder2, the Lovecraft film), 7 s cold, cached after.
