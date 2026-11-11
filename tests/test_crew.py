@@ -327,6 +327,55 @@ class Issues(Base):
         self.run_grw("issue-sync")
         self.assertEqual({i["issue"]: i for i in grw.Store(self.state).items()}[2]["state"], "drafted")
 
+    def set_issues(self, **extra):
+        path = self.state / "profile.json"
+        profile = json.loads(path.read_text(encoding="utf-8"))
+        profile["work"] = json.loads(json.dumps(profile["work"]))
+        profile["work"]["issues"].update(extra)
+        path.write_text(json.dumps(profile), encoding="utf-8")
+
+    def issue_rows(self):
+        return {i["issue"]: i for i in grw.Store(self.state).items() if i.get("issue")}
+
+    def test_needs_human_issue_is_not_taken(self):
+        self.fake.issues = [issue(1, "Crash"), issue(2, "Record the door sound", ("enhancement", "Needs-Human"))]
+        self.assertEqual(len(self.synced()), 1)
+        self.assertEqual(list(self.issue_rows()), [1])
+
+    def test_needs_human_holds_a_known_issue_until_the_label_comes_off(self):
+        self.fake.issues = [issue(1, "Crash")]
+        item = self.synced()[0]
+        self.fake.issues = [issue(1, "Crash", labels=("bug", "needs-human"))]
+        self.assertEqual(self.run_grw("issue-sync")[1]["held"], [item])
+        row = self.issue_rows()[1]
+        self.assertEqual((row["state"], row["held_from"]), ("waiting-on-human", "ready"))
+        self.assertIn("needs-human", row["waits_for"])
+        self.assertEqual(self.run_grw("claim", item)[0], 2)
+        self.assertEqual(self.run_grw("issue-sync")[1]["held"], [])  # held once, not every sync
+        self.fake.issues = [issue(1, "Crash")]
+        self.assertEqual(self.run_grw("issue-sync")[1]["released"], [item])
+        row = self.issue_rows()[1]
+        self.assertEqual(row["state"], "ready")
+        for key in ("human_only", "held_from", "waits_for"):
+            self.assertNotIn(key, row)
+
+    def test_human_only_labels_come_from_the_profile(self):
+        self.set_issues(human_only_labels=["by-hand"])
+        self.fake.issues = [issue(1, "Crash", ("bug", "needs-human")), issue(2, "Hang", ("bug", "by-hand"))]
+        self.synced()
+        self.assertEqual(list(self.issue_rows()), [1])
+
+    def test_needs_human_outlasts_a_green_light(self):
+        self.set_issues(require_greenlight=True)
+        self.fake.issues = [issue(1, "Crash")]
+        item = self.synced()[0]
+        self.fake.events = [{"event": "labeled", "label": {"name": "agent-ready"}, "actor": {"login": "pat"}}]
+        self.fake.issues = [issue(1, "Crash", labels=("bug", "agent-ready", "needs-human"))]
+        report = self.run_grw("issue-sync")[1]
+        self.assertEqual((report["greenlit"], report["held"]), ([], []))  # it was already waiting; nothing moves it
+        self.fake.issues = [issue(1, "Crash", labels=("bug", "agent-ready"))]
+        self.assertEqual(self.run_grw("issue-sync")[1]["greenlit"], [item])
+
     def test_issue_accept_takes_the_issue_number(self):
         self.fake.issues = [issue(7, "Crash on load")]
         self.synced()

@@ -14,6 +14,7 @@ from pathlib import Path
 MARKER = "<!-- grindwright -->"
 TRUSTED = ("OWNER", "MEMBER", "COLLABORATOR")
 SKIP_LABELS = ("wontfix", "duplicate", "invalid")
+HUMAN_ONLY_LABELS = ("needs-human",)
 BUG_LABELS = ("bug",)
 FEATURE_LABELS = ("enhancement", "feature")
 # Priority tiers: 0 is most urgent. An untagged issue is normal (tier 2), exactly like the "normal"/"P2" tag.
@@ -142,19 +143,20 @@ def issue_sync(store, items):
     if not config:
         return None
     repo = config["repo"]
-    report = {"new": [], "reopened": [], "closed": [], "greenlit": [], "closeout": []}
+    report = {"new": [], "reopened": [], "closed": [], "greenlit": [], "closeout": [], "held": [], "released": []}
     rows = [r for r in gh_json(f"repos/{repo}/issues?state=open&per_page=100") if "pull_request" not in r]
     open_prs = None
     live = {r["number"]: r for r in rows}
     known = {i["issue"]: i for i in items if i.get("issue")}
     skip = {s.lower() for s in config.get("skip_labels", SKIP_LABELS)}
+    human_only = {s.lower() for s in config.get("human_only_labels", HUMAN_ONLY_LABELS)}
     greenlight = config.get("greenlight_label", "agent-ready")
     require = config.get("require_greenlight", False)
     people = list(config.get("greenlighters", []))
     wait_label = f"a greenlighter ({', '.join(people) or 'none named'}) to add {greenlight}"
     for number, row in live.items():
         labels = [l["name"] for l in row.get("labels", [])]
-        if number in known or skip & {l.lower() for l in labels}:
+        if number in known or (skip | human_only) & {l.lower() for l in labels}:
             continue
         kind = issue_type(labels, config)
         trusted = row.get("author_association") in config.get("trust", TRUSTED)
@@ -176,6 +178,19 @@ def issue_sync(store, items):
                 touch(item)
                 report["closed"].append(item["id"])
             continue
+        kept = sorted(human_only & {l["name"].lower() for l in row.get("labels", [])})
+        if kept:  # a person kept this issue: hold what an agent could start, and move nothing else while the label is on
+            if item["state"] in ("ready", "drafted"):
+                item.update({"held_from": item["state"], "state": "waiting-on-human", "human_only": True,
+                             "waits_for": f"a person to take the {kept[0]} label off"})
+                touch(item)
+                report["held"].append(item["id"])
+            continue
+        if item.pop("human_only", None):
+            item["state"] = item.pop("held_from", "ready")
+            item.pop("waits_for", None)
+            touch(item)
+            report["released"].append(item["id"])
         if item.get("pr") and item["state"] == "waiting-on-human" and not item.get("closeout") and str(item.get("closeout_asked")) != str(item["pr"]):
             if open_prs is None:
                 open_prs = gh_json(f"repos/{repo}/pulls?state=open&per_page=100")
