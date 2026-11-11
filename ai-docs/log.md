@@ -206,3 +206,7 @@ Owner: when a scan sees an issue's last PR merged and the issue is wholly comple
 
 ## 2026-11-10 v0.9.1 GIFs in PRs, askwright pages on project pages
 Owner: PRs should prefer animated GIFs, graphics or gameplay; the project page should list every outstanding askwright page. loop.md "What a reviewer gets" and SKILL.md now say prefer an animated GIF (still only when nothing moves); grw.py shots() sets item["shots_hint"] when visible shots have no .gif. New grind_report.open_asks(state): ledger items waiting-on-human with a set, plus sets in the project's ask/ folder with unanswered questions. grind_index shows an "Askwright pages waiting" table by project; grw_status page and JSON gain "asks". Test in test_index.py. 185 tests pass.
+
+## 2026-11-10 v0.10.0 animation tracks
+
+Mark asked for a track that updates animations when their start or end image changes. Added `grw.py track record|check|forget` (sha256 of each source image in `ai-docs/grind/tracks.json`), `check --add` files one redo item per stale animation in the animation-kind lane, and `discover` emits a stale_animations signal. Tests in tests/test_track.py. The redo itself stays normal lane work (pixelwright or the project's renderer), then `track record` again.
