@@ -1,6 +1,8 @@
 # Changelog: grindwright
 
-## Unreleased
+## 0.10.0 (2026-11-10)
+
+- Animation tracks. The owner asked that grindwright notice when the start or end image an animation was made from has changed. `grw.py track record <name> --start A --end B --output F` stores each image's sha256 in `tracks.json`; `track check` lists animations whose images changed or vanished, and `--add` files one redo item per stale animation in the animation-kind lane (once). `discover` reports stale animations as a signal. Re-record after the redo.
 
 - `lint-text` refuses `raw.githubusercontent.com` image links, which 404 on a private repository (an Arvum PR shipped one past lint-text on 2026-11-10); use `github.com/O/R/blob/<sha>/PATH?raw=true` or run `pr-images --fix`.
 

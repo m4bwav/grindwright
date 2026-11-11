@@ -33,7 +33,7 @@ import grw_work
 import grw_status
 from grw_work import Refused
 
-VERSION = "0.9.0"
+VERSION = "0.10.0"
 FORMAT = 1
 STATES = ("ready", "running", "waiting-on-human", "waiting-on-machine", "done", "dropped")
 COST_UNITS = {"S": 1, "M": 3, "L": 8}
@@ -1498,6 +1498,10 @@ def cmd_discover(store, args):
     scan, marketing = scan_repo(repo)
     signals.append(dict(scan, lane=gaps))
     signals.append({"lane": "marketing", "files": marketing, "note": "no plan found" if not marketing else "check its age and stats"})
+    stale = stale_tracks(store, repo)
+    if stale:
+        signals.append({"lane": anim_lane(profile), "stale_animations": len(stale), "sample": [t["animation"] for t in stale[:5]],
+                        "note": "start or end image changed since render: `grw.py track check --add`"})
     demo = profile.get("demo") or {}
     if demo.get("enabled"):
         signals.append({"lane": "demo", "scope": demo.get("scope"), "build": demo.get("build"),
@@ -1699,6 +1703,87 @@ def cmd_plan(store, args):
     return "\n".join(out) + "\n"
 
 
+# ---------------------------------------------------------------- tracks
+
+def file_hash(path):
+    """sha256 of a file, or None when it is gone."""
+    try:
+        return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+    except OSError:
+        return None
+
+
+def anim_lane(profile):
+    lanes = profile.get("lanes", {})
+    return next((n for n, l in lanes.items() if l.get("kind") == "animation"), "animation")
+
+
+def save_tracks(store, tracks):
+    write_atomic(store.root / "tracks.json", json.dumps(tracks, indent=2, sort_keys=True) + "\n")
+
+
+def stale_tracks(store, repo):
+    """Animations whose start or end image changed or vanished since they were rendered."""
+    stale = []
+    for name, t in sorted(read_json(store.root / "tracks.json", {}).items()):
+        changed = []
+        for role in ("start", "end"):
+            src = t.get(role)
+            if not src:
+                continue
+            now = file_hash(repo / src)
+            if now != t.get(role + "_sha"):
+                changed.append({"role": role, "image": src, "state": "missing" if now is None else "changed"})
+        if changed:
+            stale.append({"animation": name, "output": t.get("output"), "changed": changed})
+    return stale
+
+
+def cmd_track(store, args):
+    """Track the start and end images each animation was made from; flag animations to redo when one changes."""
+    profile = store.profile()
+    repo = project_repo(store, args.repo or profile.get("repo", "."))
+    tracks = read_json(store.root / "tracks.json", {})
+    if args.action in ("record", "forget") and not args.name:
+        raise Refused([f"{args.action} needs the animation name"])
+    if args.action == "record":
+        if not (args.start or args.end):
+            raise Refused(["record needs --start, --end or both"])
+        row = {"output": args.output, "recorded": stamp()}
+        for role, src in (("start", args.start), ("end", args.end)):
+            if src:
+                sha = file_hash(repo / src)
+                if sha is None:
+                    raise Refused([f"--{role} {src}: no such file under {repo}"])
+                row[role], row[role + "_sha"] = src, sha
+        tracks[args.name] = row
+        save_tracks(store, tracks)
+        store.event("track", animation=args.name)
+        return {"recorded": args.name, "track": row}
+    if args.action == "forget":
+        tracks.pop(args.name, None)
+        save_tracks(store, tracks)
+        return {"forgot": args.name}
+    stale = stale_tracks(store, repo)
+    added = []
+    if args.add and stale:
+        lane = args.lane or anim_lane(profile)
+        open_titles = {i["title"] for i in store.items() if i["state"] not in ("done", "dropped")}
+        for s in stale:
+            title = f"Redo animation {s['animation']}: source image changed"
+            if title in open_titles:
+                continue
+            what = ", ".join(f"{c['role']} {c['image']} {c['state']}" for c in s["changed"])
+            ns = argparse.Namespace(title=title, lane=lane, source=f"grw.py track check: {what}", value=args.value,
+                                    human_min=0, cost="M", confidence=None, priority=None, goal=None, road=None,
+                                    person=None, host=None, blocked_by=None, owner_note=False,
+                                    area=[s["output"]] if s.get("output") else None,
+                                    not_duplicate="track check", question=None, guess=None)
+            added.append(cmd_add(store, ns)["id"])
+    return {"tracked": len(tracks), "stale": stale, "added": added,
+            "rule": "re-render each stale animation from its current images, then `track record` it again"}
+
+
 # ---------------------------------------------------------------- parser
 
 def build_parser():
@@ -1874,6 +1959,17 @@ def build_parser():
 
     p = add("lint-text", cmd_lint_text, "check PR or commit text against the project's text bans")
     p.add_argument("file", nargs="?")
+
+    p = add("track", cmd_track, "record an animation's start/end images; check which animations are stale")
+    p.add_argument("action", choices=["record", "check", "forget"])
+    p.add_argument("name", nargs="?", help="animation name (record, forget)")
+    p.add_argument("--start", help="start image, relative to the repo")
+    p.add_argument("--end", help="end image, relative to the repo")
+    p.add_argument("--output", help="the rendered animation file")
+    p.add_argument("--repo")
+    p.add_argument("--add", action="store_true", help="check: add a redo item per stale animation")
+    p.add_argument("--lane", help="lane for redo items (default: the animation-kind lane)")
+    p.add_argument("--value", type=int, default=3, choices=range(1, 6))
 
     p = add("discover", cmd_discover, "read-only signals of unfinished work")
     p.add_argument("--repo")

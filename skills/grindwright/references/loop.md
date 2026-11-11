@@ -74,7 +74,7 @@ idea should be split before it is opened.
 | Lane | Tool when installed | Verify with |
 |---|---|---|
 | Card and placeholder graphics | artwright, comfyui-gen, the project's card tool | wired-art check, snapshots, human pick |
-| Animation | pixelwright | its gates, snapshots, human pick |
+| Animation | pixelwright; `grw.py track record` each render's start and end images, `track check --add` files redos when one changes | its gates, snapshots, human pick |
 | Models and blockouts | polywright | render sheet |
 | Sound effects and music | sfxwright for effects when installed, else musicwright; musicwright for music | sfx.py check, mw.py measure, loop seam check, human listen |
 | Intro video, trailers | cinewright, marketwright | human watch; drafts only |
