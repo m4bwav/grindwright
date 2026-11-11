@@ -210,3 +210,7 @@ Owner: PRs should prefer animated GIFs, graphics or gameplay; the project page s
 ## 2026-11-10 v0.10.0 animation tracks
 
 Mark asked for a track that updates animations when their start or end image changes. Added `grw.py track record|check|forget` (sha256 of each source image in `ai-docs/grind/tracks.json`), `check --add` files one redo item per stale animation in the animation-kind lane, and `discover` emits a stale_animations signal. Tests in tests/test_track.py. The redo itself stays normal lane work (pixelwright or the project's renderer), then `track record` again.
+
+## 2026-11-11 Works with
+
+At the owner's request: a README "Works with" section and a Works-With wiki page (linked from the sidebar and Home), each entry naming the real handoff with a partner plugin (taken from the skills that name each other) and why the pair helps.
