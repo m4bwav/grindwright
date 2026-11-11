@@ -1,5 +1,9 @@
 # Changelog: grindwright
 
+## Unreleased
+
+- Harvest targets: `harvest.json` beside `evergreen.json` lists the communities a technique harvest checks for this unit. Reason: user request 2026-11-10: plugins store their own technique-harvest targets (evergreen 1.1.0 harvest.json).
+
 ## 0.10.0 (2026-11-10)
 
 - Animation tracks. The owner asked that grindwright notice when the start or end image an animation was made from has changed. `grw.py track record <name> --start A --end B --output F` stores each image's sha256 in `tracks.json`; `track check` lists animations whose images changed or vanished, and `--add` files one redo item per stale animation in the animation-kind lane (once). `discover` reports stale animations as a signal. Re-record after the redo.

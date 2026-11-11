@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "targets": [
+    {
+      "kind": "reddit",
+      "sub": "AI_Agents",
+      "keep": "agent orchestration and long-run techniques; drop SaaS pitches"
+    },
+    {
+      "kind": "reddit",
+      "sub": "AutoGenAI",
+      "weight": "low",
+      "keep": "multi-agent patterns"
+    }
+  ]
+}
