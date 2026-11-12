@@ -4,6 +4,10 @@
 
 - Harvest targets: `harvest.json` beside `evergreen.json` lists the communities a technique harvest checks for this unit. Reason: user request 2026-11-10: plugins store their own technique-harvest targets (evergreen 1.1.0 harvest.json).
 
+## 0.11.0 (2026-11-11)
+
+- tokenwright on the grind index. The owner asked to see whether tokenwright was used and the agents' tokens-saved guesses, as on chainwright 0.8.0. `grind_index.py` counts, from each transcript by script (no model tokens), tokenwright hook notes, skill loads, tw.py/tidy.py runs and `tw.py note --saved N --why W --how H` lines (tokenwright 0.3.0), only when tokenwright is installed. The page gets a KPI tile, a tokenwright column per session and a why/how/saved table. Session cache format 3. First real build: 86 sessions, tokenwright active in 66.
+
 ## 0.10.0 (2026-11-10)
 
 - Animation tracks. The owner asked that grindwright notice when the start or end image an animation was made from has changed. `grw.py track record <name> --start A --end B --output F` stores each image's sha256 in `tracks.json`; `track check` lists animations whose images changed or vanished, and `--add` files one redo item per stale animation in the animation-kind lane (once). `discover` reports stale animations as a signal. Re-record after the redo.
