@@ -3,6 +3,11 @@
   "targets": [
     {
       "kind": "reddit",
+      "sub": "ClaudeAI",
+      "keep": "solo-dev agent pipelines for games and films (unattended runs, budgets, marketing automation, review loops); drop showcases"
+    },
+    {
+      "kind": "reddit",
       "sub": "AI_Agents",
       "keep": "agent orchestration and long-run techniques; drop SaaS pitches"
     },
