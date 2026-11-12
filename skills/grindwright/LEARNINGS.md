@@ -107,3 +107,11 @@
 - Evidence: Arvum session 2026-11-11 night, PR 102 logging.
 - Scope: skill
 - Status: active · helpful 0 · harmful 0 · last_confirmed 2026-11-11
+
+## L-20261111-ticket-for-existing-item: `ticket_first` refused an old item, and `ticket` cannot attach to it
+
+- Observed: `next --claim` refused ticket_first on g63fd4f (made before work.issues). `ticket ... --item g63fd4f` was an unrecognized argument, so the fix was a new ticketed item (gb79bfe, issue 104) plus `drop g63fd4f`, losing its checkpoint history.
+- Rule: until `ticket --item <id>` exists, file the ticket as a new item and drop the old one with `--why "replaced by <new>"`. Worth adding `--item`.
+- Evidence: Arvum session 2026-11-11 late night.
+- Scope: skill
+- Status: active · helpful 0 · harmful 0 · last_confirmed 2026-11-11
