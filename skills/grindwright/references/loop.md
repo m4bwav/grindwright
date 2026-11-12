@@ -89,13 +89,17 @@ idea should be split before it is opened.
 | Feel | game-juice (juice-scan, juice-apply) | toggle works, snapshots |
 | Balance | ludowright, ldw.py simulations | seeded Monte Carlo, findings file |
 | Tests: add unit, integration, end-to-end, snapshot, property or regression tests, or invent a check the project lacks | the project's test tools, unity-agent, roblox-agent | the new test fails on a planted fault, then passes; never weakened to pass |
-| Testing and bugs | unity-agent, roblox-agent, the project's tests | tests, headless boot, scripted play |
+| Testing and bugs | unity-agent, roblox-agent, the project's tests | tests, headless boot, scripted play; for game state, the state-dump and replay-fixture recipe in unity-agent-workflow's test ladder (text rows at a timestamp diffed against a saved expected file) |
 | Pre-launch checks (before any public build, store page or server goes live) | the project's build and server tests, everkeep | grep the shipped build for keys and tokens; the server, not the client, decides score, currency and purchases; one account cannot read or change another's data; crashes reach a log someone reads; one backup restored for real. Source: a contractor's list of what breaks in AI-built games after launch, r/aigamedev 2026-07 |
 | Unfinished features | the road, open issues, TODOs | tests, then scripted play |
 | Maintenance | everkeep if present, the package manager | tests, build |
 | Marketing plan and stats | marketwright | drafts only; numbers cite their source |
 
 Film and video projects use other lanes and another ladder: [projects.md](projects.md).
+
+## Approved files
+
+When the owner approves a spec, design doc or asset, record it: `grw.py approve <files>` stores each file's sha256 in `approved.lock` in the state folder. An approved file changes only after a new approval. `grw.py approved --check [files]` exits 1 and names every approved file that changed or vanished, and any named file never approved; run it before a session claims work done, and ask again for anything it names.
 
 ## Oracle ladder
 

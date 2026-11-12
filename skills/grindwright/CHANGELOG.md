@@ -1,5 +1,10 @@
 # Changelog: grindwright
 
+## 0.13.0 (2026-11-12)
+
+- Approved-file lock. `grw.py approve <files>` stores each file's sha256 in `approved.lock`; `grw.py approved --check` exits 1 naming approved files that changed or vanished and named files never approved. A rule in SKILL.md and references/loop.md: approved specs and assets change only after a new owner approval, checked before done. Reason: technique harvest 2026-11-12 (C-20261112-A, a spec hash lock that refuses changed parts until re-approved).
+- Testing lane points at the state-dump and replay-fixture recipe in unity-agent-workflow. Reason: technique harvest 2026-11-12 (C-20261112-B).
+
 ## 0.12.0 (2026-11-11)
 
 - Pre-launch checks lane in references/loop.md: grep the shipped build for keys, server-side validation of score and currency, account isolation, crash logging, one real backup restore. Reason: technique harvest 2026-11-11 (r/aigamedev post 1v1kt7j, a contractor's list of what breaks in AI-built games after launch); the testing lane had no ship-readiness checklist. Idea only, no text copied.
