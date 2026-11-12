@@ -211,7 +211,7 @@ def main(argv=None):
     parser.add_argument("--session-minutes", type=float, help="longest one session may run; --max-hours always applies")
     parser.add_argument("--limit-wait", type=int, default=1800, help="seconds to sleep on a usage limit")
     parser.add_argument("--max-waits", type=int, default=4)
-    parser.add_argument("--require-text", help="text the session output must contain, such as the plugin's name")
+    parser.add_argument("--require-text", help="text the session output must contain; use the continue prompt's file name (every session prints the start command), not the plugin name, which replies often omit")
     parser.add_argument("--log", help="append each session's output to this file")
     parser.add_argument("--session-id", help="this member's name when several sessions share the state")
     parser.add_argument("--discover-first", action="store_true",

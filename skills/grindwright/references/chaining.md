@@ -13,7 +13,7 @@ python grind_loop.py <continue prompt> --state <state> --cwd <repo> --max-sessio
 It starts a fresh session per pass and stops on: the ledger allowing a stop, either bound, two passes that change
 nothing, a failed session, a session past `--session-minutes` or the `--max-hours` deadline, repeated usage limits, or
 missing `--require-text`. Runaways raise no errors, so set `--session-minutes`. The driver checks the ledger before session 1; after widening the rules (drafting past a cap, a new lane), pass `--discover-first` so one session runs and finds the work. Opening and closing a session does not
-count as progress. Use `--log <file>` to keep session output, since refused tool calls are worth reading. A dry run
+count as progress. Use `--log <file>` to keep session output, since refused tool calls are worth reading. Pass `--require-text <continue prompt file name>`: the plugin name is often absent from a healthy reply and stops the run as `plugin-missing`. Give the continue prompt a rule that `grw.py next` decides the work, not HANDOFF: driven sessions that read a run of idle HANDOFF entries quit in seconds and defer the top item as "needs a full session" (Arvum, 2026-11-11: two runs stopped `no-progress` with an owner note on top). A dry run
 checks that the agent command exists.
 
 Why an outer driver (survey, 2026-11-03, `ai-docs/research/` in the plugin repo):
