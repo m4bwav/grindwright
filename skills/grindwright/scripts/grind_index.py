@@ -92,6 +92,78 @@ def scan(root, depth=6):
     return found
 
 
+TW_NOTE = re.compile(r"tw\.py[\"']?\s+note\b(.*)")
+
+
+def tokenwright_installed():
+    """True when the tokenwright plugin is installed for Claude Code (installed_plugins.json)."""
+    try:
+        d = json.loads((Path.home() / ".claude" / "plugins" / "installed_plugins.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return False
+    return any(k.split("@")[0] == "tokenwright" for k in (d.get("plugins") or d))
+
+
+def tokenwright_use(path):
+    """What tokenwright did in one transcript, counted by script (no model tokens): hook notes, skill loads,
+    tw.py/tidy.py runs, and the agent's `tw.py note --saved N --why W --how H` lines. Same rules as chainwright."""
+    import shlex
+    use = {"hook_notes": 0, "skills": 0, "commands": 0, "saved": 0, "notes": []}
+    try:
+        f = open(path, encoding="utf-8", errors="replace")
+    except OSError:
+        return use
+    with f:
+        for line in f:
+            if "tokenwright" not in line and "tw.py" not in line and "tidy.py" not in line:
+                continue
+            try:
+                d = json.loads(line)
+            except ValueError:
+                continue
+            if not isinstance(d, dict):
+                continue
+            if d.get("type") == "attachment":
+                if "additionalContext" in line and "tokenwright:" in line or "tokenwright meter" in line:
+                    use["hook_notes"] += 1
+                continue
+            msg = d.get("message")
+            if d.get("type") != "assistant" or not isinstance(msg, dict) or not isinstance(msg.get("content"), list):
+                continue
+            for c in msg["content"]:
+                if not isinstance(c, dict) or c.get("type") != "tool_use":
+                    continue
+                inp = c.get("input") or {}
+                if c.get("name") == "Skill" and str(inp.get("skill", "")).split(":")[-1].startswith("tokenwright"):
+                    use["skills"] += 1
+                cmd = str(inp.get("command", ""))
+                m = TW_NOTE.search(cmd)
+                if m:
+                    try:
+                        a = shlex.split(m.group(1).splitlines()[0] if m.group(1) else "")
+                    except ValueError:
+                        a = []
+                    n = {k[2:]: a[i + 1] for i, k in enumerate(a[:-1]) if k in ("--saved", "--why", "--how")}
+                    raw = str(n.get("saved", "0")).lower().replace(",", "").lstrip("~")
+                    try:
+                        use["saved"] += int(float(raw.rstrip("k")) * (1000 if raw.endswith("k") else 1))
+                    except ValueError:
+                        pass
+                    use["notes"].append({k: n[k] for k in ("why", "how", "saved") if k in n})
+                elif "tw.py" in cmd or "tidy.py" in cmd:
+                    use["commands"] += 1
+    use["used"] = int(bool(use["hook_notes"] or use["skills"] or use["commands"] or use["notes"]))
+    return use
+
+
+def tw_cell(tw):
+    if not tw:
+        return ""
+    if not tw.get("used"):
+        return "no"
+    return f'~{tw["saved"]:,} saved' if tw.get("saved") else "yes"
+
+
 def transcript_session(path):
     """The grind facts of one Claude transcript, or None when it never ran `grw.py session start`."""
     first = last = cwd = sid = where = None
@@ -124,7 +196,10 @@ def transcript_session(path):
         return None
     if not starts or not cwd:
         return None
-    return {"id": sid or Path(path).stem, "cwd": where or cwd, "started": first or "", "ended": last or "", "starts": starts}
+    info = {"id": sid or Path(path).stem, "cwd": where or cwd, "started": first or "", "ended": last or "", "starts": starts}
+    if TW:
+        info["tokenwright"] = tokenwright_use(path)
+    return info
 
 
 Q = r'(?:"[^"]*"|\'[^\']*\'|[^\s;|&]+)'
@@ -224,6 +299,9 @@ def local(ts):
         return ts or ""
 
 
+TW = tokenwright_installed()
+
+
 def scan_transcripts(include_temp=False, states=()):
     cache_path = home() / "sessions-cache.json"
     cache = read_json(cache_path) or {}
@@ -233,7 +311,7 @@ def scan_transcripts(include_temp=False, states=()):
             st = path.stat()
         except OSError:
             continue
-        key, stamp = str(path), f"2:{st.st_size}:{int(st.st_mtime)}"  # 2: cache format version
+        key, stamp = str(path), f"3:{st.st_size}:{int(st.st_mtime)}"  # 3: cache format version (3 adds tokenwright)
         hit = cache.get(key)
         info = hit["info"] if hit and hit.get("stamp") == stamp else transcript_session(path)
         fresh[key] = {"stamp": stamp, "info": info}
@@ -305,6 +383,11 @@ def render(runs, sessions, asks=None):
     kpis = [(len(sessions), "grind sessions"), (len(projects), "projects"), (len(runs), "driven runs"),
             (fmt_s(hours), "session time"), (f"${sum(s.get('usd', 0) for s in sessions):,.2f}", "cost known (runs only)"),
             (len(by_day), "days with grinding")]
+    tws = [s["tokenwright"] for s in sessions if s.get("tokenwright")]
+    if tws:
+        saved = sum(t.get("saved", 0) for t in tws)
+        kpis.append((f'{sum(t.get("used", 0) for t in tws)}/{len(tws)}' + (f" · ~{saved:,}" if saved else ""),
+                     "tokenwright used · saved (agent est.)"))
     body = ["<h1>Grindwright</h1>",
             f"<p class='sub'>Every grind session and driven run on this computer. Built {dt.datetime.now():%Y-%m-%d %H:%M}.</p>",
             "<div class='kpis'>" + "".join(f"<div class='kpi'><b>{esc(v)}</b><span>{esc(k)}</span></div>" for v, k in kpis) + "</div>"]
@@ -347,12 +430,20 @@ def render(runs, sessions, asks=None):
                         f"<td>{fmt_s(r['seconds']) if r['seconds'] else '?'}</td><td>${r['usd']:,.2f}</td><td>{rep}</td></tr>")
         body.append("</table>")
     body.append("<h2>Sessions</h2><p class='mute'>Click an id to copy its resume command; run it in the session's folder.</p>"
-                "<table><tr><th>Started</th><th>Project</th><th>Length</th><th class='hide-s'>Folder</th><th>Run</th><th>Session</th></tr>")
+                "<table><tr><th>Started</th><th>Project</th><th>Length</th><th class='hide-s'>Folder</th><th>Run</th><th title='tokenwright: used, and the agent&#39;s tokens-saved guess'>tokenwright</th><th>Session</th></tr>")
     for s in sessions:
         cmd = f"cd \"{s['cwd']}\" && claude --resume {s['id']}" if s["cwd"] else f"claude --resume {s['id']}"
         body.append(f"<tr><td>{esc(s['started'][:16].replace('T', ' '))}</td><td>{esc(s['project'])}</td>"
                     f"<td>{fmt_s(s['seconds']) if s['seconds'] else '?'}</td><td class='hide-s'><code>{esc(s['cwd'])}</code></td>"
-                    f"<td>{esc(s.get('run', ''))}</td><td><code class='sid' title='{esc(cmd)}' data-cmd='{esc(cmd)}'>{esc(s['id'][:8])}</code></td></tr>")
+                    f"<td>{esc(s.get('run', ''))}</td><td>{esc(tw_cell(s.get('tokenwright')))}</td><td><code class='sid' title='{esc(cmd)}' data-cmd='{esc(cmd)}'>{esc(s['id'][:8])}</code></td></tr>")
+    notes = [(s, n) for s in sessions for n in (s.get("tokenwright") or {}).get("notes") or []]
+    if notes:
+        body.append("</table><h2>tokenwright notes</h2><p class='mute'>Counted from transcripts by script (no model tokens); "
+                    "savings are the agents' own estimates from <code>tw.py note</code>.</p>"
+                    "<table><tr><th>Started</th><th>Project</th><th>Why</th><th>How</th><th>Saved</th></tr>")
+        for s, n in notes:
+            body.append(f"<tr><td>{esc(s['started'][:16].replace('T', ' '))}</td><td>{esc(s['project'])}</td>"
+                        f"<td>{esc(n.get('why', ''))}</td><td>{esc(n.get('how', ''))}</td><td>{esc(n.get('saved', ''))}</td></tr>")
     body.append("</table><script>document.querySelectorAll('.sid').forEach(e=>{e.style.cursor='copy';e.onclick=()=>{try{navigator.clipboard.writeText(e.dataset.cmd);e.textContent='copied'}catch(x){}}})</script>")
     return PAGE.replace("__TITLE__", "Grindwright").replace("__BODY__", "\n".join(body)).replace("__STEER__", steerwright_link())
 
