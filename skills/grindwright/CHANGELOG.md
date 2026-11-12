@@ -1,6 +1,8 @@
 # Changelog: grindwright
 
-## Unreleased
+## 0.12.0 (2026-11-11)
+
+- Pre-launch checks lane in references/loop.md: grep the shipped build for keys, server-side validation of score and currency, account isolation, crash logging, one real backup restore. Reason: technique harvest 2026-11-11 (r/aigamedev post 1v1kt7j, a contractor's list of what breaks in AI-built games after launch); the testing lane had no ship-readiness checklist. Idea only, no text copied.
 
 - `log` takes `--shots` and `--no-shots`. Before, a visible lane refused `log` for lack of screenshots it could not accept, and each refused call left a stray `ready` item behind; the screenshot gate now runs before the item is added.
 
