@@ -53,6 +53,12 @@ branch and link them (private repositories: the `blob/...?raw=true` form above).
 item on a visible lane without `--shots <files>` or `--no-shots "<why>"`; the run report shows them per item. A lane
 sets `"visible": true|false` in the profile to override its kind.
 
+An art PR with no art on its page is not reviewable. The pictures go **in the PR body itself**, inline, not only
+in a later comment or a contact sheet the agent "looked at": at least one GIF or contact sheet per asset group
+(per building, per sprite set), so the reviewer sees every piece without checking out the branch. This holds for
+ports, cherry-picks and carry-overs of art that was shown on an older PR too: link the old pictures again or make
+new ones. Before `gh pr create` on an art lane, check the body has image links; if it has none, it is not ready.
+
 **Explanation grows with risk.** Large PRs test a merger's nerve, so the bigger and riskier the change, the more the
 body must explain. Start every PR body from `grw.py pr-brief --base <base> --head <branch> --markdown`: it groups the
 changed files by area and kind (code, tests, art and media, docs, settings, CI and build, generated), scores the risk
