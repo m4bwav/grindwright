@@ -33,7 +33,7 @@ import grw_work
 import grw_status
 from grw_work import Refused
 
-VERSION = "0.12.0"
+VERSION = "0.13.0"
 FORMAT = 1
 STATES = ("ready", "running", "waiting-on-human", "waiting-on-machine", "done", "dropped")
 COST_UNITS = {"S": 1, "M": 3, "L": 8}
@@ -1787,6 +1787,39 @@ def cmd_track(store, args):
             "rule": "re-render each stale animation from its current images, then `track record` it again"}
 
 
+def cmd_approve(store, args):
+    """Record the owner's approval of files as sha256 in approved.lock; a changed file needs a new approval."""
+    repo = project_repo(store, args.repo or store.profile().get("repo", "."))
+    lock = read_json(store.root / "approved.lock", {})
+    done = {}
+    for src in args.files:
+        sha = file_hash(repo / src)
+        if sha is None:
+            raise Refused([f"{src}: no such file under {repo}"])
+        lock[src] = {"sha256": sha, "approved": stamp(), "by": args.by}
+        done[src] = sha
+    write_atomic(store.root / "approved.lock", json.dumps(lock, indent=2, sort_keys=True) + "\n")
+    store.event("approve", files=sorted(done), by=args.by)
+    return {"approved": done}
+
+
+def cmd_approved(store, args):
+    """List approved files; --check fails (exit 1) naming files changed, gone or never approved."""
+    repo = project_repo(store, args.repo or store.profile().get("repo", "."))
+    lock = read_json(store.root / "approved.lock", {})
+    changed = []
+    for name, row in sorted(lock.items()):
+        sha = file_hash(repo / name)
+        if sha != row["sha256"]:
+            changed.append({"file": name, "state": "gone" if sha is None else "changed"})
+    unapproved = [f for f in (args.files or []) if f not in lock]
+    result = {"approved": sorted(lock), "changed": changed, "unapproved": unapproved}
+    if args.check and (changed or unapproved):
+        result["exit"] = 1
+        result["rule"] = "changed or unapproved files need the owner's approval again (grw.py approve) before the work counts as done"
+    return result
+
+
 # ---------------------------------------------------------------- parser
 
 def build_parser():
@@ -1976,6 +2009,16 @@ def build_parser():
     p.add_argument("--lane", help="lane for redo items (default: the animation-kind lane)")
     p.add_argument("--value", type=int, default=3, choices=range(1, 6))
 
+    p = add("approve", cmd_approve, "record the owner's approval of files (sha256 into approved.lock)")
+    p.add_argument("files", nargs="+", help="paths relative to the repo")
+    p.add_argument("--by", default="owner", help="who approved")
+    p.add_argument("--repo")
+
+    p = add("approved", cmd_approved, "list approved files; --check exits 1 on changed or unapproved files")
+    p.add_argument("files", nargs="*", help="files that must be approved (check)")
+    p.add_argument("--check", action="store_true")
+    p.add_argument("--repo")
+
     p = add("discover", cmd_discover, "read-only signals of unfinished work")
     p.add_argument("--repo")
     p.add_argument("--no-gh", action="store_true")
@@ -2005,7 +2048,7 @@ def main(argv=None):
     store = Store(args.state, args.session)
     if args.command != "init":
         store.require()
-    read_only = args.command in ("show", "rank", "next", "plan", "doctor", "list", "queue", "guard", "lint-text", "metrics", "status", "init") and not getattr(args, "claim", False)
+    read_only = args.command in ("show", "rank", "next", "plan", "doctor", "list", "queue", "guard", "lint-text", "metrics", "status", "init", "approved") and not getattr(args, "claim", False)
     try:
         if read_only:
             result = args.func(store, args)
@@ -2020,7 +2063,9 @@ def main(argv=None):
     if isinstance(result, str):
         sys.stdout.write(result)
     else:
-        print(json.dumps(dict({"ok": True}, **result), ensure_ascii=False, indent=1))
+        code = result.pop("exit", 0)
+        print(json.dumps(dict({"ok": code == 0}, **result), ensure_ascii=False, indent=1))
+        return code
     return 0
 
 

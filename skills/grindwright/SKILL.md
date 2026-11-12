@@ -2,7 +2,7 @@
 name: grindwright
 description: "Use to keep an indie game, or a long film, video or story project, moving like a solo maker who never stops: pick the most valuable work across lanes (art, animation, writing, voices, sound, music, shots and edits, trailers, balance, testing and bugs, unfinished features, maintenance, marketing), do everything that needs no person, ask questions where the project already talks (issues, PR comments, discussions) or on a decision page, and switch lanes instead of waiting, and end each session with the same start command. A ledger and a selector script rank value first, with human minutes as the discount. Use on 'grind on my game', 'keep working on the game', 'grind on my film', 'what should I work on next', 'everything is waiting on me', 'work through the backlog while I'm away', 'run unattended', or a continue prompt that names grindwright. Also 'refresh grindwright'. Not for one design question (ludowright), one juice pass (game-juice) or one asset."
 metadata:
-  version: "0.12.0"
+  version: "0.13.0"
 ---
 
 # grindwright
@@ -45,6 +45,7 @@ act on a road that is not confirmed, beyond work every road would include (bugs,
 3. Finish the item one of three ways:
    - `grw.py done <id> --evidence "..." --oracle <rung>`. Rungs: none (reports and research), compile, tests, boot, scripted-play, snapshot, human.
      Use the highest it passed. Only `human` proves it is good; never call machine-checked work fun or finished.
+     Owner-approved specs and assets change only after a new approval: run `grw.py approved --check` before done (exit 1 names them; `grw.py approve <files>` records an approval).
    - `grw.py wait-human <id> --set <askwright set> --person <who>`, which runs the gates. Then hand over one inbox
      link in one message and go to step 2.
    - `grw.py wait-machine <id> --done-file <path> --why ...`, with the render detached. Go to step 2.
