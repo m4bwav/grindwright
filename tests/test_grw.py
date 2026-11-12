@@ -104,6 +104,15 @@ class Selector(Base):
         self.grw("reject", "old TODO in menu", "--why", "menu is going away")
         self.assertEqual(self.grw("discover", "--no-gh", "--dry-run")["rejected"][0]["finding"], "old TODO in menu")
 
+    def test_log_of_visible_work_takes_shots_and_leaves_no_stray_item_when_refused(self):
+        before = len(self.grw("list"))
+        self.grw("log", "rubble strips", "--lane", "art", "--source", "t", "--evidence", "e", "--oracle", "snapshot",
+                 "--provenance", "procedural", expect=2)
+        self.assertEqual(len(self.grw("list")), before)
+        made = self.grw("log", "rubble strips", "--lane", "art", "--source", "t", "--evidence", "e", "--oracle", "snapshot",
+                        "--provenance", "procedural", "--shots", "out/strip.gif")
+        self.assertEqual(made["state"], "done")
+
     def test_high_value_hard_beats_easy_low_value(self):
         easy = self.add("rename a variable", 2, 0, "code")
         hard = self.add("finish the tutorial", 5, 60, "code")
