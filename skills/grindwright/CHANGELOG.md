@@ -3,6 +3,7 @@
 ## 0.13.0 (2026-11-12)
 
 - Approved-file lock. `grw.py approve <files>` stores each file's sha256 in `approved.lock`; `grw.py approved --check` exits 1 naming approved files that changed or vanished and named files never approved. A rule in SKILL.md and references/loop.md: approved specs and assets change only after a new owner approval, checked before done. Reason: technique harvest 2026-11-12 (C-20261112-A, a spec hash lock that refuses changed parts until re-approved).
+- SKILL.md trimmed back under the 3,500-token budget line (it was 3,507 before this release, which failed the budget check).
 - Testing lane points at the state-dump and replay-fixture recipe in unity-agent-workflow. Reason: technique harvest 2026-11-12 (C-20261112-B).
 
 ## 0.12.0 (2026-11-11)
