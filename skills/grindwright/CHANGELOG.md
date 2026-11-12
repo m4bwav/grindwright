@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- `log` takes `--shots` and `--no-shots`. Before, a visible lane refused `log` for lack of screenshots it could not accept, and each refused call left a stray `ready` item behind; the screenshot gate now runs before the item is added.
+
 - Human-only labels: `issue-sync` leaves alone any issue carrying a label in `issues.human_only_labels` (default `["needs-human"]`). A new issue with the label is not taken into the ledger; a known `ready` or drafted item waits as `waiting-on-human` until the label comes off, then returns to where it was. The sync report gains `held` and `released`. Reason: user request 2026-11-11: a ticket for work an agent does poorly (choosing and judging recorded sound) was labelled `needs-human` and would still have been picked up. A separate key from `skip_labels` so that profiles that already set `skip_labels` get the default too.
 
 - Harvest targets: `harvest.json` beside `evergreen.json` lists the communities a technique harvest checks for this unit. Reason: user request 2026-11-10: plugins store their own technique-harvest targets (evergreen 1.1.0 harvest.json).

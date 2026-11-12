@@ -1313,8 +1313,11 @@ def cmd_log(store, args):
     fields = dict(title=args.title, lane=args.lane, source=args.source, value=args.value, road=args.road, goal=None,
                   human_min=0, cost="S", confidence=None, person=None, host=None, question=None, guess=None,
                   blocked_by=None, owner_note=False)
+    if visible(store.profile(), {"lane": args.lane}) and not args.shots and not args.no_shots:
+        shots(store, {"lane": args.lane}, args)  # refuse before adding, so a refused log leaves no stray item
     added = cmd_add(store, argparse.Namespace(**fields))
-    return cmd_done(store, argparse.Namespace(id=added["id"], evidence=args.evidence, oracle=args.oracle, provenance=args.provenance))
+    return cmd_done(store, argparse.Namespace(id=added["id"], evidence=args.evidence, oracle=args.oracle, provenance=args.provenance,
+                                              shots=args.shots, no_shots=args.no_shots))
 
 
 def cmd_reject(store, args):
@@ -1928,6 +1931,8 @@ def build_parser():
     p.add_argument("--evidence", required=True)
     p.add_argument("--oracle", choices=ORACLES, required=True)
     p.add_argument("--provenance")
+    p.add_argument("--shots", action="append", help="screenshots of a visible change, comma-separated or repeated")
+    p.add_argument("--no-shots", help="why a visible change has no screenshot")
 
     p = add("reject", cmd_reject, "a finding was looked at and is not worth an item")
     p.add_argument("finding")

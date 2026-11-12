@@ -100,3 +100,10 @@
 - Evidence: Arvum session 2026-11-10 (PR 54, PR 79 held at cap 3); grindwright PR 69 merged pending, budget red, fixed in PR 70.
 - Scope: skill
 - Status: active · helpful 0 · harmful 0 · last_confirmed 2026-11-10
+
+## L-20261111-log-shots: `log` refused visible work for missing screenshots it could not take
+- Observed: on an art lane, `grw.py log ... --provenance ...` refused "a visible change needs screenshots", `--shots` was an unrecognized argument, and every refused call had already added a `ready` item (two strays in the Arvum ledger, dropped).
+- Rule: gates in a one-call command run before it writes anything. Fixed in 0.11.1 (`log --shots/--no-shots`, gate first); test `test_log_of_visible_work_takes_shots_and_leaves_no_stray_item_when_refused`.
+- Evidence: Arvum session 2026-11-11 night, PR 102 logging.
+- Scope: skill
+- Status: active · helpful 0 · harmful 0 · last_confirmed 2026-11-11
