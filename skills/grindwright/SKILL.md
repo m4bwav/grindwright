@@ -41,11 +41,11 @@ act on a road that is not confirmed, beyond work every road would include (bugs,
    - `discover`: nothing selectable. Run `grw.py discover`, then really test and balance the game and look for gaps.
      Markers miss dead data: check data rows (events, cards) have code behind them and their own feel. Search docs and data before calling something missing. Add only items with a real `--source`. No busywork. A finding not worth an item: `grw.py reject "<finding>" --why ...`. Work already finished: `grw.py log "<title>" --lane ... --source ... --evidence ... --oracle ...`.
    - `survey`: an unmet milestone of a confirmed road has no open work and no survey this window (a session or a crew's shared hours), even if earlier items are done. Survey the game against it (play, read its design docs), `add` an item per gap with `--road <id>`, then `grw.py surveyed <id>` (`--why` saying what you checked when nothing is missing), or set `"met": true` in `road.json` with the evidence. The run does not stop until each is done.
-   - `stop`: nothing selectable after discovery. Before stopping, mine the agent todo file, unbuilt design-doc sections and open issues, and file the best few with `grw.py ticket "<title>" --type feature --propose --body "<why, scope, risk>"` (labelled `proposal` until green-lit, limit `work.proposals.open`, default 3). Stacking is fine where the guard allows (`--series`). Then say so honestly.
+   - `stop`: nothing selectable after discovery. Before stopping, mine the agent todo file, unbuilt design-doc sections and open issues, and file the best few with `grw.py ticket "<title>" --type feature --propose --body "<why, scope, risk>"` (labelled `proposal` until green-lit, limit `work.proposals.open`, default 3). Stacking is fine where the guard allows (`--series`). Then say so.
 3. Finish the item one of three ways:
    - `grw.py done <id> --evidence "..." --oracle <rung>`. Rungs: none (reports and research), compile, tests, boot, scripted-play, snapshot, human.
      Use the highest it passed. Only `human` proves it is good; never call machine-checked work fun or finished.
-     Approved specs and assets change only with a new approval: `grw.py approved --check` before done ([loop](references/loop.md)).
+     Approved specs and assets change only with a new approval: `grw.py approved --check` before done.
    - `grw.py wait-human <id> --set <askwright set> --person <who>`, which runs the gates. Then hand over one inbox
      link in one message and go to step 2.
    - `grw.py wait-machine <id> --done-file <path> --why ...`, with the render detached. Go to step 2.
