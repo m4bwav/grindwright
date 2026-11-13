@@ -14,7 +14,7 @@ A demo is a cut of the game people can play before launch: one slice, built on i
 2. **Make.** A build target or flag for the demo, the locks, the ending screen, a save that does not carry into the full game unless the owner wants it.
 3. **Check.** Build it, play its whole path (scripted where the project has scripted play), and record time to finish and anything broken. Visible changes carry screenshots like any visible lane.
 4. **Maintain.** After merges to main, list what changed inside the slice and rebuild; a broken demo is a bug item at the demo's priority.
-5. **Feedback.** When the demo is out, read where players talk about it (store reviews, the project's issues or forum) through the project's work sources and file items for what they hit.
+5. **Feedback.** When the demo is out, read where players talk about it (store reviews, the project's issues or forum) through the project's work sources and file items for what they hit. Each item names the finding or hypothesis it came from (`add ... --from "<finding>"`) and, when there is one, the player evidence that would show the fix worked (`--signal "<evidence>"`), so the next round of feedback can be checked against it.
 
 ## Owner calls
 

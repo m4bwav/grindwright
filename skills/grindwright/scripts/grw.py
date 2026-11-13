@@ -33,7 +33,7 @@ import grw_work
 import grw_status
 from grw_work import Refused
 
-VERSION = "0.13.1"
+VERSION = "0.13.2"
 FORMAT = 1
 STATES = ("ready", "running", "waiting-on-human", "waiting-on-machine", "done", "dropped")
 COST_UNITS = {"S": 1, "M": 3, "L": 8}
@@ -708,7 +708,8 @@ def cmd_add(store, args):
         "value": args.value, "human_min": args.human_min, "cost": args.cost, "state": "ready",
         "created": stamp(), "updated": stamp(),
     }
-    optional = {"confidence": args.confidence, "road": args.road, "person": args.person, "host": args.host, "question": args.question, "guess": args.guess}
+    optional = {"confidence": args.confidence, "road": args.road, "person": args.person, "host": args.host, "question": args.question, "guess": args.guess,
+                "signal": getattr(args, "signal", None), "from": getattr(args, "from_ref", None)}
     item.update({k: v for k, v in optional.items() if v})
     if getattr(args, "priority", None) is not None:
         item["priority"] = args.priority
@@ -1863,6 +1864,8 @@ def build_parser():
     p.add_argument("--not-duplicate", help="it resembles an open item, and why it is different")
     p.add_argument("--question")
     p.add_argument("--guess")
+    p.add_argument("--signal", help="player evidence that would show it worked")
+    p.add_argument("--from", dest="from_ref", help="finding or hypothesis it came from (demo feedback)")
 
     p = add("set", cmd_set, "change fields: key=value")
     p.add_argument("id")

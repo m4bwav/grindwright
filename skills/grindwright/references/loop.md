@@ -23,6 +23,8 @@ finished and polished, 1 to 5. Be honest: inflating value defeats the selector. 
 Maintenance is capped at 20% of recent claims, work on the tooling itself at 10%. Capped work returns only after a
 discovery pass found nothing better.
 
+Optional item fields `signal` (player evidence that would show the item worked) and `from` (the finding or hypothesis it came from) are stored as given and never scored; older ledgers without them read unchanged.
+
 ## Value starting points
 
 Adjust per project in the road. 5: a gap that stops the game being finished (a missing core feature, a crash, a

@@ -180,6 +180,15 @@ class Selector(Base):
         self.assertEqual(self.grw("next", "--no-probe", "--claim")["claimed"]["id"], item)
         self.assertIn("running", json.dumps(self.grw("show", item)))
 
+    def test_add_keeps_optional_signal_and_from(self):
+        item = self.grw("add", "fix jump feel", "--lane", "code", "--source", "demo review", "--value", "3",
+                        "--signal", "fewer missed-jump complaints", "--from", "finding: jumps feel late")["id"]
+        shown = json.dumps(self.grw("show", item))
+        self.assertIn("fewer missed-jump complaints", shown)
+        self.assertIn("finding: jumps feel late", shown)
+        plain = self.add("plain", 3, 0, "code")
+        self.assertNotIn("signal", json.dumps(self.grw("show", plain)))
+
     def test_add_requires_a_source(self):
         with self.assertRaises(SystemExit), contextlib.redirect_stderr(io.StringIO()):
             self.grw("add", "invented", "--lane", "code", "--value", "3")
