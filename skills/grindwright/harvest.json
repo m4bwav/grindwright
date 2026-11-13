@@ -16,6 +16,11 @@
       "sub": "AutoGenAI",
       "weight": "low",
       "keep": "multi-agent patterns"
+    },
+    {
+      "kind": "reddit",
+      "sub": "ClaudeGameDev",
+      "keep": "solo-dev agent pipelines for games (unattended runs, lanes, budgets, review loops); drop showcases and how-do-I-start questions"
     }
   ]
 }
