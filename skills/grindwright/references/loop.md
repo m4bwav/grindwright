@@ -89,11 +89,13 @@ idea should be split before it is opened.
 | Feel | game-juice (juice-scan, juice-apply) | toggle works, snapshots |
 | Balance | ludowright, ldw.py simulations | seeded Monte Carlo, findings file |
 | Tests: add unit, integration, end-to-end, snapshot, property or regression tests, or invent a check the project lacks | the project's test tools, unity-agent, roblox-agent | the new test fails on a planted fault, then passes; never weakened to pass |
-| Testing and bugs | unity-agent, roblox-agent, the project's tests | tests, headless boot, scripted play; for game state, the state-dump and replay-fixture recipe in unity-agent-workflow's test ladder (text rows at a timestamp diffed against a saved expected file) |
+| Testing and bugs | unity-agent, roblox-agent, the project's tests | tests, headless boot, scripted play; for game state, the state-dump and replay-fixture recipe in unity-agent-workflow's test ladder (text rows at a timestamp diffed against a saved expected file). Every build handed to a person carries short notes: what to test, what is out of scope, known issues. Discovery asks: has anyone outside the team played the long modes and the top difficulty? Makers tune for their own skill |
 | Pre-launch checks (before any public build, store page or server goes live) | the project's build and server tests, everkeep | grep the shipped build for keys and tokens; the server, not the client, decides score, currency and purchases; one account cannot read or change another's data; crashes reach a log someone reads; one backup restored for real. Source: a contractor's list of what breaks in AI-built games after launch, r/aigamedev 2026-07 |
 | Unfinished features | the road, open issues, TODOs | tests, then scripted play |
-| Maintenance | everkeep if present, the package manager | tests, build |
+| Maintenance | everkeep if present, the package manager; walk each target platform's or store's compliance list early, not in the last week | tests, build |
 | Marketing plan and stats | marketwright | drafts only; numbers cite their source |
+
+Build notes, outside players and early compliance: Hill-Whittall, Indie Game Developer Handbook (2015), chs. 2-3; book rules, unverified.
 
 Film and video projects use other lanes and another ladder: [projects.md](projects.md).
 

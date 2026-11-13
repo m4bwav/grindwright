@@ -1,5 +1,9 @@
 # Changelog: grindwright
 
+## 0.13.1 (2026-11-13)
+
+- Testing lane: every build a person tests carries notes (what to test, out of scope, known issues), and discovery asks whether anyone outside the team has played the long modes and the top difficulty. Maintenance lane: walk each platform or store compliance list early. Reason: book harvest indie-dev-handbook (Hill-Whittall, Indie Game Developer Handbook, 2015, chs. 2-3); book rules, unverified.
+
 ## 0.13.0 (2026-11-12)
 
 - Approved-file lock. `grw.py approve <files>` stores each file's sha256 in `approved.lock`; `grw.py approved --check` exits 1 naming approved files that changed or vanished and named files never approved. A rule in SKILL.md and references/loop.md: approved specs and assets change only after a new owner approval, checked before done. Reason: technique harvest 2026-11-12 (C-20261112-A, a spec hash lock that refuses changed parts until re-approved).
