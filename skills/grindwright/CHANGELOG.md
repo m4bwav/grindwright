@@ -1,5 +1,9 @@
 # Changelog: grindwright
 
+## 0.13.2 (2026-11-13)
+
+- `grw.py add` takes optional `--signal` (player evidence that would show the item worked) and `--from` (the finding or hypothesis it came from); the demo lane's feedback step uses both. Not scored; ledgers without them are unchanged. Unit test added. Reason: book harvest jnr-boeira-lean-game-development (Boeira, Lean Game Development, chs. 5 and 11); book rule, unverified.
+
 ## 0.13.1 (2026-11-13)
 
 - Testing lane: every build a person tests carries notes (what to test, out of scope, known issues), and discovery asks whether anyone outside the team has played the long modes and the top difficulty. Maintenance lane: walk each platform or store compliance list early. Reason: book harvest indie-dev-handbook (Hill-Whittall, Indie Game Developer Handbook, 2015, chs. 2-3); book rules, unverified.
