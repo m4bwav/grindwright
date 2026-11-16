@@ -102,7 +102,7 @@ hold <id> --evidence E [--person P] [--provenance P]   checkpoint <id> "<note>" 
 
 ## Other sessions
 
-If `GRINDWRIGHT_SESSION` is set or `next` lists `others_working`, others share this project ([crew](references/crew.md)). Claim shared files with `--area`, stay on your branch, read their notes, `note "<what changed>" --area <path>` when it affects them. Refused: take other work. If `session check` returns `waiting_on`, say nothing can move until those decisions, and stop.
+Others sharing the project ([crew](references/crew.md)): claim shared files with `--area`, stay on your branch, `note "<what changed>" --area <path>` when it affects them; refused, take other work. `continue-*`: claim, build on its branch; leaving: [`handoff --to`](references/handoff.md). If `session check` returns `waiting_on`, say nothing can move until those decisions, and stop.
 
 ## Hard limits
 

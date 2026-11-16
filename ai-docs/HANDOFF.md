@@ -1,5 +1,7 @@
 # Handoff
 
+2026-11-16: v0.15.0: stale takeover and deliberate handoff (`grw.py handoff`, `continue-stale` and `continue-handoff` in `next`, `takeover.stale_hours`, default 12), `scripts/grw_handoff.py`, `references/handoff.md`. Not yet run between two real grindwrighters. Owed: wiki page for it.
+
 2026-11-16: v0.14.0: new work off (`grw.py new-work off|on|show`, `--no-new-work` on the driver and crew, stop reason `no-new-work`). Table and rulings in `skills/grindwright/references/new-work.md`. Not turned on in any project: the owners do that. Wiki page owed.
 
 2026-11-09: v0.8.1: tab icon (inline SVG gear) on the run report, master index and status page.

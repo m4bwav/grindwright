@@ -216,3 +216,6 @@ Mark asked for a track that updates animations when their start or end image cha
 At the owner's request: a README "Works with" section and a Works-With wiki page (linked from the sidebar and Home), each entry naming the real handoff with a partner plugin (taken from the skills that name each other) and why the pair helps.
 
 2026-11-16: 0.14.0 new-work mode built (PR feat/quiet-mode). Mode lives in `<state>/mode.json`; one-shot via `GRINDWRIGHT_NO_NEW_WORK=1`. SKILL.md sits at 3,490 tokens of the 3,500 line: trim before adding.
+
+- 2026-11-16: 0.15.0 stale takeover and handoff. Ruling: a fresh host claim is never taken over, even with --take-over (before, the flag overrode it). sync keeps an expired lease with a branch paused for its owner until stale.
+- 2026-11-16: dead end: a handoff test run without --worktree committed and pushed the developer's own worktree (default was the current folder). Fixed: handoff refuses to commit unless the item names a branch and the worktree is on it. Stray branch feat/stale-takeover-handoff deleted; work shipped from feat/takeover-handoff.
