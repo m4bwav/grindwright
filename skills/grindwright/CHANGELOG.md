@@ -1,5 +1,9 @@
 # Changelog: grindwright
 
+## 0.17.3 (2026-11-16)
+
+- Ready for acceptance: a merged PR now counts only when it claims the issue: `#N` in its title, or a keyword before `#N` (or `owner/repo#N`) in its body: closes, fixes, resolves, refs, references, part of, part N of. A plain mention no longer qualifies, from the PR list or from the issue's timeline. Open PRs still disqualify on any mention. Reason: the first dry run on a real project would have labelled a follow-up art ticket that a merged PR named in passing ("no door art yet (#N)") (LEARNINGS L-011).
+
 ## 0.17.2 (2026-11-16)
 
 - People can have aliases: `people.<name>.aliases` in `profile.json` (a GitHub login, a nickname). `--person` accepts the name or an alias, case ignored; the ledger stores the profile name, so caps and counts stay on one person. The unknown-person refusal lists each person's aliases and says to add a missing one there.

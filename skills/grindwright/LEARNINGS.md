@@ -1,5 +1,13 @@
 # Learnings: grindwright
 
+### L-011 · 2026-11-16 · `mention-is-not-a-claim`: a follow-up ticket named in a merged PR looked done
+- Trigger: the first `issue-acceptance --dry-run` on a real project listed a new art ticket as ready. A merged PR had named it only as follow-up work ("no door art yet (#N)"), and GitHub's timeline cross-reference said the same.
+- Hypothesis: any `#N` mention was read as "this PR is the issue's work". PR bodies name follow-ups, blockers and related tickets all the time.
+- Rule: a merged PR counts only when it claims the issue: `#N` in its title, or a closing or reference keyword before `#N` in its body. Open PRs still disqualify on any mention, the safe direction. Built as `claims_issue` in 0.17.3, with tests.
+- Evidence: a grind session on a private project, 2026-11-16, kept privately.
+- Scope: skill
+- Status: active · helpful 0 · harmful 0 · last_confirmed 2026-11-16
+
 ### L-010 · 2026-11-16 · `open-pr-is-not-done`: issues labelled ready for acceptance while their PRs were still open
 - Trigger: asked to label issues whose work was done, an agent labelled three issues whose PRs were open, not merged. It judged the PRs complete by reading them.
 - Hypothesis: "done" was read as "the change looks finished" instead of a state GitHub reports. A judgement call stood where a rule could be checked.
