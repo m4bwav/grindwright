@@ -195,6 +195,17 @@ class Handoff(Base):
         self.assertEqual(self.run_grw("claim", self.item, sid="z")[0], 0)
 
 
+    def test_new_work_off_still_continues_handed_off_work(self):
+        fresh = self.add("gamma unrelated idea")
+        self.run_grw("claim", self.item, "--branch", "feat/alpha", sid="a")
+        self.run_grw("handoff", self.item, "--to", "anyone", "--left", "x", "--next", "y", sid="mark")
+        self.assertEqual(self.run_grw("new-work", "off", "--why", "t")[0], 0)
+        ranked = [r["id"] for r in self.run_grw("rank", "--no-probe", sid="z")[1]["ranked"]]
+        self.assertIn(self.item, ranked)
+        self.assertNotIn(fresh, ranked)
+        self.assertEqual(self.run_grw("claim", self.item, sid="z")[0], 0)
+
+
 class RemoteHandoff(TwoComputers):
     def test_terminal_handoff_ends_the_lease_and_the_other_computer_continues(self):
         self.assertEqual(self.on("pc-a", "claim", self.mine)[0], 0)

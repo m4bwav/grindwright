@@ -1,6 +1,6 @@
 # grindwright: take over stale work, and hand work over on purpose
 
-Status: done, released as v0.14.0 (2026-11-16).
+Status: done, released as v0.15.0 (2026-11-16).
 
 Run this on Claude Opus 5.5. Start in `D:/m4bwa/Claude/Projects/Ai`. Repo: `m4bwav/grindwright` (public, default branch main), clone at `D:/m4bwa/Claude/Projects/Ai/grindwright`.
 

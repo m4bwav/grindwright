@@ -34,7 +34,7 @@ import grw_work
 import grw_status
 from grw_work import Refused
 
-VERSION = "0.14.0"
+VERSION = "0.15.0"
 FORMAT = 1
 STATES = ("ready", "running", "waiting-on-human", "waiting-on-machine", "done", "dropped")
 COST_UNITS = {"S": 1, "M": 3, "L": 8}
@@ -379,14 +379,10 @@ def handled_elsewhere(item, sid):
     return bool(held) and held.get("session") != sid and parse_time(held["until"]) > now()
 
 
-<<<<<<< HEAD
-def select(profile, road, items, events, session, hosts_alive=None, hosts_idle=(), closed=None, sid=SOLO, quiet=False):
+def select(profile, road, items, events, session, hosts_alive=None, hosts_idle=(), closed=None, sid=SOLO, quiet=False, gates=None):
     """Rank everything. Returns dict with ranked, deferred, answers_first, redo. No side effects.
-    quiet: new work is off, so only owner-driven items rank (references/new-work.md)."""
-=======
-def select(profile, road, items, events, session, hosts_alive=None, hosts_idle=(), closed=None, sid=SOLO, gates=None):
-    """Rank everything. Returns dict with ranked, deferred, answers_first, redo. No side effects."""
->>>>>>> 410b917 (Stale takeover and deliberate handoff (0.14.0))
+    quiet: new work is off, so only owner-driven items rank (references/new-work.md).
+    gates: paused and handed-off items to defer or offer to continue (grw_handoff.gates)."""
     done_ids = {i["id"] for i in items if i["state"] in ("done", "dropped")}
     remaining = None
     if session.get("budget"):
@@ -785,14 +781,10 @@ def cmd_list(store, args):
 def ranking(store, args):
     profile, road, items = store.profile(), store.road(), store.items()
     alive, idle, report = hosts_for(args, profile)
-<<<<<<< HEAD
     quiet = grw_work.new_work_off(store)
-    result = select(profile, road, items, store.events(), store.session(), alive, idle, closed_lanes(profile), sid=store.sid, quiet=quiet)
-    result["quiet"] = quiet
-=======
-    result = select(profile, road, items, store.events(), store.session(), alive, idle, closed_lanes(profile), sid=store.sid,
+    result = select(profile, road, items, store.events(), store.session(), alive, idle, closed_lanes(profile), sid=store.sid, quiet=quiet,
                     gates=grw_handoff.gates(store, items))
->>>>>>> 410b917 (Stale takeover and deliberate handoff (0.14.0))
+    result["quiet"] = quiet
     result["hosts"] = report
     result["free_gpu_hosts"] = [n for n, r in report.items() if r.get("up") and not r.get("queued")]
     return result

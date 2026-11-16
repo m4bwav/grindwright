@@ -49,6 +49,7 @@ sessions and checks.
 | Backlog item from `add`, `todo-sync`, a survey or discovery | none of the above | new work |
 | Draft waiting to be put to a person (`ask-drafted`) | `drafted` | new work |
 | Paused or unfinished agent work nobody asked about | `ready` with checkpoints | new work |
+| Work handed off, or paused on a branch and continued once stale ([handoff](handoff.md)) | `handed_off`, `taken_over`, or `paused_by` with a `branch` | owner-driven (finishing open work) |
 | Proposal waiting for a green light | `proposal`, waiting | waits; nothing to do |
 
 ## Rulings (2026-11-16)
