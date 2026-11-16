@@ -33,7 +33,7 @@ def stamp():
 
 
 def to_local(text):
-    when = dt.datetime.fromisoformat(text)
+    when = dt.datetime.fromisoformat(text.replace("Z", "+00:00"))
     return when.astimezone().replace(tzinfo=None) if when.tzinfo else when
 
 

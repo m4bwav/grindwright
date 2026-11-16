@@ -29,6 +29,9 @@ class Handoff(Base):
         self.addCleanup(os.environ.pop, "GRINDWRIGHT_NOW", None)
         self.addCleanup(os.environ.pop, "GRINDWRIGHT_MACHINE", None)
         os.environ["GRINDWRIGHT_MACHINE"] = "pc-a"
+        for name, value in (("GIT_AUTHOR_NAME", "t"), ("GIT_AUTHOR_EMAIL", "t@example.invalid"), ("GIT_COMMITTER_NAME", "t"), ("GIT_COMMITTER_EMAIL", "t@example.invalid")):
+            self.addCleanup(os.environ.__setitem__, name, os.environ[name]) if name in os.environ else self.addCleanup(os.environ.pop, name, None)
+            os.environ[name] = value  # CI runners have no git identity; handoff commits for real
         git(self.root, "init", "-q", "-b", "main")
         (self.root / "a.txt").write_text("a\n", encoding="utf-8")
         git(self.root, "add", "a.txt")
