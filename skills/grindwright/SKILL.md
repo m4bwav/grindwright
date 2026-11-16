@@ -2,7 +2,7 @@
 name: grindwright
 description: "Use to keep an indie game, or a long film, video or story project, moving like a solo maker who never stops: pick the most valuable work across lanes (art, animation, writing, voices, sound, music, shots and edits, trailers, balance, testing and bugs, unfinished features, maintenance, marketing), do everything that needs no person, ask questions where the project already talks (issues, PR comments, discussions) or on a decision page, and switch lanes instead of waiting, and end each session with the same start command. A ledger and a selector script rank value first, with human minutes as the discount. Use on 'grind on my game', 'keep working on the game', 'grind on my film', 'what should I work on next', 'everything is waiting on me', 'work through the backlog while I'm away', 'run unattended', or a continue prompt that names grindwright. Also 'refresh grindwright'. Not for one design question (ludowright), one juice pass (game-juice) or one asset."
 metadata:
-  version: "0.14.0"
+  version: "0.15.0"
 ---
 
 # grindwright
@@ -102,7 +102,7 @@ hold <id> --evidence E [--person P] [--provenance P]   checkpoint <id> "<note>" 
 
 ## Other sessions
 
-If `GRINDWRIGHT_SESSION` is set or `next` lists `others_working`, others share this project ([crew](references/crew.md)). Claim shared files with `--area`, stay on your branch, read their notes, `note "<what changed>" --area <path>` when it affects them. Refused: take other work. If `session check` returns `waiting_on`, say nothing can move until those decisions, and stop.
+Others sharing the project ([crew](references/crew.md)): claim shared files with `--area`, stay on your branch, `note "<what changed>" --area <path>` when it affects them; refused, take other work. `continue-*`: claim, build on its branch; leaving: [`handoff --to`](references/handoff.md). If `session check` returns `waiting_on`, say nothing can move until those decisions, and stop.
 
 ## Hard limits
 

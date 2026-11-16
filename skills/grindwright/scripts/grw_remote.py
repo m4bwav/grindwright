@@ -109,7 +109,7 @@ def claim(block, item, sid, now_iso, until_iso, take_over=False):
     holder = {"machine": me, "session": sid, "item": item["id"], "title": item.get("title", "")[:120],
               "issue": item.get("issue"), "at": now_iso, "until": until_iso}
     info = read(repo, key)
-    if info and not mine(info, me, sid) and fresh(info, now_iso) and not take_over:
+    if info and not mine(info, me, sid) and fresh(info, now_iso):  # a live holder is never taken over, flag or not
         return {"ok": False, "key": key, "held_by": public(info)}
     try:
         if info:  # renew, or take over an expired or released claim: a fast-forward only lands if nobody moved it first
@@ -137,6 +137,20 @@ def release(block, item, sid):
     except Refused as failed:
         if not _missing(failed):
             raise
+    return True
+
+
+def hand_back(block, item, by, to, now_iso):
+    """A handoff from outside the holding session: end the claim's lease now with a fast-forward update, never a
+    delete, so the holder's record stays and the addressee's claim (a take-over of an expired claim) can land."""
+    repo, key = block["repo"], key_for(item)
+    info = read(repo, key)
+    if not info:
+        return False
+    holder = {k: v for k, v in info.items() if k not in ("sha", "tree", "key")}
+    holder.update(until=now_iso, handed_to=to, handed_by=by, handed_at=now_iso)
+    sha = _commit(repo, key, info["tree"], info["sha"], holder)
+    _api("PATCH", f"repos/{repo}/git/refs/heads/{PREFIX}{key}", {"sha": sha, "force": False})
     return True
 
 

@@ -114,6 +114,8 @@ def owner_driven(item):
     counts; a brand-new issue does not."""
     if any(item.get(k) for k in OWNER_KEYS):
         return True
+    if item.get("handed_off") or item.get("taken_over") or (item.get("paused_by") and item.get("branch")):
+        return True  # finishing open work on a branch: stale or handed off (references/handoff.md)
     return bool(item.get("issue") and item.get("issue_seen") and not item.get("triaged") and not item.get("replied"))
 
 

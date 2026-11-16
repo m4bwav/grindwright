@@ -41,8 +41,8 @@ STOPS = {
     "crashed": "the driver crashed",
     "skipped": "it never started: nothing was selectable for it",
 }
-WORK = ("done", "drafted", "asked", "add", "claim")
-LABEL = {"done": "finished", "drafted": "drafted", "asked": "asked a person", "add": "added", "claim": "started"}
+WORK = ("done", "drafted", "asked", "add", "claim", "handoff", "takeover")
+LABEL = {"done": "finished", "drafted": "drafted", "asked": "asked a person", "add": "added", "claim": "started", "handoff": "handed off", "takeover": "taken over"}
 
 
 def steerwright_link():

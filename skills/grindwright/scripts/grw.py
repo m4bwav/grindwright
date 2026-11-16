@@ -28,12 +28,13 @@ import time
 import urllib.request
 from pathlib import Path
 
+import grw_handoff
 import grw_remote
 import grw_work
 import grw_status
 from grw_work import Refused
 
-VERSION = "0.14.0"
+VERSION = "0.15.0"
 FORMAT = 1
 STATES = ("ready", "running", "waiting-on-human", "waiting-on-machine", "done", "dropped")
 COST_UNITS = {"S": 1, "M": 3, "L": 8}
@@ -378,9 +379,10 @@ def handled_elsewhere(item, sid):
     return bool(held) and held.get("session") != sid and parse_time(held["until"]) > now()
 
 
-def select(profile, road, items, events, session, hosts_alive=None, hosts_idle=(), closed=None, sid=SOLO, quiet=False):
+def select(profile, road, items, events, session, hosts_alive=None, hosts_idle=(), closed=None, sid=SOLO, quiet=False, gates=None):
     """Rank everything. Returns dict with ranked, deferred, answers_first, redo. No side effects.
-    quiet: new work is off, so only owner-driven items rank (references/new-work.md)."""
+    quiet: new work is off, so only owner-driven items rank (references/new-work.md).
+    gates: paused and handed-off items to defer or offer to continue (grw_handoff.gates)."""
     done_ids = {i["id"] for i in items if i["state"] in ("done", "dropped")}
     remaining = None
     if session.get("budget"):
@@ -398,7 +400,11 @@ def select(profile, road, items, events, session, hosts_alive=None, hosts_idle=(
         if handled_elsewhere(item, sid):
             deferred.append({"id": item["id"], "title": item["title"], "why": [f"being handled by {item['handling']['session']}"]})
             continue
-        if item.get("paused_by") and item["paused_by"] != sid and sid != SOLO:
+        gate = (gates or {}).get(item["id"]) or {}
+        if gate.get("defer"):
+            deferred.append({"id": item["id"], "title": item["title"], "why": gate["defer"]})
+            continue
+        if gates is None and item.get("paused_by") and item["paused_by"] != sid and sid != SOLO:
             deferred.append({"id": item["id"], "title": item["title"], "why": [f"paused by {item['paused_by']}: its work is on that session's branch, so leave it to that session (claim --take-over moves it)"]})
             continue
         if quiet and item["state"] in ("ready", "drafted") and not grw_work.owner_driven(item):
@@ -456,7 +462,9 @@ def select(profile, road, items, events, session, hosts_alive=None, hosts_idle=(
                  "priority": item.get("priority", grw_work.PRIORITY_DEFAULT)}
         if entry["priority"] != grw_work.PRIORITY_DEFAULT:
             entry["why"] = [f"priority P{entry['priority']}: ranks {'above' if entry['priority'] < grw_work.PRIORITY_DEFAULT else 'below'} normal work"] + why
-        if item.get("owner_note"):
+        if gate.get("action"):
+            entry.update(action=gate["action"], score=round(score * gate["boost"], 3), why=gate["why"] + why)
+        elif item.get("owner_note"):
             entry["action"] = "act-on-owner-note"
             entry["why"] = ["the owner said this at session start: it outranks the queue"] + why
         elif item.get("closeout"):
@@ -488,7 +496,7 @@ def select(profile, road, items, events, session, hosts_alive=None, hosts_idle=(
             capped.append(entry)
             continue
         ranked.append(entry)
-    ranked.sort(key=lambda e: (e["action"] != "act-on-owner-note", e["action"] != "act-on-answers", e.get("priority", grw_work.PRIORITY_DEFAULT), -e["score"], e["id"]))
+    ranked.sort(key=lambda e: (e["action"] != "act-on-owner-note", e["action"] != "act-on-answers", e["action"] != "continue-handoff", e.get("priority", grw_work.PRIORITY_DEFAULT), -e["score"], e["id"]))
     capped.sort(key=lambda e: (e.get("priority", grw_work.PRIORITY_DEFAULT), -e["score"], e["id"]))
     if not ranked and (discovered or quiet):
         ranked, capped = capped, []
@@ -774,7 +782,8 @@ def ranking(store, args):
     profile, road, items = store.profile(), store.road(), store.items()
     alive, idle, report = hosts_for(args, profile)
     quiet = grw_work.new_work_off(store)
-    result = select(profile, road, items, store.events(), store.session(), alive, idle, closed_lanes(profile), sid=store.sid, quiet=quiet)
+    result = select(profile, road, items, store.events(), store.session(), alive, idle, closed_lanes(profile), sid=store.sid, quiet=quiet,
+                    gates=grw_handoff.gates(store, items))
     result["quiet"] = quiet
     result["hosts"] = report
     result["free_gpu_hosts"] = [n for n, r in report.items() if r.get("up") and not r.get("queued")]
@@ -868,12 +877,22 @@ def write_board(store):
     lines = ["# Board (generated, do not edit)", "", f"Project: {profile.get('project')}. Updated {stamp()}.", "", "## Working now", ""]
     running = [i for i in items if i["state"] == "running"]
     lines += [f"- {owner_of(i)}: {i['id']} {i['title']} [{', '.join(item_areas(profile, i)) or 'no area'}]" + (f" on {i['branch']}" if i.get("branch") else "") for i in running] or ["- nobody"]
+    moved = [i for i in items if i.get("handed_off")]
+    lines += ["", "## Handed off and taken over", ""]
+    lines += [f"- {i['id']} {i['title'][:80]}: handed to {i['handed_off']['to']} by {i['handed_off'].get('by')} at {i['handed_off'].get('at')}"
+              + (f", branch {i['handed_off']['branch']}" if i['handed_off'].get('branch') else "") + f"; next: {i['handed_off'].get('next')}" for i in moved]
+    lines += [f"- {i['id']} {i['title'][:80]}: {t['by']} took it over from {t['from']} at {t['at']} ({t['kind']}: {t['why']})"
+              for i in items if i["state"] not in ("done", "dropped") for t in i.get("taken_over", [])[-1:]]
+    if lines[-1] == "":
+        lines.append("- none")
     lines += ["", "## Notes", ""]
     notes = [e for e in store.events() if e.get("type") == "note"][-15:]
     lines += [f"- {e['ts']} {e.get('session', SOLO)}" + (f" [{e['area']}]" if e.get("area") else "") + f": {e.get('text')}" for e in notes] or ["- none"]
     write_atomic(store.root / "BOARD.md", "\n".join(lines) + "\n")
     waits = waiting_report(store)
     text = ["# Waiting on a person (generated)", ""] + [f"- {r['person']}: {r['title']} ({r['id']}), {r['waits_for']}, {r['where'] or 'no link'}; unblocks {r['unblocks']}" for r in waits]
+    text += [f"- {i['handed_off']['to']}: {i['title'][:100]} ({i['id']}), handed off by {i['handed_off'].get('by')}; next: {i['handed_off'].get('next')}"
+             for i in items if i.get("handed_off") and i["state"] == "ready"]
     write_atomic(store.root / "WAITING.md", "\n".join(text or []) + "\n")
 
 
@@ -902,8 +921,9 @@ def cmd_claim(store, args):
         raise Refused(clashes + ["take other work, or wait"])
     if item.get("issue") and not item.get("triaged"):
         raise Refused(["triage first: issue-accept, issue-question, issue-reply or issue-ask"])
-    if item.get("paused_by") and item["paused_by"] != store.sid and not getattr(args, "take_over", False):
-        raise Refused([f"paused by {item['paused_by']}, whose work is on its own branch: take other work, or claim --take-over and start from that branch"])
+    took = grw_handoff.check_claim(store, item, getattr(args, "take_over", False))
+    if took:
+        args.take_over = True  # an expired or handed-back host claim is taken over too
     if item.get("route_change_required") and not args.new_route:
         raise Refused([f"{item.get('redos')} failed passes on this route: name a new route with --new-route"])
     remote = grw_remote_claim(store, item, items, args)
@@ -916,6 +936,11 @@ def cmd_claim(store, args):
     if getattr(args, "branch", None):
         item["branch"] = args.branch
     item["lease_until"] = (now() + dt.timedelta(hours=LEASE_HOURS)).isoformat(timespec="seconds")
+    extra = {}
+    if took:
+        extra, entry = grw_handoff.record_takeover(store, item, took)
+        if getattr(args, "branch", None):
+            item["branch"] = args.branch
     if args.new_route:
         item["route"] = args.new_route
         item["route_change_required"] = False
@@ -926,7 +951,9 @@ def cmd_claim(store, args):
         session["used"] = session.get("used", 0) + COST_UNITS.get(item.get("cost", "M"), 3)
         store.save_session(session)
     store.event("claim", id=item["id"], lane=item.get("lane"))
-    answer = {"id": item["id"], "lease_until": item["lease_until"]}
+    if took:
+        store.event("takeover", id=item["id"], lane=item.get("lane"), how=entry["kind"], **{"from": entry["from"]}, why=entry["why"])
+    answer = dict({"id": item["id"], "lease_until": item["lease_until"]}, **extra)
     if remote:
         answer["remote"] = remote
     return answer
@@ -969,6 +996,16 @@ def remote_release(store, item):
         if grw_remote.release(block, item, item.get("session") or store.sid):
             item.pop("remote_claim", None)
         grw_remote.unannounce(block, item)
+
+
+def cmd_handoff(store, args):
+    items = store.items()
+    item = find_item(items, args.id)
+    answer = grw_handoff.handoff(store, items, item, args)
+    touch(item)
+    store.save_items(items)
+    store.event("handoff", id=item["id"], lane=item.get("lane"), to=args.to, from_terminal=item["handed_off"]["from_terminal"])
+    return answer
 
 
 def cmd_checkpoint(store, args):
@@ -1179,6 +1216,8 @@ def cmd_sync(store, args):
         elif item["state"] == "running" and parse_time(item.get("lease_until", stamp())) <= now():
             item["state"] = "ready"
             item.setdefault("checkpoints", []).append({"ts": stamp(), "note": "lease expired: a session died mid-work; inspect the partial work"})
+            if item.get("branch") and owner_of(item) not in (SOLO, store.sid):
+                item["paused_by"] = owner_of(item)  # its work is on a branch: others continue it once stale
             item.pop("lease_until", None)
             touch(item)
             report["recovered"].append(item["id"])
@@ -1930,7 +1969,9 @@ def build_parser():
     p.add_argument("--area", action="append", help="path or resource:name; refused if another session holds it")
     p.add_argument("--branch")
     p.add_argument("--new-route")
-    p.add_argument("--take-over", action="store_true", help="claim an item another crew session paused; start from its branch")
+    p.add_argument("--take-over", action="store_true", help="claim paused or handed-off work that is not stale or not yours; refused while the owner is live")
+
+    grw_handoff.add_parser(add).set_defaults(func=cmd_handoff)
 
     p = add("checkpoint", cmd_checkpoint, "save progress on an item")
     p.add_argument("id")
