@@ -1,5 +1,10 @@
 # Changelog: grindwright
 
+## 0.14.0 (2026-11-16)
+
+- New work off. `grw.py new-work off|on|show` stores the mode in the state folder's `mode.json`; `grind_loop.py --no-new-work`, `grind_crew.py --no-new-work` and `"no_new_work"` in a crew file (or `GRINDWRIGHT_NO_NEW_WORK=1`) set it for one run. While off, only owner-driven items rank (owner notes, answers, PR review comments, merge conflicts and stale pictures on agent PRs, `add --repair-of N` for failing checks, close-outs, green lights, reopened issues); `discover`, `surveyed` and `ticket` refuse, and `claim`, `wait-human` and the issue verbs refuse on other items. With nothing owner-driven left, `next` and `session check` stop as `no-new-work`; the driver stops with that reason instead of `no-progress`, and the run report and status page show the mode. Classification table and rulings in references/new-work.md. Ten unit tests, one trigger eval. Reason: the owners asked for a switch to stop new work while they catch up on reviews (2026-11-16).
+- SKILL.md: two ask bullets shortened to make room, so it stays under the 3,500-token line.
+
 ## 0.13.2 (2026-11-13)
 
 - `grw.py add` takes optional `--signal` (player evidence that would show the item worked) and `--from` (the finding or hypothesis it came from); the demo lane's feedback step uses both. Not scored; ledgers without them are unchanged. Unit test added. Reason: book harvest jnr-boeira-lean-game-development (Boeira, Lean Game Development, chs. 5 and 11); book rule, unverified.

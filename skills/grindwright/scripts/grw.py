@@ -33,7 +33,7 @@ import grw_work
 import grw_status
 from grw_work import Refused
 
-VERSION = "0.13.2"
+VERSION = "0.14.0"
 FORMAT = 1
 STATES = ("ready", "running", "waiting-on-human", "waiting-on-machine", "done", "dropped")
 COST_UNITS = {"S": 1, "M": 3, "L": 8}
@@ -88,6 +88,8 @@ CONFIDENCE = {"low": 0.7, "medium": 0.85, "high": 1.0}
 # Within one priority tier, plain work goes first: small and sure beats large and murky at equal value.
 PLAINNESS = {"S": 1.15, "M": 1.0, "L": 0.85}
 SHARE_WINDOW = 10
+QUIET_STOP = ("new work is off and nothing owner-driven is left: idle is the right outcome here, not a drained ledger; "
+              "do not discover, survey or propose. Stop, and say plainly that new work is off (grw.py new-work on restarts it)")
 
 
 def now():
@@ -376,8 +378,9 @@ def handled_elsewhere(item, sid):
     return bool(held) and held.get("session") != sid and parse_time(held["until"]) > now()
 
 
-def select(profile, road, items, events, session, hosts_alive=None, hosts_idle=(), closed=None, sid=SOLO):
-    """Rank everything. Returns dict with ranked, deferred, answers_first, redo. No side effects."""
+def select(profile, road, items, events, session, hosts_alive=None, hosts_idle=(), closed=None, sid=SOLO, quiet=False):
+    """Rank everything. Returns dict with ranked, deferred, answers_first, redo. No side effects.
+    quiet: new work is off, so only owner-driven items rank (references/new-work.md)."""
     done_ids = {i["id"] for i in items if i["state"] in ("done", "dropped")}
     remaining = None
     if session.get("budget"):
@@ -397,6 +400,10 @@ def select(profile, road, items, events, session, hosts_alive=None, hosts_idle=(
             continue
         if item.get("paused_by") and item["paused_by"] != sid and sid != SOLO:
             deferred.append({"id": item["id"], "title": item["title"], "why": [f"paused by {item['paused_by']}: its work is on that session's branch, so leave it to that session (claim --take-over moves it)"]})
+            continue
+        if quiet and item["state"] in ("ready", "drafted") and not grw_work.owner_driven(item):
+            deferred.append({"id": item["id"], "title": item["title"], "held": "new-work-off",
+                             "why": ["new work is off: no owner raised this; it waits for grw.py new-work on"]})
             continue
         if item["state"] == "drafted":
             person = item.get("person")
@@ -483,7 +490,7 @@ def select(profile, road, items, events, session, hosts_alive=None, hosts_idle=(
         ranked.append(entry)
     ranked.sort(key=lambda e: (e["action"] != "act-on-owner-note", e["action"] != "act-on-answers", e.get("priority", grw_work.PRIORITY_DEFAULT), -e["score"], e["id"]))
     capped.sort(key=lambda e: (e.get("priority", grw_work.PRIORITY_DEFAULT), -e["score"], e["id"]))
-    if not ranked and discovered:
+    if not ranked and (discovered or quiet):
         ranked, capped = capped, []
     return {"ranked": ranked, "deferred": deferred, "capped": capped, "discovered": discovered}
 
@@ -722,10 +729,15 @@ def cmd_add(store, args):
         item["areas"] = split_areas(args.area)
     if args.owner_note:
         item["owner_note"] = True
+    if getattr(args, "repair_of", None):
+        item["repair_of"] = args.repair_of
     items.append(item)
     store.save_items(items)
     store.event("add", id=item["id"], lane=args.lane, source=args.source)
-    return {"id": item["id"], "class": item_class(item)}
+    answer = {"id": item["id"], "class": item_class(item)}
+    if grw_work.new_work_off(store) and not grw_work.owner_driven(item):
+        answer["held"] = "new work is off: recorded for later, not started"
+    return answer
 
 
 def cmd_set(store, args):
@@ -761,7 +773,9 @@ def cmd_list(store, args):
 def ranking(store, args):
     profile, road, items = store.profile(), store.road(), store.items()
     alive, idle, report = hosts_for(args, profile)
-    result = select(profile, road, items, store.events(), store.session(), alive, idle, closed_lanes(profile), sid=store.sid)
+    quiet = grw_work.new_work_off(store)
+    result = select(profile, road, items, store.events(), store.session(), alive, idle, closed_lanes(profile), sid=store.sid, quiet=quiet)
+    result["quiet"] = quiet
     result["hosts"] = report
     result["free_gpu_hosts"] = [n for n, r in report.items() if r.get("up") and not r.get("queued")]
     return result
@@ -786,6 +800,8 @@ def next_answer(store, args):
         answer = {"next": top, "alternatives": result["ranked"][1:4], "deferred": len(result["deferred"]),
                   "free_gpu_hosts": result["free_gpu_hosts"]}
         answer.update(crew_view(store))
+        if result["quiet"]:
+            answer["new_work"] = "off: only owner-driven items rank; discover, survey, ticket and proposals are refused"
         if not store.road().get("confirmed"):
             answer["road_warning"] = "road not confirmed: put it to the owner; until then only work every road includes (bugs, failing tests)"
         elif getattr(args, "claim", False) and top.get("action") in ("work", "draft"):
@@ -793,6 +809,9 @@ def next_answer(store, args):
         elif getattr(args, "claim", False) and store.sid != SOLO:
             hold_for_session(store, top["id"])
         return answer
+    if result["quiet"]:
+        return {"next": {"action": "stop", "stopped": "no-new-work",
+                         "why": [QUIET_STOP]}, "new_work": "off", "deferred": result["deferred"]}
     lanes = store.profile().get("discover", [])
     if not result["discovered"] and lanes:
         return {"next": {"action": "discover", "why": ["nothing selectable: run grw.py discover, then work through look_at (" + ", ".join(lanes) + ")"],
@@ -872,6 +891,7 @@ def cmd_claim(store, args):
     item = find_item(items, args.id)
     if item["state"] != "ready":
         raise Refused([f"{item['id']} is {item['state']}"])
+    grw_work.refuse_new_work(store, "claim", item)
     blockers = unfinished_blockers(item, items)
     if blockers:
         raise Refused([f"{item['id']} is blocked by {', '.join(blockers)}"])
@@ -1029,6 +1049,7 @@ def cmd_wait_human(store, args):
     person = args.person or item.get("person")
     if not person:
         raise Refused(["say who answers this (--person)"])
+    grw_work.refuse_new_work(store, "wait-human", item)
     failures = eval_isolation_failures(profile) + list(derived_failures(item))
     others = [i["id"] for i in items if i.get("answered") and i["id"] != item["id"]]
     if others:
@@ -1464,6 +1485,7 @@ def scan_repo(repo, limit=5000):
 
 def cmd_discover(store, args):
     """Read-only signals of unfinished work. The agent reads them and adds items with a real source."""
+    grw_work.refuse_new_work(store, "discover")
     profile = store.profile()
     repo = project_repo(store, args.repo or profile.get("repo", "."))
     signals = []
@@ -1555,6 +1577,22 @@ def cmd_metrics(store, args):
     return {"machine_done": len(finished), "human_unproven": [i["id"] for i in finished if i.get("oracle") != "human"], "lanes": lanes, "sessions": len(sessions), "nothing_made": sum(1 for s in sessions if s.get("nothing_made"))}
 
 
+def cmd_new_work(store, args):
+    """Turn new work off (only owner-driven items rank) or on again, or show it. Stored in mode.json; nothing else moves."""
+    path = store.root / grw_work.MODE_FILE
+    if args.action != "show":
+        row = {"new_work": args.action, "since": stamp(), "session": store.sid}
+        if args.why:
+            row["why"] = args.why
+        write_atomic(path, json.dumps(row, ensure_ascii=False, indent=1) + "\n")
+        store.event("new_work", value=args.action, why=args.why)
+    mode = grw_work.new_work_mode(store)
+    live = [i for i in store.items() if i["state"] in ("ready", "drafted")]
+    mode["owner_driven"] = [i["id"] for i in live if grw_work.owner_driven(i)]
+    mode["held" if mode["new_work"] == "off" else "new_work_items"] = [i["id"] for i in live if not grw_work.owner_driven(i)]
+    return mode
+
+
 def cmd_session(store, args):
     session = store.session()
     if args.action == "start":
@@ -1640,6 +1678,7 @@ def unsurveyed(store):
 
 def cmd_surveyed(store, args):
     """Record a survey of one milestone. Finding nothing needs a reason, so a skipped look cannot pass for one."""
+    grw_work.refuse_new_work(store, "surveyed")
     ids = [m.get("id") for m in store.road().get("milestones", [])]
     if args.milestone not in ids:
         raise SystemExit(f"no milestone {args.milestone}; road has: {', '.join(ids)}")
@@ -1667,6 +1706,9 @@ def stop_verdict(store, args):
         return {"may_stop": False, "why": [f"{top['id']} is selectable: {top['title']}"], "next": top}
     if session.get("budget") and any("budget" in " ".join(d["why"]) for d in result["deferred"]):
         return {"may_stop": True, "why": ["what is left costs more than the budget"], "deferred": result["deferred"]}
+    if result["quiet"]:
+        return {"may_stop": True, "stopped": "no-new-work", "why": [QUIET_STOP], "deferred": result["deferred"],
+                "waiting_on": waiting_report(store)}
     if not result["discovered"] and store.profile().get("discover", []):
         return {"may_stop": False, "why": ["nothing selectable and no discovery pass this session: run discover, then " + ", ".join(store.profile().get("discover", []))]}
     if unsurveyed(store):
@@ -1860,6 +1902,7 @@ def build_parser():
     p.add_argument("--host", help="machine tag it needs, such as gpu")
     p.add_argument("--blocked-by", action="append")
     p.add_argument("--owner-note", action="store_true", help="the owner asked for this directly; ranks first")
+    p.add_argument("--repair-of", type=int, help="open agent PR number this repairs (failing checks); owner-driven while new work is off")
     p.add_argument("--area", action="append", help="path or resource:name it works in")
     p.add_argument("--not-duplicate", help="it resembles an open item, and why it is different")
     p.add_argument("--question")
@@ -2022,6 +2065,9 @@ def build_parser():
     p.add_argument("--check", action="store_true")
     p.add_argument("--repo")
 
+    p = add("new-work", cmd_new_work, "off: only answer what owners raised; on: normal selection; show")
+    p.add_argument("action", choices=("off", "on", "show"))
+    p.add_argument("--why", help="why it was switched, kept in mode.json")
     p = add("discover", cmd_discover, "read-only signals of unfinished work")
     p.add_argument("--repo")
     p.add_argument("--no-gh", action="store_true")
