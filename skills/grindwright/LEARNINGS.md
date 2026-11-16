@@ -3,7 +3,7 @@
 ### L-010 · 2026-11-16 · `open-pr-is-not-done`: issues labelled ready for acceptance while their PRs were still open
 - Trigger: asked to label issues whose work was done, an agent labelled three issues whose PRs were open, not merged. It judged the PRs complete by reading them.
 - Hypothesis: "done" was read as "the change looks finished" instead of a state GitHub reports. A judgement call stood where a rule could be checked.
-- Rule: an issue is ready for acceptance only when a PR referencing it merged and no PR referencing it is open. Check PR state, never PR content. Built as `issue-acceptance` in 0.14.0, with a test that any open PR disqualifies.
+- Rule: an issue is ready for acceptance only when a PR referencing it merged and no PR referencing it is open. Check PR state, never PR content. Built as `issue-acceptance` in 0.16.0, with a test that any open PR disqualifies.
 - Evidence: a grind session on a private project, 2026-11-16, kept privately.
 - Scope: skill
 - Status: active · helpful 0 · harmful 0 · last_confirmed 2026-11-16

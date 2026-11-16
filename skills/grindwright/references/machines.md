@@ -23,6 +23,7 @@ Two people each start a grind on their own computer, on the same repository. The
 |---|---|
 | The other computer holds a fresh claim | `claim` is refused with who and until when; the item is marked `held_remote` and `next` defers it ("another computer is on it") |
 | `checkpoint` | Renews the claim with a fast-forward update; a renewal that loses to a take-over fails |
+| `handoff` from another session | Ends the claim's lease with a fast-forward update recording `handed_to`; the record is kept, and the addressee's claim takes it over. A fresh claim is never taken over, even with `--take-over` ([handoff](handoff.md)) |
 | `done`, `drop`, `session release` | Deletes the ref, and removes the label from the issue |
 | The holder died | After `lease_hours` without renewal, another computer's `claim` takes it over with a fast-forward update (also only one winner) and continues from the dead holder's pushed branch |
 | `sync` (every session start) | Reads every claim: marks items another computer holds, gives back refs this computer still holds for items no longer running, and lists claims for items this ledger does not know (`unknown_here`) |

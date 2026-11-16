@@ -2,7 +2,7 @@
 name: grindwright
 description: "Use to keep an indie game, or a long film, video or story project, moving like a solo maker who never stops: pick the most valuable work across lanes (art, animation, writing, voices, sound, music, shots and edits, trailers, balance, testing and bugs, unfinished features, maintenance, marketing), do everything that needs no person, ask questions where the project already talks (issues, PR comments, discussions) or on a decision page, and switch lanes instead of waiting, and end each session with the same start command. A ledger and a selector script rank value first, with human minutes as the discount. Use on 'grind on my game', 'keep working on the game', 'grind on my film', 'what should I work on next', 'everything is waiting on me', 'work through the backlog while I'm away', 'run unattended', or a continue prompt that names grindwright. Also 'refresh grindwright'. Not for one design question (ludowright), one juice pass (game-juice) or one asset."
 metadata:
-  version: "0.14.0"
+  version: "0.16.0"
 ---
 
 # grindwright
@@ -56,7 +56,7 @@ act on a road that is not confirmed, beyond work every road would include (bugs,
 
 ## Keep the bookkeeping small
 
-Do not run `--help`; the commands are here. The game gets the turns, not the ledger.
+Do not run `--help`; the commands are here.
 
 ```
 add "<title>" --lane L --source S --value 1-5 [--human-min N] [--cost S|M|L] [--person P] [--owner-note]
@@ -66,11 +66,12 @@ analyse <id> --verdict shave --note N --shave-title T
 hold <id> --evidence E [--person P] [--provenance P]   checkpoint <id> "<note>"   redo <id> "<note>"   reject "<finding>" --why W
 ```
 
-- Finished something small that has no item? One `log`, not `add`, `claim` and `done`.
+- Small finished work with no item: one `log`.
 - Know the next item? `add` it. Named only in HANDOFF, the selector never sees it.
 - Checkpoint when a commit or a long render would be lost, not at each step.
 - Run by a driver, never end your turn while a compile, render or test runs in the background: the session ends with it. Wait in the foreground, or checkpoint and finish.
 - A request that names one item: do that item, record it, stop. No discovery and no other lanes unless asked.
+- New work off (`grw.py new-work off|on|show`, [new-work](references/new-work.md)): only what owners raised ranks. `stop`/`no-new-work` is the right end, not drained.
 
 ## What to ask, and when
 
@@ -81,8 +82,7 @@ hold <id> --evidence E [--person P] [--provenance P]   checkpoint <id> "<note>" 
 - Worth asking: picks with room for a free note, and direction before a batch. Not worth asking: technical calls,
   go-aheads, naming, housekeeping, "start now?", or content you can invent and the owner can cut (which cards, which
   names). Decide those; for content, make a small pilot and show it.
-- Long pick pages go unanswered: one item per screen, at most 12 per set. New lanes start with a small direction-first
-  pilot, then batches.
+- One item per screen, at most 12 per set. New lanes start with a small direction-first pilot.
 - Before review, check physical sense yourself, which automatic gates miss: does the material fit (no wooden roof on a
   stone smelter), is scaffolding in front, is it lit when idle?
 - `grw.py queue` orders proposed questions by how much they unblock. Past a person's review cap, ask nothing more: draft (at most as many as the cap, never in a no-stacking lane) or do different work.
@@ -91,8 +91,8 @@ hold <id> --evidence E [--person P] [--provenance P]   checkpoint <id> "<note>" 
   go in a discussion or a `proposal` issue: the answer then sits beside the code, other people see it, and `issue-sync`
   and `pr-sync` bring it back. Use an askwright page instead when the profile says `"ask_route": "askwright"` (the
   owner prefers it), for picks that need side-by-side media, for private or money questions, and for projects with
-  no repository. Both can run together: an askwright page served over a tailnet (Tailscale) reaches the owner away
-  from the desk, so link the page from the issue or PR when a pick needs it, and record the answer back on the issue.
+  no repository. Both can run together: link an askwright page (over a tailnet) from the issue or PR when a pick
+  needs it, and record the answer back on the issue.
 - Use askwright sets by project and by person. Missing askwright: write the questions to `ai-docs/grind/questions.md`
   with guesses and say so.
 - After any redo, rebuild every derived review artifact (contact sheet, GIF, PR media) and look at it. Declare them
@@ -102,7 +102,7 @@ hold <id> --evidence E [--person P] [--provenance P]   checkpoint <id> "<note>" 
 
 ## Other sessions
 
-If `GRINDWRIGHT_SESSION` is set or `next` lists `others_working`, others share this project ([crew](references/crew.md)). Claim shared files with `--area`, stay on your branch, read their notes, `note "<what changed>" --area <path>` when it affects them. Refused: take other work. If `session check` returns `waiting_on`, say nothing can move until those decisions, and stop.
+Others sharing the project ([crew](references/crew.md)): claim shared files with `--area`, stay on your branch, `note "<what changed>" --area <path>` when it affects them; refused, take other work. `continue-*`: claim, build on its branch; leaving: [`handoff --to`](references/handoff.md). If `session check` returns `waiting_on`, say nothing can move until those decisions, and stop.
 
 ## Hard limits
 

@@ -17,6 +17,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 GRW = HERE / "grw.py"
 LOOP = HERE / "grind_loop.py"
+LOOP_MODE_ENV = "GRINDWRIGHT_NO_NEW_WORK"
 sys.path.insert(0, str(HERE))
 import grind_report  # noqa: E402
 
@@ -57,8 +58,15 @@ def problems(crew):
     return found
 
 
-def rank(project, member):
+def no_new_work(crew, project):
+    """A crew file sets "no_new_work" for all projects or one; --no-new-work on the command line sets it for the run."""
+    return bool(project.get("no_new_work", crew.get("no_new_work")))
+
+
+def rank(project, member, quiet=False):
     env = dict(os.environ, GRINDWRIGHT_SESSION=member)
+    if quiet:
+        env[LOOP_MODE_ENV] = "1"
     done = subprocess.run([sys.executable, str(GRW), "--state", project["state"], "session", "check", "--no-probe"], capture_output=True, text=True, encoding="utf-8", env=env)
     try:
         return json.loads(done.stdout)
@@ -118,7 +126,9 @@ def loop_command(crew, project, member, cwd, log):
         command += ["--session-minutes", str(crew["session_minutes"])]
     if crew.get("require_text"):
         command += ["--require-text", crew["require_text"]]
-    if discover_first(crew, project, member):
+    if no_new_work(crew, project):
+        command += ["--no-new-work"]
+    elif discover_first(crew, project, member):
         command += ["--discover-first"]
     if crew.get("agent"):
         command += ["--", *crew["agent"]]
@@ -132,9 +142,11 @@ def run(crew, sleep=time.sleep):
     for index, (project, member) in enumerate(plan(crew)):
         if index:
             sleep(crew.get("stagger_seconds", 120))
-        check = rank(project, member)
-        if check.get("may_stop") and not discover_first(crew, project, member):
-            skipped.append({"member": member, "why": check.get("why"), "waiting_on": check.get("waiting_on", [])})
+        quiet = no_new_work(crew, project)
+        check = rank(project, member, quiet)
+        if check.get("may_stop") and (quiet or check.get("stopped") == "no-new-work" or not discover_first(crew, project, member)):
+            skipped.append({"member": member, "why": check.get("why"), "waiting_on": check.get("waiting_on", []),
+                            **({"stopped": "no-new-work"} if check.get("stopped") == "no-new-work" else {})})
             continue
         logs = Path(project["state"]) / "logs"
         logs.mkdir(parents=True, exist_ok=True)
@@ -168,7 +180,7 @@ def reports(crew, started, results, skipped):
         members = [{"member": r["member"], "cwd": r.get("cwd"), "passes": r.get("passes", []),
                     "result": {k: v for k, v in r.items() if k not in ("passes", "member", "project", "cwd")}}
                    for r in results if r.get("project") == project["name"]]
-        members += [{"member": x["member"], "passes": [], "result": {"ok": True, "stopped": "skipped", "why": x.get("why"), "waiting_on": x.get("waiting_on")}}
+        members += [{"member": x["member"], "passes": [], "result": {"ok": True, "stopped": x.get("stopped", "skipped"), "why": x.get("why"), "waiting_on": x.get("waiting_on")}}
                     for x in skipped if x["member"].startswith(project["name"] + "-")]
         profile = grind_report.read_json(Path(project["state"]) / "profile.json", {}) or {}
         run = {"id": run_id, "project": profile.get("project") or project["name"], "prompt": project.get("prompt"), "crew": True,
@@ -183,14 +195,17 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument("crew", help="crew JSON file")
     parser.add_argument("--go", action="store_true", help="really run; without it, print what would run")
+    parser.add_argument("--no-new-work", action="store_true", help="every member of this run only answers what owners raised")
     args = parser.parse_args(argv)
     crew = json.loads(Path(args.crew).read_text(encoding="utf-8"))
+    if args.no_new_work:
+        crew["no_new_work"] = True
     found = problems(crew)
     if found:
         print(json.dumps({"ok": False, "refused": found}, indent=1, ensure_ascii=False))
         return 2
     if not args.go:
-        rows = [{"member": member, "project": project["name"], "state": project["state"], "now": rank(project, member)} for project, member in plan(crew)]
+        rows = [{"member": member, "project": project["name"], "state": project["state"], "now": rank(project, member, no_new_work(crew, project))} for project, member in plan(crew)]
         print(json.dumps({"ok": True, "dry_run": True, "members": rows, "max_hours": crew["max_hours"], "max_sessions_each": crew["max_sessions_each"],
                           "warning": bound_warning(crew)}, indent=1, ensure_ascii=False))
         return 0

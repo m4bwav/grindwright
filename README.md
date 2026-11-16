@@ -25,6 +25,27 @@ It does not promise a finished game. No game found in the survey shipped from tr
 
 Plugs into artwright, pixelwright, musicwright, sfxwright, cinewright, game-juice, polywright, ludowright, comfyui-gen and marketwright when present, and says which lanes are closed when one is missing.
 
+## New work off
+
+When the pull requests, issues and questions pile up faster than you can review them, turn new work off. The grind keeps answering what you raised (review comments, answers, green lights, merge conflicts and broken picture links on its open PRs) and starts nothing new: no backlog items, no discovery, no proposals, no new questions. With nothing of yours left it stops cleanly as `no-new-work`. Turn it back on and the backlog ranks exactly as before.
+
+```
+python skills/grindwright/scripts/grw.py --state <project>/ai-docs/grind new-work off
+python skills/grindwright/scripts/grw.py --state <project>/ai-docs/grind new-work on
+python skills/grindwright/scripts/grw.py --state <project>/ai-docs/grind new-work show
+```
+
+The setting is stored per project. `grind_loop.py --no-new-work` and `grind_crew.py --no-new-work` (or `"no_new_work": true` in the crew file) do it for one run only. Details: [new-work.md](skills/grindwright/references/new-work.md).
+
+## Handing work over
+
+When two people grind one project, each session keeps to its own items and branch. Work moves between them two ways:
+
+- **Stale takeover.** Once an item's owner has gone quiet (no commit on its branch, no claim renewal, for 12 hours by default; set `"takeover": {"stale_hours": N}` in `profile.json`), `grw.py next` offers it as `continue-stale` and `claim` takes it over, continuing on top of the owner's branch in a new worktree. A live owner is never taken over.
+- **Handoff on purpose.** `grw.py handoff <id> --to jennifer --left "..." --next "..."` pushes the work in progress, writes the note, releases the claim and marks the item for the addressee (or `anyone`). Run from a terminal while the owning session is away, it only releases and marks.
+
+Details: [references/handoff.md](skills/grindwright/references/handoff.md).
+
 ## Works with
 
 grindwright picks the work. The real making happens in other plugins, and the more of them are installed, the more lanes it can run without you.

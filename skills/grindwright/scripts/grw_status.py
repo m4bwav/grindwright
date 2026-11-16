@@ -4,7 +4,7 @@
 grw.py --state <folder> status            print the status as JSON once
 grw.py --state <folder> status --serve    serve http://127.0.0.1:<port>/ (refreshes itself) and open it
 
-Reads only: BOARD.md, WAITING.md, events.jsonl, ledger.jsonl, timing.md, sessions/, logs/, and the process list
+Reads only: BOARD.md, mode.json, WAITING.md, events.jsonl, ledger.jsonl, timing.md, sessions/, logs/, and the process list
 (which grind_loop members and agent sessions are alive for this state folder). Writes nothing, takes no lock,
 so it is safe beside a running crew. Standard library only.
 """
@@ -118,6 +118,13 @@ def _log_stats(logs, since):
     return stats
 
 
+def _mode(root):
+    try:
+        return json.loads((root / "mode.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+
+
 def collect(state, since=None):
     root = Path(state)
     now = dt.datetime.now()
@@ -177,6 +184,7 @@ def collect(state, since=None):
     return {
         "project": project.group(1) if project else root.name,
         "state": str(root.resolve()),
+        "new_work": (_mode(root)).get("new_work", "on"),
         "now": now.isoformat(timespec="seconds"),
         "since": since.isoformat(timespec="seconds"),
         "running": bool(procs.get("members") or procs.get("crew")),
@@ -210,7 +218,7 @@ table{width:100%;border-collapse:collapse}td,th{text-align:left;padding:4px 6px;
 .k-done{color:var(--ok)}.k-skip,.k-dropped,.k-rejected,.k-released{color:var(--warn)}.k-asked{color:var(--acc)}
 ul{margin:0;padding-left:18px}li{margin:3px 0;overflow-wrap:anywhere}.scroll{max-height:420px;overflow:auto}pre{white-space:pre-wrap;margin:0;font-size:12px;color:var(--mute)}
 </style></head><body><main>
-<header><div><h1 id="proj">Grind status</h1><div class="mute" id="sub"></div></div><div><span id="run" class="pill off">...</span> <span class="mute" id="upd"></span></div></header>
+<header><div><h1 id="proj">Grind status</h1><div class="mute" id="sub"></div></div><div><span id="run" class="pill off">...</span> <span id="mode" class="pill off" style="display:none" title="only owner-driven items: grw.py new-work on restarts new work"></span> <span class="mute" id="upd"></span></div></header>
 <div class="grid">
 <section class="card wide"><div class="stats" id="stats"></div></section>
 <section class="card"><h2>Members</h2><div id="members"></div></section>
@@ -226,7 +234,7 @@ const hm=s=>s?s.slice(11,16):'';const ago=m=>m==null?'':m<60?m+' min':Math.floor
 const link=s=>e(s).replace(/(https?:\/\/[^\s,]+)/g,'<a href="$1" target="_blank">$1</a>');
 async function tick(){let d;try{d=await (await fetch('api',{cache:'no-store'})).json()}catch(x){document.getElementById('upd').textContent='server not answering';return}
 document.title=(d.running?'● ':'')+d.project+' grind';proj.textContent=d.project;sub.textContent='run since '+d.since.replace('T',' ')+'  ·  '+d.state;
-run.textContent=d.running?'RUNNING':'NOT RUNNING';run.className='pill '+(d.running?'on':'off');upd.textContent='updated '+hm(d.now)+':'+d.now.slice(17,19);
+run.textContent=d.running?'RUNNING':'NOT RUNNING';run.className='pill '+(d.running?'on':'off');mode.textContent=d.new_work==='off'?'NEW WORK OFF':'';mode.style.display=d.new_work==='off'?'':'none';upd.textContent='updated '+hm(d.now)+':'+d.now.slice(17,19);
 const c=d.counts,cost=Object.values(d.logs).reduce((a,l)=>a+l.cost,0),ses=Object.values(d.logs).reduce((a,l)=>a+l.sessions,0);
 stats.innerHTML=[['done',c.done],['claimed',c.claim],['added',c.add],['asked',c.asked],['skipped',(c.skip||0)+(c.released||0)+(c.dropped||0)],['agent sessions finished',ses],['agent cost',cost?'$'+cost.toFixed(2):'-'],['live agents',d.processes.agents.length]]
  .map(([k,v])=>`<div class="stat"><b>${e(v??0)}</b><span>${k}</span></div>`).join('');

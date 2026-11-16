@@ -20,7 +20,7 @@ Sessions on different computers cannot share a state folder: see [several comput
 | Two sessions need one tool | An area can be a name: lane `"areas": ["resource:editor"]` makes that lane one at a time. Works for a GPU or a test server too |
 | Two sessions act on the same answers, triage or analysis | `next --claim` holds the item for 2 hours for that session |
 | Two sessions discover the same work | One discovery pass serves the whole crew for 4 hours. `add` refuses a title like an open item |
-| A dead session keeps its areas | The driver runs `session release` when a member stops; otherwise the lease expires after 6 hours. Released items keep `paused_by`, so other members skip them; `claim --take-over` moves one |
+| A dead session keeps its areas | The driver runs `session release` when a member stops; otherwise the lease expires after 6 hours. Released items keep `paused_by`, so other members skip them until the owner goes quiet past `takeover.stale_hours` (then `next` offers them as `continue-stale`); `handoff <id> --to <who>` passes one on purpose ([handoff](handoff.md)) |
 | A session that was only slow wakes after its lease ran out | `sync` gave its item back and another member claimed it; `done`, `checkpoint` and `redo` from the old session are refused (fenced), so its late writes cannot finish or extend work it no longer holds. It stops and leaves its branch for the new owner. Shared files outside the ledger need the same care: re-read just before writing and refuse when they changed since you read them |
 | One undoes another's work | `next` lists `others_working`, `notes_from_others`, `done_by_others`. Before touching something near them: `note "<what changed>" --area <path>` |
 
@@ -33,6 +33,8 @@ Keep structure and behaviour apart. A member's structure-only changes (renames, 
 ## Saying there is nothing to do
 
 A session may stop only when `session check` says so. When only human decisions are left, `session check` returns `waiting_on`, most unblocking first, and `WAITING.md` lists the same. Say it plainly in the final message: "Nothing can move until these N decisions." Never invent work to stay busy. After another long run the same list may still be the answer, and that is correct.
+
+With new work off ([new-work.md](new-work.md)) a member that runs out of owner-driven items stops as `no-new-work`; a crew file takes `"no_new_work": true` for every project or one, and `grind_crew.py --no-new-work` sets it for one run.
 
 `grind_crew.py` looks before it launches: a member with nothing selectable is not started, and is reported under `skipped`. A night with nothing to do costs one check, plus at most one discovery session every 4 hours while a member keeps being offered discovery.
 
