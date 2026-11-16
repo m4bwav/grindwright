@@ -1,5 +1,9 @@
 # Changelog: grindwright
 
+## 0.14.0 (2026-11-16)
+
+- Ready for acceptance, optional and off by default. An issue can stay open after its work merged: the PR said `Refs #N`, it was the last part of a series, or it merged into a stacked base. With `work.issues.acceptance.enabled`, `issue-sync` and the new `issue-acceptance [--dry-run]` label such issues (`label`, default `ready for acceptance`) and, with `comment`, post one comment naming the merged PRs. An issue qualifies only when a PR naming it merged and no PR naming or cross-referencing it is still open. Human-only and skip labels are left alone, an issue already labelled gets nothing, nothing is closed and no label is removed. A ledger item records an `acceptance` event. With the setting on, `issue-close` labels instead of closing. Reason: owner request 2026-11-16, after an agent labelled three issues whose PRs were still open (LEARNINGS L-010).
+
 ## 0.13.2 (2026-11-13)
 
 - `grw.py add` takes optional `--signal` (player evidence that would show the item worked) and `--from` (the finding or hypothesis it came from); the demo lane's feedback step uses both. Not scored; ledgers without them are unchanged. Unit test added. Reason: book harvest jnr-boeira-lean-game-development (Boeira, Lean Game Development, chs. 5 and 11); book rule, unverified.

@@ -9,7 +9,8 @@ All optional. Any mix works; a project with none uses the ledger alone. The ledg
  "issues": {"repo": "owner/tiny-colony", "lane_bug": "bugs", "lane_feature": "features", "value_bug": 3, "value_feature": 2,
             "greenlight_label": "agent-ready", "greenlighters": ["pat"], "assign": ["pat"], "pr_labels": ["needs-review"],
             "bug_labels": ["bug"], "feature_labels": ["enhancement"], "skip_labels": ["wontfix", "duplicate", "invalid"],
-            "human_only_labels": ["needs-human"], "trust": ["OWNER", "MEMBER", "COLLABORATOR"]},
+            "human_only_labels": ["needs-human"], "trust": ["OWNER", "MEMBER", "COLLABORATOR"],
+            "acceptance": {"enabled": false, "label": "ready for acceptance", "comment": true}},
  "todo": {"path": "Docs/Agent Todos.md", "lane": "bugs"},
  "tasks": {"path": "tasks.md", "person": "pat"},
  "knowledge": {"local": "ai-docs/kb", "remote": "https://github.com/owner/tiny-colony/wiki"}
@@ -43,6 +44,8 @@ One concept gets one PR, or one labelled series. Run `grw.py pr-overlap <id>` (o
 - **Needs a decision:** `issue-ask <id> --person P --why "..."`, which tags them and waits for their label.
 
 - **After the last PR merges:** sync checks the agent's PR for each open issue. Once it merged and no open PR names the issue (`#N` in title or body), the item comes back as `close-out-issue`. Read the issue and every comment again and compare them with what merged (and what is on the default branch). Wholly done: `issue-close <id> --evidence "..."` comments what merged and how you checked each part, then closes the issue as completed. Mostly done: `issue-finalize <id> --done "..." --left "..." [--person P]` lists both and asks for final direction (close as is, finish the rest, or split it into a new issue); it asks once per PR, and the owner's reply brings the item back to triage. Unsure counts as mostly done. A PR with `Closes #N` into the default branch already closed its issue; this covers the rest.
+
+- **Ready for acceptance (optional):** some owners close issues themselves after checking the work. Set `issues.acceptance` to `{"enabled": true}` (`label` defaults to `ready for acceptance`, `comment` to true). Every `issue-sync` then labels an open issue once a PR that names it (`#N` in title or body, any keyword or none) merged and no PR that names it, or cross-references it on the issue's timeline, is still open. An open PR never qualifies, however complete. The label is created if missing; an existing one keeps its colour. With `comment`, one comment names the merged PRs. An issue that already has the label is skipped, so it never gets a second comment. Issues with a human-only or skip label are left alone. Nothing is closed and no label is removed. A ledger item gets an `acceptance` field and an `acceptance` event. With the setting on, `issue-close` labels instead of closing. `grw.py issue-acceptance --dry-run` lists what would be labelled, even while the setting is off; without `--dry-run` it labels. Only the newest 100 closed PRs are searched for a merge, so an older merge is missed, never mislabelled.
 
 - **Approved but unclear:** `issue-question <id> --question "..." [--person P]` asks on the issue and keeps the approval. The owner's answer brings it back to triage.
 

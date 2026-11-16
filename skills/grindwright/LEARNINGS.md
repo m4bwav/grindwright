@@ -1,5 +1,13 @@
 # Learnings: grindwright
 
+### L-010 · 2026-11-16 · `open-pr-is-not-done`: issues labelled ready for acceptance while their PRs were still open
+- Trigger: asked to label issues whose work was done, an agent labelled three issues whose PRs were open, not merged. It judged the PRs complete by reading them.
+- Hypothesis: "done" was read as "the change looks finished" instead of a state GitHub reports. A judgement call stood where a rule could be checked.
+- Rule: an issue is ready for acceptance only when a PR referencing it merged and no PR referencing it is open. Check PR state, never PR content. Built as `issue-acceptance` in 0.14.0, with a test that any open PR disqualifies.
+- Evidence: a grind session on a private project, 2026-11-16, kept privately.
+- Scope: skill
+- Status: active · helpful 0 · harmful 0 · last_confirmed 2026-11-16
+
 ### L-007 · 2026-11-07 · `bookkeeping-hid-an-empty-run`: the driver's stop checks both read bookkeeping as work
 - Trigger: the first overnight run used all 25 sessions in under 2 hours. One item blocked on a question counted as running, so the ledger stop never passed, and each session's discovery and checkpoint changed the fingerprint, so the no-progress stop never fired. Agents reported the fault in about 15 sessions and worked around it with `--force`.
 - Hypothesis: a stop condition must be tested against what a session does when it has nothing to do, not only against a silent session.

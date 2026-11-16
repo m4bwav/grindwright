@@ -32,6 +32,7 @@ its rules restrict what may appear there, keep the state outside it and pass `--
 - `ask_py`: path to askwright's `ask.py` when askwright is not installed as a plugin or skill (a clone, say). Without it `sync` cannot read any decision page and every item waiting on one stays waiting; `sync` and `next` then carry a `warning`. `GRINDWRIGHT_ASK` overrides it.
 - `ask_route`: where questions go. Default `"repo"` (issue, PR comment or discussion when the project has a repository); `"askwright"` when the owner prefers decision pages.
 - `text_bans`: words PR and commit text must not use.
+- `work`: issues, todo files, task lists and remote claims ([work-sources.md](work-sources.md)). Issue settings live in `work.issues`. Among them `acceptance`, off by default: `{"enabled": true, "label": "ready for acceptance", "comment": true}` labels open issues whose referencing PRs all merged, for a person's acceptance check. It never closes an issue.
 - `demo`: off unless `{"enabled": true, "scope": ..., "build": ...}`; then `discover` raises the demo lane ([demo.md](demo.md)).
 
 Project specifics (snapshot suites, slots, required skills) stay here or in the project's own docs, never in the plugin.
