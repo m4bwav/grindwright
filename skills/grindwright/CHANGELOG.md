@@ -1,5 +1,11 @@
 # Changelog: grindwright
 
+## 0.17.0 (2026-11-16)
+
+- Who is running. The status page (`grw.py status --serve`) gains a card listing every agent session seen in the project: status (live, recent, possibly stale, claimed with no session seen), the claimed item, branch, worktree, machine, start, time working and time quiet, subagents, and how each row is known. It uses askwright's `agents.py` collector when askwright is installed (sessions that claimed nothing show too); without it, the ledger's running claims show, and the page says sessions that claimed nothing are not listed. A collector failure is said in words, never shown as an empty list. Rows carry titles, ids, branches and times, never message text.
+- A link back to the project's askwright page, shown only when the project is registered there and askwright's hub answers. `grw_status.page(inline)` builds the page with its data inline, so askwright's hub can show it without string-patching.
+- Reason: owner request 2026-11-16: Jennifer wants to see every agent at work in a project before she starts anything, and moving between askwright and grindwright should take one click.
+
 ## 0.16.0 (2026-11-16)
 
 - Ready for acceptance, optional and off by default. An issue can stay open after its work merged: the PR said `Refs #N`, it was the last part of a series, or it merged into a stacked base. With `work.issues.acceptance.enabled`, `issue-sync` and the new `issue-acceptance [--dry-run]` label such issues (`label`, default `ready for acceptance`) and, with `comment`, post one comment naming the merged PRs. An issue qualifies only when a PR naming it merged and no PR naming or cross-referencing it is still open. Human-only and skip labels are left alone, an issue already labelled gets nothing, nothing is closed and no label is removed. A ledger item records an `acceptance` event. With the setting on, `issue-close` labels instead of closing. Reason: owner request 2026-11-16, after an agent labelled three issues whose PRs were still open (LEARNINGS L-010).

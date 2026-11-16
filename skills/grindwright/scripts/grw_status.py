@@ -12,10 +12,13 @@ import datetime as dt
 import html
 import json
 import os
+import importlib.util
 import re
+import socket
 import subprocess
 import sys
 import threading
+import time
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -125,6 +128,111 @@ def _mode(root):
         return {}
 
 
+# ---- who is running in this project, and the way back to askwright (both optional: the page works without askwright)
+
+def project_dir(state):
+    """The project folder: <project>/ai-docs/grind -> <project>."""
+    root = Path(state).resolve()
+    return root.parent.parent if root.parent.name == "ai-docs" else root
+
+
+def askwright_scripts():
+    """askwright's scripts folder: ASKWRIGHT_SCRIPTS, the installed plugin, or a clone beside this one. None when absent."""
+    cands = [os.environ.get("ASKWRIGHT_SCRIPTS")]
+    try:
+        inst = json.loads((Path.home() / ".claude" / "plugins" / "installed_plugins.json").read_text("utf-8"))
+        cands += [str(Path(r["installPath"], "skills", "askwright", "scripts"))
+                  for k, recs in inst["plugins"].items() if k.startswith("askwright@") for r in recs]
+    except Exception:
+        pass
+    cands.append(str(Path(__file__).resolve().parents[4] / "askwright" / "skills" / "askwright" / "scripts"))
+    return next((Path(c) for c in cands if c and (Path(c) / "agents.py").is_file()), None)
+
+
+def _claims_only(root, now):
+    """Without askwright: the ledger's running claims, each with its lease. Sessions that claimed nothing stay unseen."""
+    latest = {}
+    for record in _jsonl(root / "ledger.jsonl"):
+        if record.get("id"):
+            latest[record["id"]] = record
+    claim_ts = {e.get("id"): e.get("ts") for e in _jsonl(root / "events.jsonl") if e.get("type") == "claim"}
+    rows = []
+    for item in latest.values():
+        if item.get("state") != "running":
+            continue
+        try:
+            lease = dt.datetime.fromisoformat(str(item.get("lease_until"))[:19])
+        except ValueError:
+            lease = None
+        expired = lease is not None and lease < now
+        claim = {"id": item["id"], "title": str(item.get("title") or "")[:120]}
+        for k in ("handed_off", "paused_by"):
+            if item.get(k):
+                claim[k] = item[k]
+        how = f", lease ran out at {item.get('lease_until')}" if expired else f", lease until {item.get('lease_until')}"
+        rows.append({"session": item.get("session") or "solo", "status": "possibly stale" if expired else "claimed, no session seen",
+                     "claims": [claim], "branch": item.get("branch") or "", "started": claim_ts.get(item["id"]),
+                     "subagents": [], "evidence": ["grindwright claim" + how]})
+    return rows
+
+
+_WHO_CACHE = {}
+
+
+def who(state, now=None):
+    """Every agent session seen in this project (askwright's agents.py), or the grindwright claims alone, with problems
+    said in words so an unreadable source never looks like an empty list. Cached 10 s for the page's refresh."""
+    key = str(Path(state).resolve())
+    hit = _WHO_CACHE.get(key)
+    if hit and now is None and time.time() - hit[0] < 10:
+        return hit[1]
+    stamp = now or dt.datetime.now()
+    scripts = askwright_scripts()
+    data = None
+    if scripts:
+        try:
+            spec = importlib.util.spec_from_file_location("askwright_agents_for_grind", scripts / "agents.py")
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+            data = mod.collect([str(project_dir(state))])
+            data["source"] = "askwright"
+        except Exception as error:
+            data = {"problems": [f"askwright's session collector failed ({error}): only grindwright claims show"]}
+    if data is None or data.get("source") != "askwright":
+        problems = (data or {}).get("problems") or [
+            "askwright is not installed, so only grindwright claims show: a session that claimed nothing is not listed"]
+        data = {"rows": _claims_only(Path(state), stamp), "problems": problems, "source": "grindwright claims",
+                "note": "claims only"}
+    data.setdefault("built", stamp.isoformat(timespec="seconds"))
+    if now is None:
+        _WHO_CACHE[key] = (time.time(), data)
+    return data
+
+
+def askwright_link(state):
+    """The askwright project page for this folder, only when its hub answers. None otherwise."""
+    home = Path(os.environ.get("ASKWRIGHT_HOME") or Path.home() / ".askwright")
+    here = project_dir(state).as_posix().lower()
+    slug = None
+    for f in sorted((home / "projects").glob("*.json")):
+        try:
+            rec = json.loads(f.read_text("utf-8"))
+            dirs = [Path(d).resolve().as_posix().lower() for d in rec.get("dirs") or []]
+        except (OSError, ValueError, TypeError):
+            continue
+        if here in dirs:
+            slug = rec.get("slug") or f.stem
+            break
+    if not slug:
+        return None
+    try:
+        port = int(os.environ.get("ASKWRIGHT_PORT") or 47631)
+        socket.create_connection(("127.0.0.1", port), 0.3).close()
+    except (OSError, ValueError):
+        return None
+    return f"http://127.0.0.1:{port}/projects/{slug}"
+
+
 def collect(state, since=None):
     root = Path(state)
     now = dt.datetime.now()
@@ -197,6 +305,8 @@ def collect(state, since=None):
         "waiting": [line[2:] for line in waiting.splitlines() if line.startswith("- ")],
         "timing": timing_rows[-10:],
         "logs": _log_stats(root / "logs", since),
+        "who": who(root),
+        "links": {k: v for k, v in {"askwright": askwright_link(root)}.items() if v},
     }
 
 
@@ -219,8 +329,10 @@ table{width:100%;border-collapse:collapse}td,th{text-align:left;padding:4px 6px;
 ul{margin:0;padding-left:18px}li{margin:3px 0;overflow-wrap:anywhere}.scroll{max-height:420px;overflow:auto}pre{white-space:pre-wrap;margin:0;font-size:12px;color:var(--mute)}
 </style></head><body><main>
 <header><div><h1 id="proj">Grind status</h1><div class="mute" id="sub"></div></div><div><span id="run" class="pill off">...</span> <span id="mode" class="pill off" style="display:none" title="only owner-driven items: grw.py new-work on restarts new work"></span> <span class="mute" id="upd"></span></div></header>
+<nav id="links" class="mute" style="margin:-6px 0 10px"></nav>
 <div class="grid">
 <section class="card wide"><div class="stats" id="stats"></div></section>
+<section class="card wide" id="who-card"><h2 id="who-h">Who is running in this project</h2><div id="who"></div></section>
 <section class="card"><h2>Members</h2><div id="members"></div></section>
 <section class="card"><h2>Working now</h2><div id="working"></div></section>
 <section class="card wide"><h2>Timeline (this run)</h2><div class="scroll" id="timeline"></div></section>
@@ -232,8 +344,23 @@ ul{margin:0;padding-left:18px}li{margin:3px 0;overflow-wrap:anywhere}.scroll{max
 const e=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const hm=s=>s?s.slice(11,16):'';const ago=m=>m==null?'':m<60?m+' min':Math.floor(m/60)+' h '+(m%60)+' min';
 const link=s=>e(s).replace(/(https?:\/\/[^\s,]+)/g,'<a href="$1" target="_blank">$1</a>');
+const dur=m=>m==null||isNaN(m)||m<0?'':m<60?Math.round(m)+' min':Math.floor(m/60)+' h '+Math.round(m%60)+' min';
+const since=(t,now)=>t?(Date.parse(now)-Date.parse(t))/60000:null;
+function drawWho(d){const w=d.who||{rows:[],problems:['no session data']};
+links.innerHTML=Object.entries(d.links||{}).map(([k,u])=>`<a href="${e(u)}">${k==='askwright'?'&larr; askwright project page':e(k)}</a>`).join(' &middot; ');
+document.getElementById('who-h').textContent='Who is running in this project'+(w.built?' (checked '+hm(w.built)+(w.note?', '+w.note:'')+')':'');
+const rows=(w.rows||[]).map(r=>{const what=(r.claims||[]).map(c=>e(c.id+' '+c.title)).join('; ')||e(r.title||r.name||'(no claimed task)');
+ const subs=(r.subagents||[]).map(a=>e(a.description)+' <span class="mute">('+e(a.status)+')</span>').join(', ');
+ const run=dur(since(r.started,d.now)),quiet=r.minutes_quiet!=null?dur(r.minutes_quiet):dur(since(r.last_activity,d.now));
+ const cls=r.status==='live'?'k-done':r.status==='recent'?'k-asked':'k-skip';
+ return `<tr><td class="${cls}"><b>${e(r.status)}</b>${r.stale_reason?'<div class="mute">'+e(r.stale_reason)+'</div>':''}</td><td>${what}${subs?'<div class="mute">subagents: '+subs+'</div>':''}</td>`+
+ `<td><code>${e(r.branch||'')}</code><div class="mute">${e(r.worktree||r.cwd||'')}${r.machine?' · '+e(r.machine):''}</div></td>`+
+ `<td class="t">${r.started?'started '+e(String(r.started).slice(5,16).replace('T',' ')):''}${run?'<div>working '+run+'</div>':''}${quiet?'<div>quiet '+quiet+'</div>':''}</td>`+
+ `<td class="mute">${e((r.evidence||[]).join('; '))}</td></tr>`}).join('');
+document.getElementById('who').innerHTML=(rows?'<div class="scroll"><table><tr><th>status</th><th>working on</th><th>where</th><th>time</th><th>how it is known</th></tr>'+rows+'</table></div>':'<p class="mute">No agent session seen in this project'+(w.source==='askwright'?' on this machine':'')+'.</p>')+
+ (w.problems||[]).map(p=>'<p class="k-skip">'+e(p)+'</p>').join('');}
 async function tick(){let d;try{d=await (await fetch('api',{cache:'no-store'})).json()}catch(x){document.getElementById('upd').textContent='server not answering';return}
-document.title=(d.running?'● ':'')+d.project+' grind';proj.textContent=d.project;sub.textContent='run since '+d.since.replace('T',' ')+'  ·  '+d.state;
+drawWho(d);document.title=(d.running?'● ':'')+d.project+' grind';proj.textContent=d.project;sub.textContent='run since '+d.since.replace('T',' ')+'  ·  '+d.state;
 run.textContent=d.running?'RUNNING':'NOT RUNNING';run.className='pill '+(d.running?'on':'off');mode.textContent=d.new_work==='off'?'NEW WORK OFF':'';mode.style.display=d.new_work==='off'?'':'none';upd.textContent='updated '+hm(d.now)+':'+d.now.slice(17,19);
 const c=d.counts,cost=Object.values(d.logs).reduce((a,l)=>a+l.cost,0),ses=Object.values(d.logs).reduce((a,l)=>a+l.sessions,0);
 stats.innerHTML=[['done',c.done],['claimed',c.claim],['added',c.add],['asked',c.asked],['skipped',(c.skip||0)+(c.released||0)+(c.dropped||0)],['agent sessions finished',ses],['agent cost',cost?'$'+cost.toFixed(2):'-'],['live agents',d.processes.agents.length]]
@@ -253,6 +380,19 @@ tick();setInterval(tick,15000);
 </script></body></html>"""
 
 
+FETCH = "await (await fetch('api',{cache:'no-store'})).json()"
+
+
+def page(inline=None):
+    """The status page. With inline (the collect() dict), the data is built in and no fetch is made: for hosts such as
+    askwright's hub whose sandboxed page has no origin to fetch from. Such hosts reload the page to refresh it."""
+    if inline is None:
+        return PAGE
+    data = json.dumps(json.loads(json.dumps(inline, default=str)), ensure_ascii=False).replace("</", "<\\/")
+    return (PAGE.replace(FETCH, "JSON.parse(document.getElementById('grind-data').textContent)", 1)
+            .replace("</body>", f"<script type='application/json' id='grind-data'>{data}</script></body>", 1))
+
+
 def make_server(state, port=0):
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, *args):
@@ -263,7 +403,7 @@ def make_server(state, port=0):
                 body = json.dumps(collect(state), ensure_ascii=False).encode("utf-8")
                 kind = "application/json"
             elif self.path in ("/", "/index.html"):
-                body, kind = PAGE.encode("utf-8"), "text/html; charset=utf-8"
+                body, kind = page().encode("utf-8"), "text/html; charset=utf-8"
             else:
                 self.send_error(404)
                 return
