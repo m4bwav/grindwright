@@ -1,5 +1,9 @@
 # Changelog: grindwright
 
+## 0.16.0 (2026-11-16)
+
+- Ready for acceptance, optional and off by default. An issue can stay open after its work merged: the PR said `Refs #N`, it was the last part of a series, or it merged into a stacked base. With `work.issues.acceptance.enabled`, `issue-sync` and the new `issue-acceptance [--dry-run]` label such issues (`label`, default `ready for acceptance`) and, with `comment`, post one comment naming the merged PRs. An issue qualifies only when a PR naming it merged and no PR naming or cross-referencing it is still open. Human-only and skip labels are left alone, an issue already labelled gets nothing, nothing is closed and no label is removed. A ledger item records an `acceptance` event. With the setting on, `issue-close` labels instead of closing. Reason: owner request 2026-11-16, after an agent labelled three issues whose PRs were still open (LEARNINGS L-010).
+
 ## 0.15.0 (2026-11-16)
 
 - Stale takeover. A paused item (its work on the owner's branch) whose owner has gone quiet past `takeover.stale_hours` (default 12; no fresh lease or host claim, no branch commit, no checkpoint) shows in `next` as `continue-stale` and may be claimed without a flag. The claim records `taken_over` (from, why, when), an event, a BOARD.md line and a PR or issue comment, and returns commands that continue on top of the owner's branch in a new worktree and branch. Unsure (branch not seen) means not stale. `claim --take-over` is refused while the owner is live (branch commit under 2 hours, fresh lease, fresh host claim); a fresh host claim is never taken over, flag or not. `sync` keeps an expired-lease item that has a branch with its owner (`paused_by`) until it is stale, instead of freeing it at once.
