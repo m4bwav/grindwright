@@ -27,6 +27,7 @@ LIMIT = re.compile(r"usage limit|rate limit|limit reached|hit your limit|overloa
 DEFAULT_COMMAND = ["claude", "-p", "--permission-mode", "auto", "--output-format", "json"]
 
 
+MODE_ENV = "GRINDWRIGHT_NO_NEW_WORK"  # one-shot "no new work" for this run; grw.py reads it
 PROGRESS = ("done", "asked", "detached", "resolved", "redo", "drafted")
 
 
@@ -58,9 +59,22 @@ def fingerprint(state, sid=None):
     return digest.hexdigest()
 
 
-def verdict(state, sid=None):
+def run_env(args):
+    """The sessions' and checks' environment: --no-new-work adds the one-shot flag without touching the project's mode.json."""
+    env = dict(os.environ)
+    if getattr(args, "no_new_work", False):
+        env[MODE_ENV] = "1"
+    return env
+
+
+def quiet_stop(check):
+    """New work is off and nothing owner-driven is left: a clean stop of its own, never drained, never no-progress."""
+    return bool(check.get("may_stop") and check.get("stopped") == "no-new-work")
+
+
+def verdict(state, sid=None, env=None):
     done = subprocess.run([sys.executable, str(GRW), "--state", str(state), *(["--session", sid] if sid else []), "session", "check"],
-                          capture_output=True, text=True, encoding="utf-8")
+                          capture_output=True, text=True, encoding="utf-8", env=env)
     try:
         return json.loads(done.stdout)
     except ValueError:
@@ -81,9 +95,9 @@ def kill_tree(process):
         os.killpg(process.pid, signal.SIGKILL)
 
 
-def session(command, cwd, timeout):
+def session(command, cwd, timeout, env=None):
     process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8", errors="replace",
-                               cwd=cwd, start_new_session=sys.platform != "win32")
+                               cwd=cwd, start_new_session=sys.platform != "win32", env=env)
     try:
         out, err = process.communicate(timeout=timeout)
     except subprocess.TimeoutExpired:
@@ -149,14 +163,17 @@ def drive(args, sleep, clock):
     command = resolve(wanted)
     if not command:
         return {"ok": False, "stopped": "command-not-found", "command": wanted[0], "sessions": 0}
+    env = run_env(args)
     prompt = f"Execute {Path(args.prompt).resolve().as_posix()}"  # the session runs in --cwd, so a relative path would miss
     if not args.go:
         return {"ok": True, "dry_run": True, "would_run": command + [prompt], "max_sessions": args.max_sessions,
-                "max_hours": args.max_hours, "now": verdict(args.state, args.session_id)}
+                "max_hours": args.max_hours, "no_new_work": bool(getattr(args, "no_new_work", False)), "now": verdict(args.state, args.session_id, env)}
     deadline = clock() + args.max_hours * 3600
     sessions, idle, waits, missing = 0, 0, 0, 0
     while True:
-        check = verdict(args.state, args.session_id)
+        check = verdict(args.state, args.session_id, env)
+        if quiet_stop(check):
+            return {"ok": True, "stopped": "no-new-work", "why": check.get("why"), "waiting_on": check.get("waiting_on", []), "sessions": sessions}
         if check.get("may_stop") and not (args.discover_first and sessions == 0):
             return {"ok": True, "stopped": "ledger", "why": check.get("why"), "waiting_on": check.get("waiting_on", []), "sessions": sessions}
         if sessions >= args.max_sessions:
@@ -169,7 +186,7 @@ def drive(args, sleep, clock):
             allowed = min(allowed, args.session_minutes * 60)
         began, began_at = clock(), grind_report.stamp()
         try:
-            done = session(command + [prompt], args.cwd, allowed)
+            done = session(command + [prompt], args.cwd, allowed, env)
         except subprocess.TimeoutExpired:
             record(args, began_at, clock() - began, "failed", "")
             return {"ok": False, "stopped": "session-timeout", "seconds": round(allowed), "sessions": sessions}
@@ -198,6 +215,8 @@ def drive(args, sleep, clock):
         record(args, began_at, clock() - began, "idle" if same else "worked", done.stdout)
         idle = idle + 1 if same else 0
         if idle >= 2:
+            if quiet_stop(verdict(args.state, args.session_id, env)):
+                continue  # the top of the loop stops it as no-new-work
             return {"ok": False, "stopped": "no-progress", "sessions": sessions}
 
 
@@ -216,6 +235,8 @@ def main(argv=None):
     parser.add_argument("--session-id", help="this member's name when several sessions share the state")
     parser.add_argument("--discover-first", action="store_true",
                         help="run session 1 even when the ledger has nothing selectable, after a person widened the rules")
+    parser.add_argument("--no-new-work", action="store_true",
+                        help="this run only answers what owners raised (reviews, answers, green lights); the project's stored mode is untouched")
     parser.add_argument("--no-report", action="store_true", help="do not build or show the run report (a crew builds its own)")
     parser.add_argument("--go", action="store_true", help="really run; without it, print what would run")
     argv = list(sys.argv[1:] if argv is None else argv)

@@ -31,6 +31,7 @@ STOPS = {
     "max-sessions": "it used every session the run allowed",
     "max-hours": "it reached the run's time limit",
     "no-progress": "two sessions in a row changed nothing in the ledger",
+    "no-new-work": "new work is off and nothing owner-driven was left: the right outcome in that mode, not a drained ledger",
     "usage-limit": "the usage limit lasted longer than the run could wait",
     "session-failed": "an agent session exited with an error",
     "session-timeout": "a session ran past its time limit and was ended",
@@ -284,7 +285,8 @@ def collect(state, run, use_github=True):
     for row in touched.values():
         row["pictures"] = [picture(shot, roots) for shot in row["shots"]]
     return {"events": events, "lanes": lanes, "touched": list(touched.values()), "left": left, "stones": stones,
-            "ends": ends, "github": gh, "road": road, "since": since, "until": until}
+            "ends": ends, "github": gh, "road": road, "since": since, "until": until,
+            "new_work": (read_json(Path(state) / "mode.json", {}) or {}).get("new_work", "on")}
 
 
 IMAGE_TYPES = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".gif": "image/gif", ".webp": "image/webp"}
@@ -422,7 +424,7 @@ def render(run, data, chain_page=None):
             ("PRs opened", len(gh.get("prs_created", [])) if data["github"] is not None else "?")]
     body = [f'<h1>{e(run.get("project") or "Grind")} run report</h1>',
             f'<div class="sub">{e(run.get("id", ""))} · {e(run.get("started", ""))} to {e(run.get("ended") or "still running")} · '
-            f'{len(members)} member{"s" * (len(members) != 1)}{" · " + link(Path(chain_page).resolve().as_uri(), "chainwright tier report") if chain_page else ""}</div>',
+            f'{len(members)} member{"s" * (len(members) != 1)}{" · new work off: only owner-driven items" if data.get("new_work") == "off" or any((m.get("result") or {}).get("stopped") == "no-new-work" for m in members) else ""}{" · " + link(Path(chain_page).resolve().as_uri(), "chainwright tier report") if chain_page else ""}</div>',
             '<div class="kpis">' + "".join(f'<div class="kpi"><b>{e(str(v))}</b><span>{k}</span></div>' for k, v in kpis) + "</div>"]
 
     body.append("<h2>Why it stopped</h2>")

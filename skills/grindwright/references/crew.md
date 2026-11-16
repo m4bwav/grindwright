@@ -34,6 +34,8 @@ Keep structure and behaviour apart. A member's structure-only changes (renames, 
 
 A session may stop only when `session check` says so. When only human decisions are left, `session check` returns `waiting_on`, most unblocking first, and `WAITING.md` lists the same. Say it plainly in the final message: "Nothing can move until these N decisions." Never invent work to stay busy. After another long run the same list may still be the answer, and that is correct.
 
+With new work off ([new-work.md](new-work.md)) a member that runs out of owner-driven items stops as `no-new-work`; a crew file takes `"no_new_work": true` for every project or one, and `grind_crew.py --no-new-work` sets it for one run.
+
 `grind_crew.py` looks before it launches: a member with nothing selectable is not started, and is reported under `skipped`. A night with nothing to do costs one check, plus at most one discovery session every 4 hours while a member keeps being offered discovery.
 
 ## Running a night

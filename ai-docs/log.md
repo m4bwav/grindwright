@@ -214,3 +214,5 @@ Mark asked for a track that updates animations when their start or end image cha
 ## 2026-11-11 Works with
 
 At the owner's request: a README "Works with" section and a Works-With wiki page (linked from the sidebar and Home), each entry naming the real handoff with a partner plugin (taken from the skills that name each other) and why the pair helps.
+
+2026-11-16: 0.14.0 new-work mode built (PR feat/quiet-mode). Mode lives in `<state>/mode.json`; one-shot via `GRINDWRIGHT_NO_NEW_WORK=1`. SKILL.md sits at 3,490 tokens of the 3,500 line: trim before adding.
