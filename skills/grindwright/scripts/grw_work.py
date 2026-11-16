@@ -234,6 +234,11 @@ def issue_sync(store, items):
                 item.update({"state": "ready", "triaged": False, "replied": False})
                 report["reopened"].append(item["id"])
             touch(item)
+    if acceptance(config)["enabled"]:
+        try:
+            report["acceptance"] = acceptance_pass(store, items, rows)
+        except Refused as failed:  # a labelling failure must not lose the new items above
+            report["acceptance"] = {"error": failed.reasons}
     return report
 
 
@@ -243,6 +248,127 @@ def closeout_due(repo, number, pr, open_prs):
         return False
     ref = re.compile(rf"#{number}\b")
     return not any(ref.search((p.get("title") or "") + " " + (p.get("body") or "")) for p in open_prs)
+
+
+ACCEPTANCE = {"enabled": False, "label": "ready for acceptance", "comment": True}
+PR_RANK = {"closed": 0, "merged": 1, "open": 2}
+
+
+def acceptance(config):
+    """The issues block's acceptance settings over the defaults. Off unless the profile turns it on."""
+    block = dict(ACCEPTANCE)
+    block.update((config or {}).get("acceptance") or {})
+    return block
+
+
+def names_issue(pr, number):
+    return re.search(rf"#{number}(?!\d)", (pr.get("title") or "") + " " + (pr.get("body") or "")) is not None
+
+
+def pr_key(source, repo):
+    """Same-repository PRs by number, others as owner/name#N."""
+    full = (source.get("repository") or {}).get("full_name") or "/".join((source.get("repository_url") or "").split("/")[-2:])
+    return source["number"] if not full or full == repo else f"{full}#{source['number']}"
+
+
+def pr_label(key):
+    return f"#{key}" if isinstance(key, int) else key
+
+
+def referencing_prs(repo, number, open_prs, closed_prs):
+    """{pr: "open" | "merged" | "closed"} for every PR that names the issue in its title or body, or that GitHub lists as
+    cross-referencing it. When two sources disagree, open wins over merged, merged over closed."""
+    found = {}
+
+    def put(key, state):
+        if PR_RANK[state] >= PR_RANK.get(found.get(key), -1):
+            found[key] = state
+    for pr in open_prs:
+        if names_issue(pr, number):
+            put(pr["number"], "open")
+    for pr in closed_prs:
+        if names_issue(pr, number):
+            put(pr["number"], "merged" if pr.get("merged_at") else "closed")
+    for event in gh_json(f"repos/{repo}/issues/{number}/timeline?per_page=100"):
+        source = (event.get("source") or {}).get("issue") or {}
+        if event.get("event") != "cross-referenced" or "pull_request" not in source:
+            continue
+        merged = (source.get("pull_request") or {}).get("merged_at")
+        put(pr_key(source, repo), "open" if source.get("state") == "open" else "merged" if merged else "closed")
+    return found
+
+
+def create_label(repo, label):
+    """Without --force: an existing label, a person's colour and description included, is left as it is."""
+    try:
+        gh("label", "create", label, "-R", repo, "--color", "0e8a16", "--description", "Work merged; waiting for a person's acceptance check")
+    except Refused:
+        pass
+
+
+def mark_accepted(store, items, repo, number, label, prs):
+    """A ledger item records the transition; an issue the ledger never took gets nothing."""
+    for item in items:
+        if item.get("issue") == number and item.get("issue_repo", repo) == repo:
+            item["acceptance"] = {"label": label, "prs": prs, "at": stamp()}
+            touch(item)
+            store.event("acceptance", id=item["id"], issue=number, label=label, prs=prs)
+            return item["id"]
+    return None
+
+
+def acceptance_pass(store, items, rows=None, dry_run=False):
+    """Label open issues whose work merged and that no open PR still references, for the owner's acceptance check.
+    Never closes an issue and never removes a label. An issue that already has the label is skipped, so no second comment."""
+    config = store.profile().get("work", {}).get("issues") or {}
+    block, repo = acceptance(config), config["repo"]
+    label = block["label"]
+    if rows is None:
+        rows = [r for r in gh_json(f"repos/{repo}/issues?state=open&per_page=100") if "pull_request" not in r]
+    passed = {s.lower() for s in config.get("human_only_labels", HUMAN_ONLY_LABELS)} | {s.lower() for s in config.get("skip_labels", SKIP_LABELS)}
+    passed.add(label.lower())
+    eligible = [r["number"] for r in rows if not passed & {l["name"].lower() for l in r.get("labels", [])}]
+    report = {"label": label, "dry_run": dry_run, "ready": [], "open_pr": [], "labelled": []}
+    if not eligible:
+        return report
+    open_prs = gh_json(f"repos/{repo}/pulls?state=open&per_page=100")
+    closed_prs = gh_json(f"repos/{repo}/pulls?state=closed&sort=updated&direction=desc&per_page=100")
+    made = False
+    for number in sorted(eligible):
+        if not any(p.get("merged_at") and names_issue(p, number) for p in closed_prs):
+            continue  # no merged PR among the newest 100 closed ones names it: not worth a timeline call
+        refs = referencing_prs(repo, number, open_prs, closed_prs)
+        still_open = [pr_label(k) for k, v in refs.items() if v == "open"]
+        merged = sorted((pr_label(k) for k, v in refs.items() if v == "merged"), key=lambda s: (len(s), s))
+        if still_open:
+            report["open_pr"].append({"issue": number, "open": still_open})
+            continue
+        if not merged:
+            continue
+        report["ready"].append({"issue": number, "merged": merged})
+        if dry_run:
+            continue
+        if not made:
+            create_label(repo, label)
+            made = True
+        gh("issue", "edit", str(number), "-R", repo, "--add-label", label)
+        if block.get("comment", True):
+            post_issue_comment(store, repo, number, f"**Ready for acceptance.** Merged: {', '.join(merged)}. No open pull request references "
+                               f"this issue. I added the `{label}` label so a person can check the work. I do not close issues.")
+        report["labelled"].append(number)
+        mark_accepted(store, items, repo, number, label, merged)
+    return report
+
+
+def cmd_issue_acceptance(store, args):
+    config = work(store, "issues")
+    if not acceptance(config)["enabled"] and not args.dry_run:
+        raise Refused(['acceptance labels are off: set "work.issues.acceptance": {"enabled": true}, or look with --dry-run'])
+    items = store.items()
+    report = acceptance_pass(store, items, dry_run=args.dry_run)
+    if not args.dry_run:
+        store.save_items(items)
+    return report
 
 
 PR_TRUST = ("OWNER",)
@@ -600,6 +726,8 @@ def cmd_issue_close(store, args):
     items = store.items()
     item = closeout_item(items, args.id)
     repo, number = config["repo"], item["issue"]
+    if acceptance(config)["enabled"]:
+        return label_for_acceptance(store, items, item, acceptance(config)["label"], repo, args.evidence)
     url = post_issue_comment(store, repo, number, f"**Done.** PR #{item['merged_pr']} merged. {args.evidence}\n\nClosing as completed. Reopen it if anything is missing.")
     gh("issue", "close", str(number), "-R", repo, "--reason", "completed")
     item.update({"state": "done", "closeout": False, "evidence": f"closed after PR #{item['merged_pr']} merged: {args.evidence}",
@@ -609,6 +737,22 @@ def cmd_issue_close(store, args):
     store.save_items(items)
     store.event("closed", id=item["id"], issue=number)
     return {"id": item["id"], "closed": number, "comment": url}
+
+
+def label_for_acceptance(store, items, item, label, repo, evidence):
+    """With acceptance labels on, a person closes the issue: comment the evidence and label it instead."""
+    number, merged = item["issue"], f"#{item['merged_pr']}"
+    url = post_issue_comment(store, repo, number, f"**Done.** PR {merged} merged. {evidence}\n\n"
+                             f"I added the `{label}` label so a person can check the work and close the issue.")
+    create_label(repo, label)
+    gh("issue", "edit", str(number), "-R", repo, "--add-label", label)
+    mark_accepted(store, items, repo, number, label, [merged])
+    item.update({"state": "done", "closeout": False, "evidence": f"labelled {label} after PR {merged} merged: {evidence}",
+                 "oracle": "agent", "finished": stamp()})
+    item.pop("lease_until", None)
+    touch(item)
+    store.save_items(items)
+    return {"id": item["id"], "labelled": number, "comment": url}
 
 
 def cmd_issue_finalize(store, args):
@@ -991,6 +1135,8 @@ def cmd_remote(store, args):
 def add_parsers(add):
     add("remote", cmd_remote, "list claims held on the repository host by every computer")
     add("issue-sync", cmd_issue_sync, "pull GitHub issues into the ledger")
+    p = add("issue-acceptance", cmd_issue_acceptance, "label open issues whose PRs all merged for a person's acceptance check; never closes")
+    p.add_argument("--dry-run", action="store_true", help="list what would be labelled; change nothing")
     add("pr-sync", cmd_pr_sync, "owner comments on open agent PRs become items to address")
     p = add("issue-accept", cmd_issue_accept, "triage says an agent can fix it: make it normal work")
     p.add_argument("id")
