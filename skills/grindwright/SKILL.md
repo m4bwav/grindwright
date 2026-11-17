@@ -87,19 +87,16 @@ hold <id> --evidence E [--person P] [--provenance P]   checkpoint <id> "<note>" 
 - Before review, check physical sense yourself, which automatic gates miss: does the material fit (no wooden roof on a
   stone smelter), is scaffolding in front, is it lit when idle?
 - `grw.py queue` orders proposed questions by how much they unblock. Past a person's review cap, ask nothing more: draft (at most as many as the cap, never in a no-stacking lane) or do different work.
-- Ask where the project already talks. On a repository with issues, pull requests, discussions or a wiki, a question
-  about an issue goes on that issue (`issue-question`), one about a PR goes in a PR comment, and open design questions
-  go in a discussion or a `proposal` issue: the answer then sits beside the code, other people see it, and `issue-sync`
-  and `pr-sync` bring it back. Use an askwright page instead when the profile says `"ask_route": "askwright"` (the
-  owner prefers it), for picks that need side-by-side media, for private or money questions, and for projects with
+- Ask where the project already talks. On a repository, a question about an issue goes on that issue
+  (`issue-question`), one about a PR in a PR comment, open design questions in a discussion or a `proposal` issue:
+  the answer sits beside the code, others see it, and `issue-sync` and `pr-sync` bring it back. Use an askwright page instead when the profile says `"ask_route": "askwright"`, for picks that need side-by-side media, for private or money questions, and for projects with
   no repository. Both can run together: link an askwright page (over a tailnet) from the issue or PR when a pick
   needs it, and record the answer back on the issue.
 - Use askwright sets by project and by person. Missing askwright: write the questions to `ai-docs/grind/questions.md`
   with guesses and say so.
 - After any redo, rebuild every derived review artifact (contact sheet, GIF, PR media) and look at it. Declare them
   with `grw.py derived`, record the look with `grw.py look`; the gate compares file times.
-- Automated judges (artwright-judge, pixelwright checks) catch what they can before a person sees it. They do not
-  replace the person.
+- Automated judges (artwright-judge, pixelwright checks) screen work before a person sees it; they never replace the person.
 
 ## Other sessions
 
