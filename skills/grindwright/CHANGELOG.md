@@ -1,5 +1,9 @@
 # Changelog: grindwright
 
+## 0.19.2 (2026-11-17)
+
+- Testing lane (loop.md): route bots that play each character's route every session, plus in-page probes after each change. Reason: technique harvest D13, credited to the r/aigamedev post 1xs7pj3.
+
 ## 0.19.1 (2026-11-17)
 
 - Ready for acceptance: a merged PR now counts only when it claims the issue: `#N` in its title, or a keyword before `#N` (or `owner/repo#N`) in its body: closes, fixes, resolves, refs, references, part of, part N of. A plain mention no longer qualifies, from the PR list or from the issue's timeline. Open PRs still disqualify on any mention. Reason: the first dry run on a real project would have labelled a follow-up art ticket that a merged PR named in passing ("no door art yet (#N)") (LEARNINGS L-011).
