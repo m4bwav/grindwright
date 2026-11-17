@@ -287,6 +287,15 @@ class HumanQueue(Base):
         self.assertIn("alex, sam", out["refused"][0])
         self.grw("hold", item, "--evidence", "e", "--person", "Alex")
 
+    def test_an_alias_resolves_to_the_person_and_their_cap(self):
+        self.profile({"people": {"alex": {"review_cap": 2, "aliases": ["alexgithub"]}}})
+        item = self.add("y")
+        self.grw("claim", item)
+        self.grw("hold", item, "--evidence", "e", "--person", "AlexGitHub")
+        self.assertEqual(self.grw("show", item)["item"]["person"], "alex")
+        out = self.grw("add", "z", "--lane", "code", "--source", "t", "--value", "3", "--person", "nobody", expect=2)
+        self.assertIn("aliases: alexgithub", out["refused"][0])
+
     def test_cap_defers_more_asks(self):
         guess = {"option": "a", "why": "reads best"}
         for n in range(2):

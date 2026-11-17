@@ -1,5 +1,9 @@
 # Changelog: grindwright
 
+## 0.17.2 (2026-11-16)
+
+- People can have aliases: `people.<name>.aliases` in `profile.json` (a GitHub login, a nickname). `--person` accepts the name or an alias, case ignored; the ledger stores the profile name, so caps and counts stay on one person. The unknown-person refusal lists each person's aliases and says to add a missing one there.
+
 ## 0.17.1 (2026-11-16)
 
 - An unknown `--person` is refused instead of guessed. `add`, `hold` and `wait-human` check the name against `profile.json` people (case ignored) and refuse with the known names when it is missing, so the agent asks rather than giving the person the default review cap of 3. Found when a GitHub login was passed where the profile said `jenny`.

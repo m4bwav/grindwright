@@ -338,18 +338,32 @@ def open_for_person(items, person):
     return len(sets)
 
 
+def canonical_person(profile, person):
+    """The profile name for `person`, matching the name or any of its `aliases` (case ignored); None when unknown."""
+    for name, entry in (profile.get("people") or {}).items():
+        if same_person(name, person) or any(same_person(a, person) for a in (entry or {}).get("aliases", [])):
+            return name
+    return None
+
+
 def check_person(profile, person):
-    """A name the profile's people list does not know is refused, never guessed: an unknown name would silently get
-    the default review cap of 3 (2026-11-16: a GitHub login was passed where the profile said 'jenny')."""
+    """Return the profile name for `person`. A name the people list does not know (as a name or an alias) is refused,
+    never guessed: an unknown name would silently get the default review cap of 3 (2026-11-16: a GitHub login was
+    passed where the profile said 'jenny'). Add logins and nicknames as `aliases` on the person."""
     people = profile.get("people") or {}
-    if person and people and not any(same_person(k, person) for k in people):
-        raise Refused([f"unknown person '{person}': profile.json people are {', '.join(sorted(people))}. "
-                       "Use one of those names, or ask the owner and add the person to profile.json"])
+    if not person or not people:
+        return person
+    name = canonical_person(profile, person)
+    if name is None:
+        known = ", ".join(f"{k} (aliases: {', '.join(v.get('aliases', []))})" if (v or {}).get("aliases") else k for k, v in sorted(people.items()))
+        raise Refused([f"unknown person '{person}': profile.json people are {known}. Use one of those, "
+                       "or ask the owner and add it to profile.json (a new person, or an alias under people.<name>.aliases)"])
+    return name
 
 
 def review_cap(profile, person):
-    people = {str(k).lower(): v for k, v in profile.get("people", {}).items()}
-    return people.get(str(person or "").lower(), {}).get("review_cap", 3)
+    name = canonical_person(profile, person)
+    return (profile.get("people") or {}).get(name, {}).get("review_cap", 3) if name else 3
 
 
 def area_key(area):
@@ -732,7 +746,7 @@ def cmd_add(store, args):
         "value": args.value, "human_min": args.human_min, "cost": args.cost, "state": "ready",
         "created": stamp(), "updated": stamp(),
     }
-    check_person(store.profile(), args.person)
+    args.person = check_person(store.profile(), args.person)
     optional = {"confidence": args.confidence, "road": args.road, "person": args.person, "host": args.host, "question": args.question, "guess": args.guess,
                 "signal": getattr(args, "signal", None), "from": getattr(args, "from_ref", None)}
     item.update({k: v for k, v in optional.items() if v})
@@ -1096,7 +1110,7 @@ def cmd_wait_human(store, args):
     person = args.person or item.get("person")
     if not person:
         raise Refused(["say who answers this (--person)"])
-    check_person(profile, person)
+    person = check_person(profile, person)
     grw_work.refuse_new_work(store, "wait-human", item)
     failures = eval_isolation_failures(profile) + list(derived_failures(item))
     others = [i["id"] for i in items if i.get("answered") and i["id"] != item["id"]]
@@ -1367,7 +1381,7 @@ def cmd_hold(store, args):
     person = args.person or item.get("person")
     if not person:
         raise Refused(["say who reviews this (--person)"])
-    check_person(store.profile(), person)
+    person = check_person(store.profile(), person)
     pictures = shots(store, item, args)
     item.update({"state": "drafted", "evidence": args.evidence, "person": person})
     if args.provenance:

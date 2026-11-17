@@ -66,7 +66,7 @@ analyse <id> --verdict shave --note N --shave-title T
 hold <id> --evidence E [--person P] [--provenance P]   checkpoint <id> "<note>"   redo <id> "<note>"   reject "<finding>" --why W
 ```
 
-- `--person` takes a name from `profile.json` people, never a login; an unknown name is refused: ask, don't guess.
+- `--person` takes a `profile.json` people name or one of its `aliases`; an unknown name is refused: ask, don't guess.
 - Small finished work with no item: one `log`.
 - Know the next item? `add` it. Named only in HANDOFF, the selector never sees it.
 - Checkpoint when a commit or a long render would be lost, not at each step.
