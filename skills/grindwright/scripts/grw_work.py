@@ -315,6 +315,19 @@ def names_issue(pr, number):
     return re.search(rf"#{number}(?!\d)", (pr.get("title") or "") + " " + (pr.get("body") or "")) is not None
 
 
+CLAIM_WORDS = r"(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?|refs?|references|part(?:\s+\w+)?\s+of)"
+
+
+def claims_issue(pr, number):
+    """A merged PR counts as the issue's work only when its title names the issue or its body says so with a keyword
+    (`Closes #N`, `Refs #N`, `Part 2 of #N`, also `owner/repo#N`). A plain mention, such as a follow-up named in
+    passing, does not."""
+    if re.search(rf"(?<![\w/])#{number}(?!\d)", pr.get("title") or ""):
+        return True
+    pattern = rf"(?i)\b{CLAIM_WORDS}\b[:\s]+(?:[\w.-]+/[\w.-]+)?#{number}(?!\d)"
+    return re.search(pattern, pr.get("body") or "") is not None
+
+
 def pr_key(source, repo):
     """Same-repository PRs by number, others as owner/name#N."""
     full = (source.get("repository") or {}).get("full_name") or "/".join((source.get("repository_url") or "").split("/")[-2:])
@@ -326,8 +339,9 @@ def pr_label(key):
 
 
 def referencing_prs(repo, number, open_prs, closed_prs):
-    """{pr: "open" | "merged" | "closed"} for every PR that names the issue in its title or body, or that GitHub lists as
-    cross-referencing it. When two sources disagree, open wins over merged, merged over closed."""
+    """{pr: "open" | "merged" | "closed"} for the PRs that touch the issue. Any mention of the issue by an open PR counts
+    (holding the label back is the safe mistake); a merged PR counts only when it claims the issue (claims_issue), from
+    the PR list or from GitHub's cross-references. When two sources disagree, open wins over merged, merged over closed."""
     found = {}
 
     def put(key, state):
@@ -337,14 +351,16 @@ def referencing_prs(repo, number, open_prs, closed_prs):
         if names_issue(pr, number):
             put(pr["number"], "open")
     for pr in closed_prs:
-        if names_issue(pr, number):
+        if claims_issue(pr, number):
             put(pr["number"], "merged" if pr.get("merged_at") else "closed")
     for event in gh_json(f"repos/{repo}/issues/{number}/timeline?per_page=100"):
         source = (event.get("source") or {}).get("issue") or {}
         if event.get("event") != "cross-referenced" or "pull_request" not in source:
             continue
-        merged = (source.get("pull_request") or {}).get("merged_at")
-        put(pr_key(source, repo), "open" if source.get("state") == "open" else "merged" if merged else "closed")
+        if source.get("state") == "open":
+            put(pr_key(source, repo), "open")
+        elif claims_issue(source, number):
+            put(pr_key(source, repo), "merged" if (source.get("pull_request") or {}).get("merged_at") else "closed")
     return found
 
 
@@ -385,8 +401,8 @@ def acceptance_pass(store, items, rows=None, dry_run=False):
     closed_prs = gh_json(f"repos/{repo}/pulls?state=closed&sort=updated&direction=desc&per_page=100")
     made = False
     for number in sorted(eligible):
-        if not any(p.get("merged_at") and names_issue(p, number) for p in closed_prs):
-            continue  # no merged PR among the newest 100 closed ones names it: not worth a timeline call
+        if not any(p.get("merged_at") and claims_issue(p, number) for p in closed_prs):
+            continue  # no merged PR among the newest 100 closed ones claims it: not worth a timeline call
         refs = referencing_prs(repo, number, open_prs, closed_prs)
         still_open = [pr_label(k) for k, v in refs.items() if v == "open"]
         merged = sorted((pr_label(k) for k, v in refs.items() if v == "merged"), key=lambda s: (len(s), s))

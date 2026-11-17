@@ -1,5 +1,9 @@
 # Changelog: grindwright
 
+## 0.19.1 (2026-11-17)
+
+- Ready for acceptance: a merged PR now counts only when it claims the issue: `#N` in its title, or a keyword before `#N` (or `owner/repo#N`) in its body: closes, fixes, resolves, refs, references, part of, part N of. A plain mention no longer qualifies, from the PR list or from the issue's timeline. Open PRs still disqualify on any mention. Reason: the first dry run on a real project would have labelled a follow-up art ticket that a merged PR named in passing ("no door art yet (#N)") (LEARNINGS L-011).
+
 ## 0.19.0 (2026-11-16)
 
 - The status page links to the steerwright project page (`/steer/p/<key>` on askwright's hub) when steerwright has a project naming this folder or grind state and the hub answers; no link otherwise. Chain runs have no served page of their own, so they are reached through the askwright project page's Chain runs card.

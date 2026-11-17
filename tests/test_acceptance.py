@@ -35,9 +35,9 @@ def pr(number, body, merged=True):
     return {"number": number, "title": f"Change {number}", "body": body, "merged_at": "2026-01-02T00:00:00Z" if merged else None}
 
 
-def cross_ref(number, state, merged=False, repo="o/r"):
+def cross_ref(number, state, merged=False, repo="o/r", body=""):
     return {"event": "cross-referenced", "source": {"type": "issue", "issue": {
-        "number": number, "state": state, "repository": {"full_name": repo},
+        "number": number, "state": state, "repository": {"full_name": repo}, "title": f"Change {number}", "body": body,
         "pull_request": {"merged_at": "2026-01-02T00:00:00Z" if merged else None}}}}
 
 
@@ -114,10 +114,29 @@ class Acceptance(Base):
     def test_timeline_adds_other_repositories_and_never_relabels_an_open_one(self):
         self.fake.issues = [issue(1, "Crash")]
         self.fake.closed_prs = [pr(5, "Refs #1")]
-        self.fake.timeline = {1: [cross_ref(5, "open"), cross_ref(3, "closed", merged=True, repo="o/tools")]}
+        tools = cross_ref(3, "closed", merged=True, repo="o/tools", body="Closes o/r#1")
+        self.fake.timeline = {1: [cross_ref(5, "open"), tools]}
         self.assertEqual(self.accept()["open_pr"], [{"issue": 1, "open": ["#5"]}])
-        self.fake.timeline = {1: [cross_ref(3, "closed", merged=True, repo="o/tools")]}
+        self.fake.timeline = {1: [tools]}
         self.assertEqual(self.accept()["ready"], [{"issue": 1, "merged": ["#5", "o/tools#3"]}])
+
+    def test_a_merged_pr_that_only_mentions_the_issue_does_not_count(self):
+        self.fake.issues = [issue(1, "Crash"), issue(2, "Door art")]
+        self.fake.closed_prs = [pr(5, "Closes #1\n\nNo door art yet (#2), so nothing draws.")]
+        self.fake.timeline = {2: [cross_ref(5, "closed", merged=True, body="No door art yet (#2), so nothing draws.")]}
+        out = self.accept()
+        self.assertEqual(out["ready"], [{"issue": 1, "merged": ["#5"]}])
+        self.assertEqual(out["labelled"], [1])
+
+    def test_claim_words_titles_and_plain_mentions(self):
+        claims = grw_work.claims_issue
+        for body in ("Closes #7", "fixes #7", "Resolved #7", "Refs #7", "Part of #7", "Part 2 of #7", "closes o/r#7",
+                     "References: #7"):
+            self.assertTrue(claims({"title": "", "body": body}, 7), body)
+        self.assertTrue(claims({"title": "Herds shelter in snow (#7)", "body": ""}, 7))
+        for body in ("See #7 for the art.", "Follow-up: #7", "Closes #70", "Closes #17", "Depends on #7"):
+            self.assertFalse(claims({"title": "", "body": body}, 7), body)
+        self.assertFalse(claims({"title": "Bump o/r#7", "body": ""}, 7))
 
     def test_human_only_and_skip_labels_are_left_alone(self):
         self.fake.issues = [issue(1, "Crash", ("bug", "needs-human")), issue(2, "Hang", ("bug", "wontfix"))]
