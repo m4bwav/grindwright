@@ -8,7 +8,7 @@ its rules restrict what may appear there, keep the state outside it and pass `--
 ```json
 {
  "project": "Tiny Colony", "repo": "../tiny-colony", "min_value": 2, "escalate_after": 2,
- "people": {"owner": {"review_cap": 3}},
+ "people": {"owner": {"review_cap": 3, "aliases": ["owner-github-login"]}},
  "lanes": {
   "cards": {"kind": "art", "host": "gpu", "person": "owner"},
   "buildings": {"kind": "animation", "needs": ["pixelwright"], "batch_min": {"owner": 5}, "stack_on_pending": false},
@@ -25,6 +25,7 @@ its rules restrict what may appear there, keep the state outside it and pass `--
 ```
 
 - `review_cap`: open review sets or PRs a person may have before the plugin does other work.
+- `aliases`: other names for the person (a GitHub login, a nickname). `--person` accepts the name or any alias, case ignored, and the ledger stores the name. Any other name is refused with the known names listed: ask the owner and add it here, never guess.
 - `kind`: art, animation, sound, music, video, edit, voice, writing, tests, juice, balance, marketing, model, demo, code, maintenance, meta. It sets the
   default plugin and the share cap. `needs` overrides the plugin list (a nested list means any one of them; sound defaults to sfxwright or musicwright); `share_cap` overrides the cap.
 - `batch_min`: smallest batch per person. `stack_on_pending`: `false` defers the lane while a review is open.
