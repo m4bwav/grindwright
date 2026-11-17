@@ -233,6 +233,29 @@ def askwright_link(state):
     return f"http://127.0.0.1:{port}/projects/{slug}"
 
 
+def steerwright_link(state):
+    """The steerwright project page (mounted at /steer/ on askwright's hub) for this folder, only when steerwright
+    has a project naming this folder or grind state and the hub answers. None otherwise."""
+    reg = Path(os.environ.get("STEERWRIGHT_HOME") or Path.home() / ".steerwright") / "projects.json"
+    try:
+        projects = json.loads(reg.read_text("utf-8")).get("projects") or {}
+    except (OSError, ValueError, AttributeError):
+        return None
+    norm = lambda p: Path(p).resolve().as_posix().lower()
+    here, st = norm(project_dir(state)), norm(state)
+    key = next((k for k, rec in projects.items() if isinstance(rec, dict) and (
+        here in {norm(p) for p in rec.get("paths") or []}
+        or st in {norm(p) for p in (rec.get("sources") or {}).get("grindwright") or []})), None)
+    if not key:
+        return None
+    try:
+        port = int(os.environ.get("ASKWRIGHT_PORT") or 47631)
+        socket.create_connection(("127.0.0.1", port), 0.3).close()
+    except (OSError, ValueError):
+        return None
+    return f"http://127.0.0.1:{port}/steer/p/{key}"
+
+
 def collect(state, since=None):
     root = Path(state)
     now = dt.datetime.now()
@@ -306,7 +329,7 @@ def collect(state, since=None):
         "timing": timing_rows[-10:],
         "logs": _log_stats(root / "logs", since),
         "who": who(root),
-        "links": {k: v for k, v in {"askwright": askwright_link(root)}.items() if v},
+        "links": {k: v for k, v in {"askwright": askwright_link(root), "steerwright": steerwright_link(root)}.items() if v},
     }
 
 
@@ -347,7 +370,7 @@ const link=s=>e(s).replace(/(https?:\/\/[^\s,]+)/g,'<a href="$1" target="_blank"
 const dur=m=>m==null||isNaN(m)||m<0?'':m<60?Math.round(m)+' min':Math.floor(m/60)+' h '+Math.round(m%60)+' min';
 const since=(t,now)=>t?(Date.parse(now)-Date.parse(t))/60000:null;
 function drawWho(d){const w=d.who||{rows:[],problems:['no session data']};
-links.innerHTML=Object.entries(d.links||{}).map(([k,u])=>`<a href="${e(u)}">${k==='askwright'?'&larr; askwright project page':e(k)}</a>`).join(' &middot; ');
+links.innerHTML=Object.entries(d.links||{}).map(([k,u])=>`<a href="${e(u)}">${k==='askwright'?'&larr; askwright project page':k==='steerwright'?'steerwright project page':e(k)}</a>`).join(' &middot; ');
 document.getElementById('who-h').textContent='Who is running in this project'+(w.built?' (checked '+hm(w.built)+(w.note?', '+w.note:'')+')':'');
 const rows=(w.rows||[]).map(r=>{const what=(r.claims||[]).map(c=>e(c.id+' '+c.title)).join('; ')||e(r.title||r.name||'(no claimed task)');
  const subs=(r.subagents||[]).map(a=>e(a.description)+' <span class="mute">('+e(a.status)+')</span>').join(', ');

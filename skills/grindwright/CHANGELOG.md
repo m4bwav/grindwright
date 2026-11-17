@@ -1,8 +1,16 @@
 # Changelog: grindwright
 
-## 0.17.3 (2026-11-16)
+## 0.19.1 (2026-11-17)
 
 - Ready for acceptance: a merged PR now counts only when it claims the issue: `#N` in its title, or a keyword before `#N` (or `owner/repo#N`) in its body: closes, fixes, resolves, refs, references, part of, part N of. A plain mention no longer qualifies, from the PR list or from the issue's timeline. Open PRs still disqualify on any mention. Reason: the first dry run on a real project would have labelled a follow-up art ticket that a merged PR named in passing ("no door art yet (#N)") (LEARNINGS L-011).
+
+## 0.19.0 (2026-11-16)
+
+- The status page links to the steerwright project page (`/steer/p/<key>` on askwright's hub) when steerwright has a project naming this folder or grind state and the hub answers; no link otherwise. Chain runs have no served page of their own, so they are reached through the askwright project page's Chain runs card.
+
+## 0.18.0 (2026-11-16)
+
+- Commercial products and websites (owner's request): `grw.py product-scan` lists test gaps (no e2e, pages no e2e spec mentions, no approval or snapshot tests), outdated and vulnerable npm packages, deprecated packages and deprecation warnings from the project's own commands, and feature-idea prompts for the owner. Findings carry an `add` line keyed `product:<key>`; added or skipped ones stop showing. `grw.py product-due` runs the tracks on a schedule (`product.every_days`). New reference products.md.
 
 ## 0.17.2 (2026-11-16)
 
