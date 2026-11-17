@@ -157,6 +157,25 @@ class WhoIsRunning(unittest.TestCase):
         with mock.patch.dict("os.environ", {"ASKWRIGHT_HOME": str(Path(self.dir.name) / "none")}):
             self.assertIsNone(grw_status.askwright_link(self.state))
 
+    def test_steerwright_link_only_when_project_known_and_hub_up(self):
+        home = Path(self.dir.name) / "steerhome"
+        home.mkdir()
+        (home / "projects.json").write_text(json.dumps({"projects": {
+            "other": {"paths": [str(Path(self.dir.name) / "elsewhere")]},
+            "colony": {"paths": [], "sources": {"grindwright": [str(self.state)]}}}}), encoding="utf-8")
+        import socket
+        hub = socket.socket()
+        hub.bind(("127.0.0.1", 0))
+        hub.listen()
+        self.addCleanup(hub.close)
+        env = {"STEERWRIGHT_HOME": str(home), "ASKWRIGHT_PORT": str(hub.getsockname()[1])}
+        with mock.patch.dict("os.environ", env):
+            self.assertEqual(grw_status.steerwright_link(self.state), f"http://127.0.0.1:{env['ASKWRIGHT_PORT']}/steer/p/colony")
+            hub.close()
+            self.assertIsNone(grw_status.steerwright_link(self.state))
+        with mock.patch.dict("os.environ", {"STEERWRIGHT_HOME": str(Path(self.dir.name) / "none")}):
+            self.assertIsNone(grw_status.steerwright_link(self.state))
+
     def test_page_inline_needs_no_fetch(self):
         page = grw_status.page({"project": "</script><b>x", "who": {"rows": []}})
         self.assertNotIn("fetch('api'", page)

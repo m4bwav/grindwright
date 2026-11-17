@@ -1,5 +1,9 @@
 # Changelog: grindwright
 
+## 0.19.0 (2026-11-16)
+
+- The status page links to the steerwright project page (`/steer/p/<key>` on askwright's hub) when steerwright has a project naming this folder or grind state and the hub answers; no link otherwise. Chain runs have no served page of their own, so they are reached through the askwright project page's Chain runs card.
+
 ## 0.18.0 (2026-11-16)
 
 - Commercial products and websites (owner's request): `grw.py product-scan` lists test gaps (no e2e, pages no e2e spec mentions, no approval or snapshot tests), outdated and vulnerable npm packages, deprecated packages and deprecation warnings from the project's own commands, and feature-idea prompts for the owner. Findings carry an `add` line keyed `product:<key>`; added or skipped ones stop showing. `grw.py product-due` runs the tracks on a schedule (`product.every_days`). New reference products.md.
