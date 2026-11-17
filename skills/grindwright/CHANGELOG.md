@@ -1,5 +1,9 @@
 # Changelog: grindwright
 
+## 0.17.1 (2026-11-16)
+
+- An unknown `--person` is refused instead of guessed. `add`, `hold` and `wait-human` check the name against `profile.json` people (case ignored) and refuse with the known names when it is missing, so the agent asks rather than giving the person the default review cap of 3. Found when a GitHub login was passed where the profile said `jenny`.
+
 ## 0.17.0 (2026-11-16)
 
 - Who is running. The status page (`grw.py status --serve`) gains a card listing every agent session seen in the project: status (live, recent, possibly stale, claimed with no session seen), the claimed item, branch, worktree, machine, start, time working and time quiet, subagents, and how each row is known. It uses askwright's `agents.py` collector when askwright is installed (sessions that claimed nothing show too); without it, the ledger's running claims show, and the page says sessions that claimed nothing are not listed. A collector failure is said in words, never shown as an empty list. Rows carry titles, ids, branches and times, never message text.

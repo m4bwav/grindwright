@@ -338,6 +338,15 @@ def open_for_person(items, person):
     return len(sets)
 
 
+def check_person(profile, person):
+    """A name the profile's people list does not know is refused, never guessed: an unknown name would silently get
+    the default review cap of 3 (2026-11-16: a GitHub login was passed where the profile said 'jenny')."""
+    people = profile.get("people") or {}
+    if person and people and not any(same_person(k, person) for k in people):
+        raise Refused([f"unknown person '{person}': profile.json people are {', '.join(sorted(people))}. "
+                       "Use one of those names, or ask the owner and add the person to profile.json"])
+
+
 def review_cap(profile, person):
     people = {str(k).lower(): v for k, v in profile.get("people", {}).items()}
     return people.get(str(person or "").lower(), {}).get("review_cap", 3)
@@ -723,6 +732,7 @@ def cmd_add(store, args):
         "value": args.value, "human_min": args.human_min, "cost": args.cost, "state": "ready",
         "created": stamp(), "updated": stamp(),
     }
+    check_person(store.profile(), args.person)
     optional = {"confidence": args.confidence, "road": args.road, "person": args.person, "host": args.host, "question": args.question, "guess": args.guess,
                 "signal": getattr(args, "signal", None), "from": getattr(args, "from_ref", None)}
     item.update({k: v for k, v in optional.items() if v})
@@ -1086,6 +1096,7 @@ def cmd_wait_human(store, args):
     person = args.person or item.get("person")
     if not person:
         raise Refused(["say who answers this (--person)"])
+    check_person(profile, person)
     grw_work.refuse_new_work(store, "wait-human", item)
     failures = eval_isolation_failures(profile) + list(derived_failures(item))
     others = [i["id"] for i in items if i.get("answered") and i["id"] != item["id"]]
@@ -1356,6 +1367,7 @@ def cmd_hold(store, args):
     person = args.person or item.get("person")
     if not person:
         raise Refused(["say who reviews this (--person)"])
+    check_person(store.profile(), person)
     pictures = shots(store, item, args)
     item.update({"state": "drafted", "evidence": args.evidence, "person": person})
     if args.provenance:

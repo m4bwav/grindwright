@@ -278,6 +278,15 @@ class HumanQueue(Base):
     def test_add_question_needs_guess(self):
         self.grw("add", "q", "--lane", "code", "--source", "t", "--value", "3", "--question", "Which?", expect=2)
 
+    def test_unknown_person_is_refused_not_given_a_default_cap(self):
+        out = self.grw("add", "x", "--lane", "code", "--source", "t", "--value", "3", "--person", "alexgithub", expect=2)
+        self.assertIn("unknown person 'alexgithub'", out["refused"][0])
+        item = self.add("y")
+        self.grw("claim", item)
+        out = self.grw("hold", item, "--evidence", "e", "--person", "nobody", expect=2)
+        self.assertIn("alex, sam", out["refused"][0])
+        self.grw("hold", item, "--evidence", "e", "--person", "Alex")
+
     def test_cap_defers_more_asks(self):
         guess = {"option": "a", "why": "reads best"}
         for n in range(2):
@@ -476,7 +485,7 @@ class Proof(Base):
 
     def test_no_shots_needs_a_reason_and_code_needs_none(self):
         art = self.add("card", 3, 0, "art")
-        self.grw("hold", art, "--person", "P", "--evidence", "e", "--provenance", "p", "--no-shots", "audio-only change to the card's sound")
+        self.grw("hold", art, "--person", "alex", "--evidence", "e", "--provenance", "p", "--no-shots", "audio-only change to the card's sound")
         code = self.add("parser", 3, 0)
         self.grw("done", code, "--evidence", "green", "--oracle", "tests")
 
