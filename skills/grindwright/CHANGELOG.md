@@ -1,5 +1,9 @@
 # Changelog: grindwright
 
+## 0.18.0 (2026-11-16)
+
+- Commercial products and websites (owner's request): `grw.py product-scan` lists test gaps (no e2e, pages no e2e spec mentions, no approval or snapshot tests), outdated and vulnerable npm packages, deprecated packages and deprecation warnings from the project's own commands, and feature-idea prompts for the owner. Findings carry an `add` line keyed `product:<key>`; added or skipped ones stop showing. `grw.py product-due` runs the tracks on a schedule (`product.every_days`). New reference products.md.
+
 ## 0.17.2 (2026-11-16)
 
 - People can have aliases: `people.<name>.aliases` in `profile.json` (a GitHub login, a nickname). `--person` accepts the name or an alias, case ignored; the ledger stores the profile name, so caps and counts stay on one person. The unknown-person refusal lists each person's aliases and says to add a missing one there.

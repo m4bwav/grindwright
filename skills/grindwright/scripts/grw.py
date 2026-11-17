@@ -32,9 +32,10 @@ import grw_handoff
 import grw_remote
 import grw_work
 import grw_status
+import grw_product
 from grw_work import Refused
 
-VERSION = "0.17.0"
+VERSION = "0.18.0"
 FORMAT = 1
 STATES = ("ready", "running", "waiting-on-human", "waiting-on-machine", "done", "dropped")
 COST_UNITS = {"S": 1, "M": 3, "L": 8}
@@ -2095,6 +2096,7 @@ def build_parser():
     p.add_argument("--area")
     grw_work.add_parsers(add)
     grw_status.add_parsers(add)
+    grw_product.add_parsers(add)
 
     add("queue", cmd_queue, "what each person has open, and proposed questions")
 

@@ -1,17 +1,16 @@
 ---
 name: grindwright
-description: "Use to keep an indie game, or a long film, video or story project, moving like a solo maker who never stops: pick the most valuable work across lanes (art, animation, writing, voices, sound, music, shots and edits, trailers, balance, testing and bugs, unfinished features, maintenance, marketing), do everything that needs no person, ask questions where the project already talks (issues, PR comments, discussions) or on a decision page, and switch lanes instead of waiting, and end each session with the same start command. A ledger and a selector script rank value first, with human minutes as the discount. Use on 'grind on my game', 'keep working on the game', 'grind on my film', 'what should I work on next', 'everything is waiting on me', 'work through the backlog while I'm away', 'run unattended', or a continue prompt that names grindwright. Also 'refresh grindwright'. Not for one design question (ludowright), one juice pass (game-juice) or one asset."
+description: "Use to keep an indie game, or a long film, video or story project, moving like a solo maker who never stops: pick the most valuable work across lanes (art, animation, writing, voices, sound, music, shots and edits, trailers, balance, testing and bugs, unfinished features, maintenance, marketing; for products and websites test gaps, npm updates, deprecations, feature ideas), do everything that needs no person, ask questions where the project already talks (issues, PR comments, discussions) or on a decision page, and switch lanes instead of waiting, and end each session with the same start command. A ledger and a selector script rank value first, with human minutes as the discount. Use on 'grind on my game', 'keep working on the game', 'grind on my film', 'what should I work on next', 'everything is waiting on me', 'work through the backlog while I'm away', 'run unattended', or a continue prompt that names grindwright. Also 'refresh grindwright'. Not for one design question (ludowright), one juice pass (game-juice) or one asset."
 metadata:
-  version: "0.17.0"
+  version: "0.18.0"
 ---
 
 # grindwright
 
-Work on a game, or a film, video series or story, the way a grinding solo maker would. Non-game projects: [projects.md](references/projects.md). **Blocked is a state of one lane, never of the session.**
+Work on a project the way a grinding solo maker would. Films: [projects.md](references/projects.md); products, sites: [products.md](references/products.md). **Blocked is a state of one lane, never of the session.**
 
-Script: `scripts/grw.py` in this folder (Python 3.9+, standard library). Run it by full path (`python` on Windows, `python3` elsewhere), with `--state <folder>`
-when the state is not at `ai-docs/grind`. Every command prints one JSON object; exit 2 means a gate refused and the
-JSON says why. Fix the cause. There is no override for a gate except `session end --force "<why>"`.
+Script: `scripts/grw.py` in this folder (Python 3.9+, standard library). Run it by full path, with `--state <folder>`
+when the state is not at `ai-docs/grind`. Every command prints JSON; exit 2 means a gate refused and says why. Fix the cause. Only `session end --force "<why>"` overrides a gate.
 
 Read on demand: [loop details and lanes](references/loop.md), [profile and road](references/profile.md),
 [running unattended](references/chaining.md), [several sessions at once](references/crew.md), [other computers](references/machines.md), [issues, todo files, task lists, knowledge bases](references/work-sources.md), [saving tokens](references/tokens.md), [engine verification](references/engine-verify.md), [demo lane](references/demo.md).
