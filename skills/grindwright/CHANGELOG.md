@@ -1,5 +1,9 @@
 # Changelog: grindwright
 
+## 0.19.3 (2026-11-18)
+
+- Art lane (references/loop.md): search owned packs with AssetCat before generating or buying. Reason: technique-harvest GPU test 2026-11-18 (post 1xuksmh: 17/25 hits in the top 5).
+
 ## 0.19.2 (2026-11-17)
 
 - Testing lane (loop.md): route bots that play each character's route every session, plus in-page probes after each change. Reason: technique harvest D13, credited to the r/aigamedev post 1xs7pj3.
