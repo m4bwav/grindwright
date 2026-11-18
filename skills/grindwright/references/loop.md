@@ -55,6 +55,8 @@ branch and link them (private repositories: the `blob/...?raw=true` form above).
 item on a visible lane without `--shots <files>` or `--no-shots "<why>"`; the run report shows them per item. A lane
 sets `"visible": true|false` in the profile to override its kind.
 
+Art lane: before generating or buying an asset, search the packs the project already owns with [AssetCat](https://github.com/digitalhobbit/assetcat) (MIT, local; `assetcat search --meaning "wooden door" --json`): 17 of 25 right hits in the top 5 on 16 px tiles, weak on characters, so look at the top 10.
+
 An art PR with no art on its page is not reviewable. The pictures go **in the PR body itself**, inline, not only
 in a later comment or a contact sheet the agent "looked at": at least one GIF or contact sheet per asset group
 (per building, per sprite set), so the reviewer sees every piece without checking out the branch. This holds for
