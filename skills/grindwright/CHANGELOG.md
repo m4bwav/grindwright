@@ -1,5 +1,9 @@
 # Changelog: grindwright
 
+## 0.19.5 (2026-11-18)
+
+- SKILL.md description cut from 1,042 to 906 characters, under the spec's 1,024 limit (tokenwright lint). Every trigger phrase kept; dropped the session start-command clause (chainwright owns it) and tightened the lane list.
+
 ## 0.19.4 (2026-11-18)
 
 - references/engine-verify.md, Determinism first: the browser form (URL flag that skips the animation loop, a console `step(seconds)` at fixed dt, `?seed` and scenario flags, an autopilot), so a headless run can load, step and screenshot. Reason: technique-harvest post robinduckett-1; idea source robinduckett/boo-mas (no licence, so our own words, no code copied).
