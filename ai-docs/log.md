@@ -219,3 +219,4 @@ At the owner's request: a README "Works with" section and a Works-With wiki page
 
 - 2026-11-16: 0.15.0 stale takeover and handoff. Ruling: a fresh host claim is never taken over, even with --take-over (before, the flag overrode it). sync keeps an expired lease with a branch paused for its owner until stale.
 - 2026-11-16: dead end: a handoff test run without --worktree committed and pushed the developer's own worktree (default was the current folder). Fixed: handoff refuses to commit unless the item names a branch and the worktree is on it. Stray branch feat/stale-takeover-handoff deleted; work shipped from feat/takeover-handoff.
+- 2026-11-18: another session's uncommitted LEARNINGS notes (Arvum runs, 2026-11-11/12) were merged from the shared clone as five entries; the clone was reset to main so the installed plugin could move past 0.19.0.

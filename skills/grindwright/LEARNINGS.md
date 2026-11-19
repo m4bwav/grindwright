@@ -131,3 +131,38 @@
 - Evidence: Arvum session 2026-11-11 late night.
 - Scope: skill
 - Status: active · helpful 0 · harmful 0 · last_confirmed 2026-11-11
+
+## L-20261112-reject-names-item: `reject` does not close the ledger item it names
+- Observed: `reject "<finding>"` left an existing duplicate item open; closing it took `done <id> --oracle none --no-shots ... --provenance ...`. Also: PRs merged into a stacked base branch after that base merged are stranded off main.
+- Rule: close a duplicate with `done` (or `drop --why`) until `reject` takes an item id; `pr-sync` could flag PRs whose base branch already merged.
+- Evidence: Arvum art pilot 2026-11-12; PRs 34/35 into destruction-hook after #33 merged, recovered as PR 108.
+- Scope: skill
+- Status: active · helpful 0 · harmful 0 · last_confirmed 2026-11-12
+
+## L-20261111-require-text: `grind_loop.py --require-text grindwright` stopped a healthy run
+- Observed: the run stopped as plugin-missing after 3 sessions; session replies need not contain the word.
+- Rule: match on something the skill always prints (the start command path) or check the transcript for the Skill call. -> grind_loop.py
+- Evidence: Arvum run 2026-11-11.
+- Scope: skill
+- Status: active · helpful 0 · harmful 0 · last_confirmed 2026-11-11
+
+## L-20261111-deferred-big-item: driven sessions defer a big item forever
+- Observed: sessions skipped the top item as "needs a full session" until the run stopped no-progress; an `--owner-note` item broke the loop.
+- Rule: `next` should not let a session skip the top item without a checkpoint. -> grw.py next / loop.md
+- Evidence: Arvum run 2026-11-11.
+- Scope: skill
+- Status: active · helpful 0 · harmful 0 · last_confirmed 2026-11-11
+
+## L-20261112-ticket-first-no-issues: `ticket_first` refuses where agents may open PRs but not issues
+- Observed: claim and `next --claim` refused on a project whose owner allows agent PRs but not agent issues.
+- Rule: needs a profile opt-out; meanwhile hold without claiming.
+- Evidence: Arvum chain 2026-11-12.
+- Scope: skill
+- Status: active · helpful 0 · harmful 0 · last_confirmed 2026-11-12
+
+## L-20261111-lint-text-positional: `lint-text "<body>"` reads the body as a file path
+- Observed: `grw.py lint-text "<body>"` crashed with OSError on Windows (the argument is a file name).
+- Rule: pipe the body on stdin (`lint-text < body.md`) or pass a file. Fix: detect a non-path argument and say so.
+- Evidence: Arvum session 2026-11-11.
+- Scope: skill
+- Status: active · helpful 0 · harmful 0 · last_confirmed 2026-11-11
