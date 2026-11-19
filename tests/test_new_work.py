@@ -37,7 +37,7 @@ class Mode(Base):
         return [r["id"] for r in self.grw("rank", "--no-probe")["ranked"]]
 
     def test_off_ranks_only_owner_driven_and_survives_between_runs(self):
-        self.assertEqual(self.ranked()[0], self.fresh)
+        self.assertEqual(self.ranked(), [self.review, self.fresh])  # PR comments come before new work (grw.ORDER)
         shown = self.grw("new-work", "off", "--why", "catching up")
         self.assertEqual((shown["new_work"], shown["held"], shown["owner_driven"]), ("off", [self.fresh], [self.review]))
         self.assertEqual(json.loads((self.state / "mode.json").read_text(encoding="utf-8"))["new_work"], "off")
@@ -100,7 +100,7 @@ class Mode(Base):
         self.assertEqual(self.ranked(), [self.review])
         self.assertFalse((self.state / "mode.json").exists())
         os.environ.pop(grw_work.MODE_ENV)
-        self.assertEqual(self.ranked()[0], self.fresh)
+        self.assertEqual(self.ranked(), [self.review, self.fresh])  # PR comments come before new work (grw.ORDER)
 
 
 class Driver(unittest.TestCase):

@@ -35,7 +35,7 @@ import grw_status
 import grw_product
 from grw_work import Refused
 
-VERSION = "0.19.7"
+VERSION = "0.20.0"
 FORMAT = 1
 STATES = ("ready", "running", "waiting-on-human", "waiting-on-machine", "done", "dropped")
 COST_UNITS = {"S": 1, "M": 3, "L": 8}
@@ -403,6 +403,34 @@ def handled_elsewhere(item, sid):
     return bool(held) and held.get("session") != sid and parse_time(held["until"]) > now()
 
 
+ORDER = ("owner-note", "pr-conflicts", "pr-comments", "answers", "handoff", "tickets", "other")
+
+
+def order_of(profile):
+    """The profile's `order`, first wins; categories it leaves out keep their default place after the listed ones.
+    The owner's own request always comes first: a profile cannot rank routine work above it."""
+    listed = [c for c in profile.get("order") or () if c in ORDER and c != "owner-note"]
+    rest = [c for c in ORDER if c not in listed and c != "owner-note"]
+    return {c: i for i, c in enumerate(["owner-note"] + listed + rest)}
+
+
+def category(entry, item):
+    if entry["action"] == "act-on-owner-note":
+        return "owner-note"
+    if item.get("conflict_of"):
+        return "pr-conflicts"
+    if item.get("review_of"):
+        return "pr-comments"
+    named = {"act-on-answers": "answers", "continue-handoff": "handoff"}.get(entry["action"])
+    return named or ("tickets" if item.get("issue") else "other")
+
+
+def ticket_sources(profile):
+    work = profile.get("work", {})
+    lists = [work[k]["path"] for k in ("tasks", "todo") if isinstance(work.get(k), dict) and work[k].get("path")]
+    return lists + list(work.get("plans") or ["unbuilt design-doc sections"]) + ["open issues"]
+
+
 def select(profile, road, items, events, session, hosts_alive=None, hosts_idle=(), closed=None, sid=SOLO, quiet=False, gates=None):
     """Rank everything. Returns dict with ranked, deferred, answers_first, redo. No side effects.
     quiet: new work is off, so only owner-driven items rank (references/new-work.md).
@@ -443,7 +471,7 @@ def select(profile, road, items, events, session, hosts_alive=None, hosts_idle=(
             else:
                 score, why = score_item(item, items, road, hosts_idle)
                 ranked.append({"id": item["id"], "title": item["title"], "lane": item.get("lane"), "score": score,
-                               "class": item_class(item), "action": "ask-drafted",
+                               "class": item_class(item), "action": "ask-drafted", "category": "tickets" if item.get("issue") else "other",
                                "why": ["drafted and the review queue has room: put it to the person"] + why})
             continue
         if item["state"] != "ready":
@@ -510,6 +538,7 @@ def select(profile, road, items, events, session, hosts_alive=None, hosts_idle=(
         elif draft_only:
             entry["action"] = "draft"
             entry["why"] = [f"{person}'s review queue is full: make the draft, then grw.py hold; ask later"] + why
+        entry["category"] = category(entry, item)
         cap = lane.get("share_cap")
         if cap is None and lane.get("kind") == "maintenance":
             cap = MAINT_SHARE_CAP
@@ -520,7 +549,8 @@ def select(profile, road, items, events, session, hosts_alive=None, hosts_idle=(
             capped.append(entry)
             continue
         ranked.append(entry)
-    ranked.sort(key=lambda e: (e["action"] != "act-on-owner-note", e["action"] != "act-on-answers", e["action"] != "continue-handoff", e.get("priority", grw_work.PRIORITY_DEFAULT), -e["score"], e["id"]))
+    rank = order_of(profile)
+    ranked.sort(key=lambda e: (rank[e["category"]], e.get("priority", grw_work.PRIORITY_DEFAULT), -e["score"], e["id"]))
     capped.sort(key=lambda e: (e.get("priority", grw_work.PRIORITY_DEFAULT), -e["score"], e["id"]))
     if not ranked and (discovered or quiet):
         ranked, capped = capped, []
@@ -856,7 +886,10 @@ def next_answer(store, args):
                                                      ": survey the game against each and add items with --road, then grw.py surveyed <id>"
                                                      " (--why if nothing is missing), or set met: true in road.json with evidence"],
                          "road": blind}, "deferred": result["deferred"]}
-    stop = {"next": {"action": "stop", "why": ["nothing selectable after a discovery pass; do not invent work"]},
+    sources = ticket_sources(store.profile())
+    stop = {"next": {"action": "stop", "ticket_sources": sources,
+                     "why": ["nothing selectable after a discovery pass; do not invent work",
+                             "file the best few as proposals (ticket --propose) from: " + ", ".join(sources)]},
             "deferred": result["deferred"]}
     return stop
 
@@ -1486,6 +1519,11 @@ def cmd_doctor(store, args):
 def profile_conflicts(profile):
     """Settings that contradict each other, so a session does not find out mid-batch."""
     out = []
+    unknown = [c for c in profile.get("order") or () if c not in ORDER]
+    if unknown:
+        out.append("order names unknown categories (" + ", ".join(map(str, unknown)) + "): use " + ", ".join(ORDER))
+    if "owner-note" in (profile.get("order") or ())[1:]:
+        out.append("order lists owner-note after other work: the owner's own request always ranks first, so that place is ignored")
     guard = str(profile.get("guards", {}).get("stack_on_pending", "deny"))
     if not guard.startswith("allow"):
         for name, lane in profile.get("lanes", {}).items():
