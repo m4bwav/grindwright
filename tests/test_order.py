@@ -43,6 +43,20 @@ class Order(Base):
         self.profile({"order": ["tickets", "answers"]})
         self.assertEqual([r["id"] for r in self.ranked()], [self.ticket, self.answers, self.conflict, self.comments, self.other])
 
+    def test_owner_request_overrides_any_profile_order(self):
+        self.profile({"order": ["tickets", "answers", "owner-note"]})
+        note = self.add("Owner asked for this", 1, 0, "code", "--owner-note")
+        got = self.ranked()
+        self.assertEqual(got[0]["id"], note)
+        self.assertEqual(got[0]["category"], "owner-note")
+        self.assertEqual([r["id"] for r in got[1:3]], [self.ticket, self.answers])
+
+    def test_owner_note_listed_late_is_a_profile_conflict(self):
+        found = grw.profile_conflicts({"order": ["answers", "owner-note"]})
+        self.assertEqual(len(found), 1)
+        self.assertIn("always ranks first", found[0])
+        self.assertEqual(grw.profile_conflicts({"order": ["owner-note", "answers"]}), [])
+
     def test_value_still_ranks_inside_a_category(self):
         better = self.add("Second approved ticket", 5)
         self.mark(better, issue=13, triaged=True, greenlit_by="alex")

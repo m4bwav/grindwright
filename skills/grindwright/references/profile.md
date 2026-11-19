@@ -40,7 +40,8 @@ its rules restrict what may appear there, keep the state outside it and pass `--
   merge conflicts on the agent's open PRs, owner comments on them, askwright answers, another session's handoff,
   issue tickets (green-lit when `require_greenlight` is on), then everything else. Inside a category, priority and
   value rank as before. Categories left out follow the listed ones in default order; an unknown name is a `doctor`
-  conflict. When nothing is selectable, the `stop` step names its `ticket_sources` to file proposals from:
+  conflict. `owner-note` is fixed in first place: whatever the owner asks for at session start or mid-session
+  (`add --owner-note`) overrides the order, and listing it lower is a `doctor` conflict that changes nothing. When nothing is selectable, the `stop` step names its `ticket_sources` to file proposals from:
   `work.tasks` and `work.todo` paths, `work.plans` (a list of design docs or folders, default "unbuilt design-doc
   sections"), and open issues.
 

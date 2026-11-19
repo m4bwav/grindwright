@@ -407,9 +407,11 @@ ORDER = ("owner-note", "pr-conflicts", "pr-comments", "answers", "handoff", "tic
 
 
 def order_of(profile):
-    """The profile's `order`, first wins; categories it leaves out keep their default place after the listed ones."""
-    listed = [c for c in profile.get("order") or () if c in ORDER]
-    return {c: i for i, c in enumerate(listed + [c for c in ORDER if c not in listed])}
+    """The profile's `order`, first wins; categories it leaves out keep their default place after the listed ones.
+    The owner's own request always comes first: a profile cannot rank routine work above it."""
+    listed = [c for c in profile.get("order") or () if c in ORDER and c != "owner-note"]
+    rest = [c for c in ORDER if c not in listed and c != "owner-note"]
+    return {c: i for i, c in enumerate(["owner-note"] + listed + rest)}
 
 
 def category(entry, item):
@@ -1520,6 +1522,8 @@ def profile_conflicts(profile):
     unknown = [c for c in profile.get("order") or () if c not in ORDER]
     if unknown:
         out.append("order names unknown categories (" + ", ".join(map(str, unknown)) + "): use " + ", ".join(ORDER))
+    if "owner-note" in (profile.get("order") or ())[1:]:
+        out.append("order lists owner-note after other work: the owner's own request always ranks first, so that place is ignored")
     guard = str(profile.get("guards", {}).get("stack_on_pending", "deny"))
     if not guard.startswith("allow"):
         for name, lane in profile.get("lanes", {}).items():
