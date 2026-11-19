@@ -7,3 +7,7 @@ Not on a registry, so examples run against a fresh clone of the repository: `202
 Not tested for the wiki: `grind_loop.py --go`, the plugin install lines, the eval command.
 
 Update: rerun the script against the new tag, `wikiwright.py diffout` against the saved output, fix the pages named by the differences, then bump the footer and Versions-and-Upgrading.
+
+## Update 2026-11-18 (0.19.7)
+
+Reran as `2026-11-18-wiki-verify.py v0.19.7` (now masks the local claude path and the scratch game folder; output in `2026-11-18-wiki-verify.out.txt`). Pages changed: Home, How-Work-Is-Ranked (cost S x1.15 factor), Errors-and-Edge-Cases (`--pr or --why`), Development (258 tests), Versions-and-Upgrading, Works-With (dropped repeated title), footer. check, outputs, snippets and live all clean. The doctor section's plugin list depends on what the machine has installed. evergreen audit still finds the unit at the repo root after the 0.19.7 move (`evergreen.py status <repo path>` works; `status grindwright` by bare name does not).
