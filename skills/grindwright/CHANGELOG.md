@@ -1,5 +1,9 @@
 # Changelog: grindwright
 
+## 0.19.4 (2026-11-18)
+
+- references/engine-verify.md, Determinism first: the browser form (URL flag that skips the animation loop, a console `step(seconds)` at fixed dt, `?seed` and scenario flags, an autopilot), so a headless run can load, step and screenshot. Reason: technique-harvest post robinduckett-1; idea source robinduckett/boo-mas (no licence, so our own words, no code copied).
+
 ## 0.19.3 (2026-11-18)
 
 - Art lane (references/loop.md): search owned packs with AssetCat before generating or buying. Reason: technique-harvest GPU test 2026-11-18 (post 1xuksmh: 17/25 hits in the top 5).
