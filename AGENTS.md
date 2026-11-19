@@ -16,7 +16,7 @@ decisions, the log and the handoff are under `ai-docs/` (start with `ai-docs/HAN
 - This repo is public. Real games, people, ledgers, session mining and local paths never go here: no person other than
   the author credit. They live in the maintainer's private sidecar, outside the repo. Examples use made-up names.
 - Size budget: `python scripts/budget.py`; SKILL.md under 200 lines.
-- Evergreen unit: read `skills/grindwright/evergreen.json` before editing; log changes in its CHANGELOG with the reason,
+- Evergreen unit: read `evergreen.json` (unit files sit at the repo root, outside the installed skill folder) before editing; log changes in its CHANGELOG with the reason,
   lessons in LEARNINGS with Trigger and Hypothesis. Re-run evals after SKILL.md changes. The beat `indie-ai-games` feeds refreshes.
 - A release bumps `.claude-plugin/plugin.json`, `plugin.json`, `VERSION` in `grw.py`, `metadata.version` in SKILL.md and the CHANGELOG together.
 - Plain short sentences, no em dashes, relative links. No AI attribution anywhere.

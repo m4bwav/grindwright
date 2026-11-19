@@ -1,5 +1,9 @@
 # Changelog: grindwright
 
+## 0.19.7 (2026-11-18)
+
+- Installed skill folder cut from 514 KB to 410 KB (budget.py). The evergreen unit files (CHANGELOG, LEARNINGS, TESTS, MAINTENANCE, RESEARCH, evergreen.json, harvest.json) moved to the repo root, and the eval cases, fixtures and A/B scripts to tests/evals/. Nothing the skill reads at run time moved; the remaining 410 KB is SKILL.md, references and scripts. Reason: the folder was red against the 300 KB green line; it is now yellow, and green would need cutting script code.
+
 ## 0.19.6 (2026-11-18)
 
 - New references/game-systems.md, linked from SKILL.md: one hot-reloaded tuning file (poll mtime, keep a broken file as .bad with a warning, host's file wins in multiplayer), one feature per commit with a version bump and version stamps on generated asset filenames, and model-driven game systems where the model proposes intents, code validates and commits, with a capped number of model calls per turn and an end_turn tool. Reason: technique-harvest batch D. Idea credits: sloppysteaks69/GPU-Bandits (no licence, our own words, no code) and legend-of-alan/spookery agent crates (MIT).

@@ -5,7 +5,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-GRW = Path(__file__).resolve().parents[2] / "scripts" / "grw.py"
+GRW = Path(__file__).resolve().parents[3] / "skills" / "grindwright" / "scripts" / "grw.py"
 STATE = Path("ai-docs/grind")
 
 

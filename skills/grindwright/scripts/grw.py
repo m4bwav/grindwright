@@ -35,7 +35,7 @@ import grw_status
 import grw_product
 from grw_work import Refused
 
-VERSION = "0.19.6"
+VERSION = "0.19.7"
 FORMAT = 1
 STATES = ("ready", "running", "waiting-on-human", "waiting-on-machine", "done", "dropped")
 COST_UNITS = {"S": 1, "M": 3, "L": 8}

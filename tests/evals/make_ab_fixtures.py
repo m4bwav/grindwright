@@ -8,7 +8,7 @@ import tempfile
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-GRW = HERE.parent / "scripts" / "grw.py"
+GRW = HERE.parents[1] / "skills" / "grindwright" / "scripts" / "grw.py"
 
 COLONY = '''"""Tiny Colony: a small invented game for evals."""
 import json
