@@ -1,5 +1,9 @@
 # Changelog: grindwright
 
+## Unreleased
+
+- Testing lane (references/loop.md): level data validated at load with descriptive errors, solution steps per level replayed by a test as a solvability check, and a level without solution steps counts as a test gap. All unattended work. Reason: technique-harvest, a commercial web puzzle game demo (our own words, no code).
+
 ## 0.20.0 (2026-11-18)
 
 - `next` picks work in a configurable order, the profile's `order` (references/profile.md). Default: the owner's session-start note, merge conflicts on the agent's open PRs, owner comments on them, askwright answers, another session's handoff, issue tickets, then everything else; priority and value still rank inside a category. Before, answers and handoffs came first and PR conflicts and review comments ranked by value among new work, so a fresh value-5 item could go ahead of a PR the owner was waiting on. An unknown category name is a `doctor` conflict. The owner's own request (`--owner-note`) always ranks first whatever the profile says, so a specific ask overrides the order; a profile that lists it lower gets a `doctor` conflict. The `stop` step names `ticket_sources` (`work.tasks`, `work.todo`, the new `work.plans`, open issues) to file proposals from. Reason: owner request.

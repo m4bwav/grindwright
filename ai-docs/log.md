@@ -227,3 +227,6 @@ Wiki footer 0.1.0 -> 0.19.7, examples rerun against v0.19.7, pushed and live. Ev
 
 ## 2026-11-18 0.20.0 work order
 select() sorts by a category rank from the profile's order (grw.ORDER default) before priority and score; entries carry category. Two test_new_work assertions expected a fresh value-5 item over a PR review item; under the default order PR comments come first, so they now expect [review, fresh]. stop names ticket_sources.
+
+## 2026-11-19 level validation in testing lane
+loop.md testing row: validate levels at load, solution steps + replay test, missing solution = test gap. Test in test_references.
