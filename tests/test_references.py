@@ -18,6 +18,11 @@ class ReferenceLinks(unittest.TestCase):
             self.assertIn(needle, text)
         self.assertNotIn("\u2014", text)
 
+    def test_level_validation_in_testing_lane(self):
+        text = (SKILL / "references" / "loop.md").read_text(encoding="utf-8")
+        for needle in ("validate every level at load", "solution steps", "replays them", "test gap"):
+            self.assertIn(needle, text)
+
 
 if __name__ == "__main__":
     unittest.main()
