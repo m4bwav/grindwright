@@ -1,6 +1,6 @@
 # Tests: grindwright
 
-Cases are in `evals/evals.json`; unit tests in the repository's `tests/`. A test passes on evidence, never on prose.
+Cases are in `tests/evals/evals.json`; unit tests in the repository's `tests/`. A test passes on evidence, never on prose.
 
 ## Isolation
 

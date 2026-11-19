@@ -1,8 +1,8 @@
 {
   "evergreen": "1.0",
   "name": "grindwright",
-  "kind": "skill",
-  "main": "SKILL.md",
+  "kind": "plugin",
+  "main": "skills/grindwright/SKILL.md",
   "files": {
     "research": "RESEARCH.md",
     "changelog": "CHANGELOG.md",

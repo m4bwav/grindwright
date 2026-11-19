@@ -1,4 +1,4 @@
-"""Generate evals/<case>/ for claude plugin eval from skills/grindwright/evals/evals.json.
+"""Generate evals/<case>/ for claude plugin eval from tests/evals/evals.json.
 The sandbox denies reads of the plugin's evals folders, so each scaffold embeds its fixture state.
 Run from the repository root: python scripts/build_evals.py"""
 import base64
@@ -31,7 +31,7 @@ TOOL_GRADERS = {
 def fixture_blob(case):
     with tempfile.TemporaryDirectory() as tmp:
         env = dict(os.environ, GRINDWRIGHT_ASK="", GRINDWRIGHT_PLUGIN_DIRS=str(Path(tmp) / "none"))
-        subprocess.run([sys.executable, str(SKILL / "evals" / "fixtures" / "make_fixture.py"), case], cwd=tmp, env=env, check=True, capture_output=True)
+        subprocess.run([sys.executable, str(ROOT / "tests" / "evals" / "fixtures" / "make_fixture.py"), case], cwd=tmp, env=env, check=True, capture_output=True)
         buffer = io.BytesIO()
         with tarfile.open(fileobj=buffer, mode="w:gz") as tar:
             for name in ("ai-docs", "ask"):
@@ -49,7 +49,7 @@ def main():
     for old in OUT.iterdir() if OUT.exists() else []:
         if old.is_dir() and old.name != "results":
             shutil.rmtree(old)
-    cases = json.loads((SKILL / "evals" / "evals.json").read_text(encoding="utf-8"))["evals"]
+    cases = json.loads((ROOT / "tests" / "evals" / "evals.json").read_text(encoding="utf-8"))["evals"]
     for case in cases:
         folder = OUT / case["id"]
         prompt = case["prompt"]
