@@ -1,5 +1,9 @@
 # Changelog: grindwright
 
+## 0.19.6 (2026-11-18)
+
+- New references/game-systems.md, linked from SKILL.md: one hot-reloaded tuning file (poll mtime, keep a broken file as .bad with a warning, host's file wins in multiplayer), one feature per commit with a version bump and version stamps on generated asset filenames, and model-driven game systems where the model proposes intents, code validates and commits, with a capped number of model calls per turn and an end_turn tool. Reason: technique-harvest batch D. Idea credits: sloppysteaks69/GPU-Bandits (no licence, our own words, no code) and legend-of-alan/spookery agent crates (MIT).
+
 ## 0.19.5 (2026-11-18)
 
 - SKILL.md description cut from 1,042 to 906 characters, under the spec's 1,024 limit (tokenwright lint). Every trigger phrase kept; dropped the session start-command clause (chainwright owns it) and tightened the lane list.
