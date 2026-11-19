@@ -221,3 +221,6 @@ At the owner's request: a README "Works with" section and a Works-With wiki page
 - 2026-11-16: dead end: a handoff test run without --worktree committed and pushed the developer's own worktree (default was the current folder). Fixed: handoff refuses to commit unless the item names a branch and the worktree is on it. Stray branch feat/stale-takeover-handoff deleted; work shipped from feat/takeover-handoff.
 - 2026-11-18: another session's uncommitted LEARNINGS notes (Arvum runs, 2026-11-11/12) were merged from the shared clone as five entries; the clone was reset to main so the installed plugin could move past 0.19.0.
 - 2026-11-18: 0.19.7 moved evergreen unit files to repo root and evals source to tests/evals/ (build_evals.py rmtrees evals/, so sources cannot live there). Installed folder 514 -> 410 KB.
+
+## 2026-11-18 wiki 0.19.7
+Wiki footer 0.1.0 -> 0.19.7, examples rerun against v0.19.7, pushed and live. Evergreen audit still finds grindwright after evergreen.json moved to root.
