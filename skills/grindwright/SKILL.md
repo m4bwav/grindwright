@@ -2,7 +2,7 @@
 name: grindwright
 description: "Use to keep an indie game, or a long film, video or story project, moving like a solo maker who never stops: pick the most valuable work across lanes (art, animation, writing, voices, sound, music, shots, trailers, balance, testing, bugs, unfinished features, maintenance, marketing; for products and sites test gaps, npm updates, deprecations, feature ideas), do all work that needs no person, ask questions on issues, PRs or a decision page, and switch lanes instead of waiting. A ledger and selector rank value first, with human minutes as the discount. Use on 'grind on my game', 'keep working on the game', 'grind on my film', 'what should I work on next', 'everything is waiting on me', 'work through the backlog while I'm away', 'run unattended', or a continue prompt naming grindwright. Also 'refresh grindwright'. Not for one design question (ludowright), one juice pass (game-juice) or one asset."
 metadata:
-  version: "0.19.7"
+  version: "0.20.0"
 ---
 
 # grindwright
@@ -27,7 +27,7 @@ act on a road that is not confirmed, beyond work every road would include (bugs,
 1. `grw.py session start [--budget N]`. It also syncs answers, finished renders, dead sessions' leases and the repo owner's new comments on your open PRs and any merge conflicts on them (`pr-sync`; resolve and push to the PR branch, or comment on the PR when a person must decide), and names the next action. Any
    free text the owner wrote with the start command, or a direct request in the session, is the top priority, road or not: `grw.py add ... --owner-note`. Feedback relayed
    for another person is authoritative: `grw.py relay <id> --person <who> --note ...`. Relay only words that person gave. "It looks ready" from anyone else is not their review: the item keeps waiting, and you say so.
-2. `grw.py next --claim` after that, which also claims `work` and `draft`. It names one action:
+2. `grw.py next --claim` after that, which also claims `work` and `draft`. It names one action, in the profile's `order`:
    - `act-on-owner-note`: do that first. `act-on-answers`: do what the answers say, close the questions, then `grw.py resolve` with a rule per answer or
      `--no-rule "<why one-off>"`. Rules go in the project's rule file as well, so that kind of question gets rarer.
    - `work`: if the output has `road_warning`, take only bugs and failing tests. Otherwise `grw.py claim <id>`, work on your own branch or as the project says, `checkpoint` and commit often.
@@ -40,7 +40,7 @@ act on a road that is not confirmed, beyond work every road would include (bugs,
    - `discover`: nothing selectable. Run `grw.py discover`, then really test and balance the game and look for gaps.
      Markers miss dead data: check data rows (events, cards) have code behind them and their own feel. Search docs and data before calling something missing. Add only items with a real `--source`. No busywork. A finding not worth an item: `grw.py reject "<finding>" --why ...`. Work already finished: `grw.py log "<title>" --lane ... --source ... --evidence ... --oracle ...`.
    - `survey`: an unmet milestone of a confirmed road has no open work and no survey this window (a session or a crew's shared hours), even if earlier items are done. Survey the game against it (play, read its design docs), `add` an item per gap with `--road <id>`, then `grw.py surveyed <id>` (`--why` saying what you checked when nothing is missing), or set `"met": true` in `road.json` with the evidence. The run does not stop until each is done.
-   - `stop`: nothing selectable after discovery. Before stopping, mine the agent todo file, unbuilt design-doc sections and open issues, and file the best few with `grw.py ticket "<title>" --type feature --propose --body "<why, scope, risk>"` (labelled `proposal` until green-lit, limit `work.proposals.open`, default 3). Stacking is fine where the guard allows (`--series`). Then say so.
+   - `stop`: nothing selectable after discovery. Before stopping, mine its `ticket_sources`, and file the best few with `grw.py ticket "<title>" --type feature --propose --body "<why, scope, risk>"` (labelled `proposal` until green-lit, limit `work.proposals.open`, default 3). Stacking is fine where the guard allows (`--series`). Then say so.
 3. Finish the item one of three ways:
    - `grw.py done <id> --evidence "..." --oracle <rung>`. Rungs: none (reports and research), compile, tests, boot, scripted-play, snapshot, human.
      Use the highest it passed. Only `human` proves it is good; never call machine-checked work fun or finished.

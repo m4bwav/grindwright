@@ -20,7 +20,8 @@ its rules restrict what may appear there, keep the state outside it and pass `--
  "guards": {"merge": "allow: after checks pass", "touch_main": "deny: branch", "stack_on_pending": "deny"},
  "read_only_paths": ["tasks.md"],
  "text_bans": [],
- "discover": ["test", "balance", "gaps", "marketing"]
+ "discover": ["test", "balance", "gaps", "marketing"],
+ "order": ["owner-note", "pr-conflicts", "pr-comments", "answers", "handoff", "tickets", "other"]
 }
 ```
 
@@ -35,6 +36,13 @@ its rules restrict what may appear there, keep the state outside it and pass `--
 - `text_bans`: words PR and commit text must not use.
 - `work`: issues, todo files, task lists and remote claims ([work-sources.md](work-sources.md)). Issue settings live in `work.issues`. Among them `acceptance`, off by default: `{"enabled": true, "label": "ready for acceptance", "comment": true}` labels open issues whose referencing PRs all merged, for a person's acceptance check. It never closes an issue.
 - `demo`: off unless `{"enabled": true, "scope": ..., "build": ...}`; then `discover` raises the demo lane ([demo.md](demo.md)).
+- `order`: which kind of work `next` picks first. The example is the default: what the owner said at session start,
+  merge conflicts on the agent's open PRs, owner comments on them, askwright answers, another session's handoff,
+  issue tickets (green-lit when `require_greenlight` is on), then everything else. Inside a category, priority and
+  value rank as before. Categories left out follow the listed ones in default order; an unknown name is a `doctor`
+  conflict. When nothing is selectable, the `stop` step names its `ticket_sources` to file proposals from:
+  `work.tasks` and `work.todo` paths, `work.plans` (a list of design docs or folders, default "unbuilt design-doc
+  sections"), and open issues.
 
 Project specifics (snapshot suites, slots, required skills) stay here or in the project's own docs, never in the plugin.
 

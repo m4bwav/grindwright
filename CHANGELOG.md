@@ -1,5 +1,9 @@
 # Changelog: grindwright
 
+## 0.20.0 (2026-11-18)
+
+- `next` picks work in a configurable order, the profile's `order` (references/profile.md). Default: the owner's session-start note, merge conflicts on the agent's open PRs, owner comments on them, askwright answers, another session's handoff, issue tickets, then everything else; priority and value still rank inside a category. Before, answers and handoffs came first and PR conflicts and review comments ranked by value among new work, so a fresh value-5 item could go ahead of a PR the owner was waiting on. An unknown category name is a `doctor` conflict. The `stop` step names `ticket_sources` (`work.tasks`, `work.todo`, the new `work.plans`, open issues) to file proposals from. Reason: owner request.
+
 ## 0.19.7 (2026-11-18)
 
 - Installed skill folder cut from 514 KB to 410 KB (budget.py). The evergreen unit files (CHANGELOG, LEARNINGS, TESTS, MAINTENANCE, RESEARCH, evergreen.json, harvest.json) moved to the repo root, and the eval cases, fixtures and A/B scripts to tests/evals/. Nothing the skill reads at run time moved; the remaining 410 KB is SKILL.md, references and scripts. Reason: the folder was red against the 300 KB green line; it is now yellow, and green would need cutting script code.
