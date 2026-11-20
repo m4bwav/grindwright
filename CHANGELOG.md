@@ -1,7 +1,8 @@
 # Changelog: grindwright
 
-## Unreleased
+## 0.20.1 (2026-11-20)
 
+- references/engine-verify.md: web games get a random-input soak, `tw play dist --monkey` over several seeds (threewright 1.10.0), and each crash or stuck run becomes a bug item with its seed and trace. Reason: technique-harvest, arXiv:2610.33106 (VibeGame).
 - Testing lane (references/loop.md): level data validated at load with descriptive errors, solution steps per level replayed by a test as a solvability check, and a level without solution steps counts as a test gap. All unattended work. Reason: technique-harvest, a commercial web puzzle game demo (our own words, no code).
 
 ## 0.20.0 (2026-11-18)

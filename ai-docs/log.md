@@ -230,3 +230,6 @@ select() sorts by a category rank from the profile's order (grw.ORDER default) b
 
 ## 2026-11-19 level validation in testing lane
 loop.md testing row: validate levels at load, solution steps + replay test, missing solution = test gap. Test in test_references.
+
+## 2026-11-20 tw play soak line
+engine-verify.md: web games soak with `tw play dist --monkey` over seeds, crash/stuck runs become bug items (harvest arXiv:2610.33106). Released 0.20.1 (0.20.0 had no tag).
