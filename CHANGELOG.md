@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Issue sync, the acceptance pass, PR sync and stale-branch checks read every page of open issues, open PRs and branches (`gh_list`). They read only the first 100, so a project with more than 100 open issues had its oldest issue items marked done as "issue closed on GitHub" at every sync, and an approval on one of them was never seen. Reason: found in use on a repository with 124 open issues.
 - Testing lane (references/loop.md): level data validated at load with descriptive errors, solution steps per level replayed by a test as a solvability check, and a level without solution steps counts as a test gap. All unattended work. Reason: technique-harvest, a commercial web puzzle game demo (our own words, no code).
 
 ## 0.20.0 (2026-11-18)

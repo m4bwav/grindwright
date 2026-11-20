@@ -63,6 +63,18 @@ def gh_json(*argv):
     return json.loads(gh("api", *argv) or "[]")
 
 
+def gh_list(path, per_page=100):
+    """Every row of a list endpoint, page by page. One page would drop the rest: issue sync then reads an open issue as closed."""
+    joiner = "&" if "?" in path else "?"
+    rows, page = [], 1
+    while True:
+        batch = gh_json(f"{path}{joiner}per_page={per_page}&page={page}")
+        rows.extend(batch)
+        if len(batch) < per_page:
+            return rows
+        page += 1
+
+
 def work(store, name):
     block = store.profile().get("work", {}).get(name)
     if not block:
@@ -194,7 +206,7 @@ def issue_sync(store, items):
         return None
     repo = config["repo"]
     report = {"new": [], "reopened": [], "closed": [], "greenlit": [], "closeout": [], "held": [], "released": []}
-    rows = [r for r in gh_json(f"repos/{repo}/issues?state=open&per_page=100") if "pull_request" not in r]
+    rows = [r for r in gh_list(f"repos/{repo}/issues?state=open") if "pull_request" not in r]
     open_prs = None
     live = {r["number"]: r for r in rows}
     known = {i["issue"]: i for i in items if i.get("issue")}
@@ -243,7 +255,7 @@ def issue_sync(store, items):
             report["released"].append(item["id"])
         if item.get("pr") and item["state"] == "waiting-on-human" and not item.get("closeout") and str(item.get("closeout_asked")) != str(item["pr"]):
             if open_prs is None:
-                open_prs = gh_json(f"repos/{repo}/pulls?state=open&per_page=100")
+                open_prs = gh_list(f"repos/{repo}/pulls?state=open")
             if closeout_due(repo, number, item["pr"], open_prs):
                 item.update({"state": "ready", "triaged": True, "closeout": True, "merged_pr": item["pr"], "replied": False})
                 item.pop("waits_for", None)
@@ -390,14 +402,14 @@ def acceptance_pass(store, items, rows=None, dry_run=False):
     block, repo = acceptance(config), config["repo"]
     label = block["label"]
     if rows is None:
-        rows = [r for r in gh_json(f"repos/{repo}/issues?state=open&per_page=100") if "pull_request" not in r]
+        rows = [r for r in gh_list(f"repos/{repo}/issues?state=open") if "pull_request" not in r]
     passed = {s.lower() for s in config.get("human_only_labels", HUMAN_ONLY_LABELS)} | {s.lower() for s in config.get("skip_labels", SKIP_LABELS)}
     passed.add(label.lower())
     eligible = [r["number"] for r in rows if not passed & {l["name"].lower() for l in r.get("labels", [])}]
     report = {"label": label, "dry_run": dry_run, "ready": [], "open_pr": [], "labelled": []}
     if not eligible:
         return report
-    open_prs = gh_json(f"repos/{repo}/pulls?state=open&per_page=100")
+    open_prs = gh_list(f"repos/{repo}/pulls?state=open")
     closed_prs = gh_json(f"repos/{repo}/pulls?state=closed&sort=updated&direction=desc&per_page=100")
     made = False
     for number in sorted(eligible):
@@ -467,7 +479,7 @@ def pr_sync(store, items):
     trust = tuple(config.get("trust", PR_TRUST))
     authors = set(config.get("authors") or [json.loads(gh("api", "user"))["login"]])
     report = {"new": [], "updated": []}
-    open_prs = [p for p in gh_json(f"repos/{repo}/pulls?state=open&per_page=100") if p["user"]["login"] in authors]
+    open_prs = [p for p in gh_list(f"repos/{repo}/pulls?state=open") if p["user"]["login"] in authors]
     by_pr = {i["review_of"]: i for i in items if i.get("review_of") and i["state"] not in ("done", "dropped")}
     seen = {c for i in items for c in i.get("pr_seen", [])}
     report["conflicts"] = pr_conflicts(store, items, config, work_block, repo, open_prs)
@@ -893,7 +905,7 @@ def find_overlaps(repo, title, issue=None, base=None, head=None):
     prs = json.loads(gh("pr", "list", "-R", repo, "--state", "open", "--limit", "100",
                         "--json", "number,title,body,headRefName,baseRefName") or "[]")
     default = json.loads(gh("repo", "view", repo, "--json", "defaultBranchRef") or "{}").get("defaultBranchRef", {}).get("name")
-    branches = [b["name"] for b in gh_json(f"repos/{repo}/branches?per_page=100") if b["name"] != default]
+    branches = [b["name"] for b in gh_list(f"repos/{repo}/branches") if b["name"] != default]
     return overlaps(prs, branches, title, issue, base, head)
 
 
