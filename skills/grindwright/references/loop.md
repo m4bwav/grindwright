@@ -107,6 +107,14 @@ Film and video projects use other lanes and another ladder: [projects.md](projec
 
 When the owner approves a spec, design doc or asset, record it: `grw.py approve <files>` stores each file's sha256 in `approved.lock` in the state folder. An approved file changes only after a new approval. `grw.py approved --check [files]` exits 1 and names every approved file that changed or vanished, and any named file never approved; run it before a session claims work done, and ask again for anything it names.
 
+## Appetite and shaping
+
+From Singer, Shape Up (ch. 3, 8, 13). An appetite (`add --appetite N`) is a session budget set before design. A `redo` once
+the sessions spent reach it sets `appetite_blown`; `claim` then refuses with code `appetite-blown` until `analyse` reshapes it
+or `--new-route` names another way. Never just extend. `add` flags grab-bag titles ("redesign X", "polish", "2.0") without
+`--problem` (the moment the current way breaks); `claim` flags an L item with no problem and appetite. Three
+`checkpoint --hill up` in a row return `stuck_uphill`: spike the unknown in code, split it, or ask. Push the riskiest unknown first.
+
 ## Oracle ladder
 
 Compile, tests, headless boot, scripted play, screenshot diff, human taste. Engine projects: one worktree per session with its own editor, a warm worktree pool, batchmode tests ([engine-verify](engine-verify.md)). Climb as far as the lane allows at the
