@@ -1,5 +1,9 @@
 # Changelog: grindwright
 
+## Unreleased
+
+- Appetite and shaping (Singer, Shape Up, ch. 3, 8, 13): `add --appetite N --problem "..."`; a `redo` once claims reach the appetite marks the item `appetite_blown` and `claim` refuses it (code `appetite-blown`) until `analyse` or `--new-route` reshapes it. `add` warns on grab-bag titles, `claim` warns on an unshaped L item, `checkpoint --hill up|top|down` returns `stuck_uphill` after three ups. All opt-in: items without an appetite behave as before. Reason: books round 7, track 68. Dropped: chowder and iceberg limits, cool-down lane, nice-to-have `~` children, triage "when not what" (untestable as script checks or already covered by `analyse` and owner-notes-first).
+
 ## 0.20.1 (2026-11-20)
 
 - references/engine-verify.md: web games get a random-input soak, `tw play dist --monkey` over several seeds (threewright 1.10.0), and each crash or stuck run becomes a bug item with its seed and trace. Reason: technique-harvest, arXiv:2610.33106 (VibeGame).

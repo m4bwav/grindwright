@@ -758,6 +758,9 @@ def cmd_init(store, args):
     return {"state": str(store.root), "next": "fill profile.json and road.json (references/profile.md)"}
 
 
+GRAB_BAG = re.compile(r"\b(redesign|refactor|polish|cleanup|clean up|overhaul|revamp|bugs)\b|\b2\.0\b", re.I)
+
+
 def cmd_add(store, args):
     if args.question and not args.guess:
         raise Refused(["a question needs a real guess (--guess)"])
@@ -794,10 +797,16 @@ def cmd_add(store, args):
         item["owner_note"] = True
     if getattr(args, "repair_of", None):
         item["repair_of"] = args.repair_of
+    if getattr(args, "appetite", None):
+        item["appetite"] = args.appetite
+    if getattr(args, "problem", None):
+        item["problem"] = args.problem
     items.append(item)
     store.save_items(items)
     store.event("add", id=item["id"], lane=args.lane, source=args.source)
     answer = {"id": item["id"], "class": item_class(item)}
+    if GRAB_BAG.search(args.title) and not item.get("problem"):
+        answer["grab_bag"] = "a grab-bag title has no end: name the one problem driving it (--problem) or split it"
     if grw_work.new_work_off(store) and not grw_work.owner_driven(item):
         answer["held"] = "new work is off: recorded for later, not started"
     return answer
@@ -982,6 +991,9 @@ def cmd_claim(store, args):
     took = grw_handoff.check_claim(store, item, getattr(args, "take_over", False))
     if took:
         args.take_over = True  # an expired or handed-back host claim is taken over too
+    if item.get("appetite_blown") and not args.new_route:
+        raise Refused([f"appetite-blown: {item.get('claims', 0)} sessions spent on a {item['appetite']}-session appetite; "
+                       "reshape it (analyse, or shave a smaller part) instead of extending"], code="appetite-blown")
     if item.get("route_change_required") and not args.new_route:
         raise Refused([f"{item.get('redos')} failed passes on this route: name a new route with --new-route"])
     remote = grw_remote_claim(store, item, items, args)
@@ -1002,6 +1014,7 @@ def cmd_claim(store, args):
     if args.new_route:
         item["route"] = args.new_route
         item["route_change_required"] = False
+    item["claims"] = item.get("claims", 0) + 1
     touch(item)
     store.save_items(items)
     session = store.session()
@@ -1012,6 +1025,8 @@ def cmd_claim(store, args):
     if took:
         store.event("takeover", id=item["id"], lane=item.get("lane"), how=entry["kind"], **{"from": entry["from"]}, why=entry["why"])
     answer = dict({"id": item["id"], "lease_until": item["lease_until"]}, **extra)
+    if item.get("cost") == "L" and not (item.get("problem") and item.get("appetite")) and not item.get("analysed"):
+        answer["unshaped"] = "a large item claimed without a problem sentence and an appetite: set both (grw.py set) before deep work"
     if remote:
         answer["remote"] = remote
     return answer
@@ -1070,7 +1085,15 @@ def cmd_checkpoint(store, args):
     items = store.items()
     item = find_item(items, args.id)
     fence(store, item)
-    item.setdefault("checkpoints", []).append({"ts": stamp(), "note": args.note})
+    point = {"ts": stamp(), "note": args.note}
+    if getattr(args, "hill", None):
+        point["hill"] = args.hill
+    item.setdefault("checkpoints", []).append(point)
+    hills = [c.get("hill") for c in item["checkpoints"] if c.get("hill")]
+    if hills[-3:] == ["up"] * 3:
+        item["stuck_uphill"] = True
+    else:
+        item.pop("stuck_uphill", None)
     if item["state"] == "running":
         item["lease_until"] = (now() + dt.timedelta(hours=LEASE_HOURS)).isoformat(timespec="seconds")
         block = grw_remote.config(store) if item.get("remote_claim") else None
@@ -1079,13 +1102,18 @@ def cmd_checkpoint(store, args):
                 grw_remote.claim(block, item, store.sid, stamp(), item["lease_until"])
     touch(item)
     store.save_items(items)
-    return {"id": item["id"], "checkpoints": len(item["checkpoints"])}
+    answer = {"id": item["id"], "checkpoints": len(item["checkpoints"])}
+    if item.get("stuck_uphill"):
+        answer["stuck_uphill"] = "three checkpoints still uphill: spike the unknown in code, split the scope, or ask"
+    return answer
 
 
 def cmd_analyse(store, args):
     items = store.items()
     item = find_item(items, args.id)
     item["analysed"] = {"ts": stamp(), "verdict": args.verdict, "note": args.note}
+    if item.pop("appetite_blown", None):
+        item["claims"] = 0  # reshaped: the new shape gets a fresh appetite
     created = None
     if args.verdict == "cut":
         item["state"] = "dropped"
@@ -1349,12 +1377,15 @@ def cmd_redo(store, args):
     escalate = item["redos"] >= limit
     if escalate:
         item["route_change_required"] = True
+    blown = bool(item.get("appetite")) and item.get("claims", 0) >= item["appetite"]
+    if blown:
+        item["appetite_blown"] = True
     item["state"] = "ready"
     item.pop("lease_until", None)
     touch(item)
     store.save_items(items)
     store.event("redo", id=item["id"], lane=item.get("lane"), note=args.note)
-    return {"id": item["id"], "redos": item["redos"], "route_change_required": escalate,
+    return {"id": item["id"], "redos": item["redos"], "route_change_required": escalate, **({"appetite_blown": True} if blown else {}),
             "reminder": "rebuild every derived review artifact before asking again"}
 
 
@@ -2008,6 +2039,8 @@ def build_parser():
     p.add_argument("--owner-note", action="store_true", help="the owner asked for this directly; ranks first")
     p.add_argument("--repair-of", type=int, help="open agent PR number this repairs (failing checks); owner-driven while new work is off")
     p.add_argument("--area", action="append", help="path or resource:name it works in")
+    p.add_argument("--appetite", type=int, help="sessions this is worth, set before designing it; a failed pass past it reshapes, never extends")
+    p.add_argument("--problem", help="the moment the current way breaks, not a feature name")
     p.add_argument("--not-duplicate", help="it resembles an open item, and why it is different")
     p.add_argument("--question")
     p.add_argument("--guess")
@@ -2041,6 +2074,7 @@ def build_parser():
     p = add("checkpoint", cmd_checkpoint, "save progress on an item")
     p.add_argument("id")
     p.add_argument("note")
+    p.add_argument("--hill", choices=["up", "top", "down"], help="up: still figuring out; down: known steps left")
 
     p = add("analyse", cmd_analyse, "decide a worst-class item: keep, cut or shave")
     p.add_argument("id")

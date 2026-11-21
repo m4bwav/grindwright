@@ -58,15 +58,20 @@ act on a road that is not confirmed, beyond work every road would include (bugs,
 Do not run `--help`; the commands are here.
 
 ```
-add "<title>" --lane L --source S --value 1-5 [--human-min N] [--cost S|M|L] [--person P] [--owner-note]
+add "<title>" --lane L --source S --value 1-5 [--human-min N] [--cost S|M|L] [--appetite SESSIONS] [--problem "<when it breaks>"] [--person P] [--owner-note]
 done <id> --evidence E --oracle R [--provenance P]   log "<title>" --lane L --source S --evidence E --oracle R
 wait-human <id> --set S --person P        wait-human <id> --pr N --person P        wait-machine <id> --done-file F --why W
 analyse <id> --verdict shave --note N --shave-title T
-hold <id> --evidence E [--person P] [--provenance P]   checkpoint <id> "<note>"   redo <id> "<note>"   reject "<finding>" --why W
+hold <id> --evidence E [--person P] [--provenance P]   checkpoint <id> "<note>" [--hill up|top|down]   redo <id> "<note>"   reject "<finding>" --why W
 ```
 
 - `--person` takes a `profile.json` people name or one of its `aliases`; an unknown name is refused: ask, don't guess.
 - Small finished work with no item: one `log`.
+- Shape before you build (Singer, Shape Up, ch. 3, 8, 13): an appetite is a session budget set before design. A `redo` once the
+  sessions spent reach it sets `appetite_blown`, and `claim` refuses with code `appetite-blown` until `analyse` reshapes it
+  (or a `--new-route`); never just extend. `add` flags grab-bag titles ("redesign X", "polish", "2.0") without `--problem`;
+  `claim` flags an L item with no problem and appetite. Three `--hill up` checkpoints in a row return `stuck_uphill`:
+  spike the unknown in code, split it, or ask. Push the riskiest unknown first.
 - Know the next item? `add` it. Named only in HANDOFF, the selector never sees it.
 - Checkpoint when a commit or a long render would be lost, not at each step.
 - Run by a driver, never end your turn while a compile, render or test runs in the background: the session ends with it. Wait in the foreground, or checkpoint and finish.
