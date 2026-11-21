@@ -441,6 +441,31 @@ class Gates(Base):
         self.grw("claim", item, expect=2)
         self.grw("claim", item, "--new-route", "Blender blockout as a reference")
 
+    def test_appetite_blown_reshapes_instead_of_extending(self):
+        self.profile({"escalate_after": 9})
+        item = self.add("save slots", 4, 0, "code", "--appetite", "1", "--problem", "a crash loses the run")
+        self.grw("claim", item)
+        self.assertTrue(self.grw("redo", item, "half done")["appetite_blown"])
+        self.assertEqual(self.grw("claim", item, expect=2)["code"], "appetite-blown")
+        self.grw("analyse", item, "--verdict", "keep", "--note", "only the autosave part")
+        self.grw("claim", item)
+        plain = self.add("menu", 4, 0)  # no appetite: never blown
+        self.grw("claim", plain)
+        self.assertNotIn("appetite_blown", self.grw("redo", plain, "again"))
+        self.grw("claim", plain)
+
+    def test_shaping_hints_and_stuck_uphill(self):
+        self.assertIn("grab_bag", self.grw("add", "redesign the inventory", "--lane", "code", "--source", "t", "--value", "3"))
+        self.assertNotIn("grab_bag", self.grw("add", "inventory", "--lane", "code", "--source", "t", "--value", "3", "--problem", "x"))
+        big = self.add("boss fight", 4, 0, "code", "--cost", "L")
+        self.assertIn("unshaped", self.grw("claim", big))
+        small = self.add("tooltip", 4, 0)
+        self.assertNotIn("unshaped", self.grw("claim", small))
+        for _ in range(2):
+            self.assertNotIn("stuck_uphill", self.grw("checkpoint", big, "trying", "--hill", "up"))
+        self.assertIn("stuck_uphill", self.grw("checkpoint", big, "still lost", "--hill", "up"))
+        self.assertNotIn("stuck_uphill", self.grw("checkpoint", big, "found it", "--hill", "down"))
+
     def test_done_requires_evidence(self):
         item = self.add("x")
         with self.assertRaises(SystemExit), contextlib.redirect_stderr(io.StringIO()):
