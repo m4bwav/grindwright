@@ -24,6 +24,9 @@ import sys
 import webbrowser
 from pathlib import Path
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import report_ui  # noqa: E402
+
 HERE = Path(__file__).resolve().parent
 
 STOPS = {
@@ -394,7 +397,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,san
 h1{font-size:22px;margin:0 0 4px}h2{font-size:16px;margin:22px 0 8px}.sub,.mute{color:var(--mute)}a{color:var(--t)}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:14px 0}
 .kpi,.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px}.kpi b{display:block;font-size:20px}.kpi span{color:var(--mute);font-size:12px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
+.wrap{overflow-x:auto}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
 table{border-collapse:collapse;width:100%;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
 td,th{padding:6px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{color:var(--mute);font-weight:600;font-size:12px}
 .chip{border:1px solid var(--line);border-radius:999px;padding:0 8px;font-size:11px;color:var(--mute);white-space:nowrap}
@@ -405,7 +408,8 @@ details summary{cursor:pointer;color:var(--mute)}.shots img{height:96px;max-widt
 @media (max-width:600px){td,th{padding:5px 6px}.hide-s{display:none}}
 </style></head><body><main>__STEER__
 __BODY__
-</main></body></html>"""
+</main>__JS__</body></html>"""
+PAGE = PAGE.replace("</style>", report_ui.CSS + "</style>", 1).replace("__JS__", report_ui.JS)
 
 
 def render(run, data, chain_page=None):
@@ -425,6 +429,7 @@ def render(run, data, chain_page=None):
     body = [f'<h1>{e(run.get("project") or "Grind")} run report</h1>',
             f'<div class="sub">{e(run.get("id", ""))} · {e(run.get("started", ""))} to {e(run.get("ended") or "still running")} · '
             f'{len(members)} member{"s" * (len(members) != 1)}{" · new work off: only owner-driven items" if data.get("new_work") == "off" or any((m.get("result") or {}).get("stopped") == "no-new-work" for m in members) else ""}{" · " + link(Path(chain_page).resolve().as_uri(), "chainwright tier report") if chain_page else ""}</div>',
+            f'<div class="sub">{report_ui.stamp()}</div>',
             '<div class="kpis">' + "".join(f'<div class="kpi"><b>{e(str(v))}</b><span>{k}</span></div>' for k, v in kpis) + "</div>"]
 
     body.append("<h2>Why it stopped</h2>")
@@ -454,16 +459,18 @@ def render(run, data, chain_page=None):
 
     body.append("<h2>How far each front got</h2>")
     if data["stones"]:
-        body.append("<table><tr><th>Road milestone</th><th>Items done</th><th>This run</th><th class='hide-s'>Status</th></tr>" + "".join(
-            f"<tr><td>{e(s['title'] or s['id'])}</td><td>{s['done']} of {s['total']}</td><td>{s['this_run']}</td><td class='hide-s'>{e(s['status'])}</td></tr>"
-            for s in data["stones"]) + "</table><br>")
+        body.append("<div class='wrap'><table id='road' data-ui><thead><tr><th data-sort='text'>Road milestone</th><th class='n' data-sort='num'>Items done</th>"
+                    "<th class='n' data-sort='num'>This run</th><th class='hide-s' data-sort='text'>Status</th></tr></thead><tbody>" + "".join(
+            f"<tr><td>{e(s['title'] or s['id'])}</td><td class='n' data-v='{s['done']}'>{s['done']} of {s['total']}</td><td class='n'>{s['this_run']}</td><td class='hide-s'>{e(s['status'])}</td></tr>"
+            for s in data["stones"]) + "</tbody></table></div><br>")
     lanes = sorted(set(data["lanes"]) | set(data["left"]))
-    body.append("<table><tr><th>Lane</th><th>This run</th><th>Still open</th></tr>" + "".join(
+    body.append(("<div class='wrap'><table id='lanes' data-ui><thead><tr><th data-sort='text'>Lane</th><th>This run</th><th>Still open</th></tr></thead><tbody>" + "".join(
         "<tr><td>{}</td><td>{}</td><td>{}</td></tr>".format(
             e(lane),
             e(", ".join(f"{v} {LABEL[k]}" for k, v in data["lanes"].get(lane, {}).items() if v and k != "claim") or "nothing"),
             e(", ".join(f"{v} {k}" for k, v in sorted(data["left"].get(lane, {}).items())) or "none"))
-        for lane in lanes) + "</table>")
+        for lane in lanes) + "</tbody></table></div>") if lanes else report_ui.empty(
+        "No lane had work in this run.", "Add items with grw.py add, or check the profile's lanes, then run again."))
 
     body.append("<h2>Pull requests and issues</h2>")
     if data["github"] is None:
@@ -483,29 +490,36 @@ def render(run, data, chain_page=None):
             if t["issue"]:
                 refs.append(f"issue #{t['issue']}")
             src = link(t["source"], "source") if (t["source"] or "").startswith("http") else ""
-            rows.append(f"<tr><td><code>{e(t['id'])}</code></td><td>{e(t['title'])}<div class='mute'>{e((t['evidence'] or '')[:220])}</div></td>"
-                        f"<td>{e(t['lane'])}</td><td>{e(', '.join(LABEL[d] for d in t['did']))}</td><td>{e(t['now'])}</td>"
-                        f"<td class='hide-s'>{e(', '.join(refs))} {src}</td></tr>")
             thumbs = "".join(f'<a href="{e(href or shot)}"><img src="{e(src)}" alt="{e(shot)}" loading="lazy"></a>' if src else
                              f'<span class="chip">{e(shot)} (not found)</span>' for shot, (src, href) in zip(t["shots"], t["pictures"]))
             if t["no_shots"]:
                 thumbs += f"<span class='mute'>no screenshot: {e(t['no_shots'])}</span>"
-            if thumbs:
-                rows.append(f"<tr><td></td><td colspan='5' class='shots'>{thumbs}</td></tr>")
-        body.append("<table><tr><th>Item</th><th>What</th><th>Lane</th><th>This run</th><th>Now</th><th class='hide-s'>Links</th></tr>" + "".join(rows) + "</table>")
+            shots = f"<div class='shots'>{thumbs}</div>" if thumbs else ""
+            rows.append(f"<tr><td><code>{e(t['id'])}</code></td><td>{e(t['title'])}<div class='mute'>{report_ui.clip(t['evidence'])}</div>{shots}</td>"
+                        f"<td>{e(t['lane'])}</td><td>{e(', '.join(LABEL[d] for d in t['did']))}</td><td>{e(t['now'])}</td>"
+                        f"<td class='hide-s'>{e(', '.join(refs))} {src}</td></tr>")
+        body.append("<div class='wrap'><table id='items' data-ui data-page='25'><thead><tr><th data-sort='text'>Item</th><th data-sort='text'>What</th><th data-sort='text'>Lane</th>"
+                    "<th>This run</th><th data-sort='text'>Now</th><th class='hide-s'>Links</th></tr></thead><tbody>" + "".join(rows) + "</tbody></table></div>")
     else:
-        body.append("<p class='mute'>No item was started, finished, drafted or asked about in this run.</p>")
+        body.append(report_ui.empty("No item was started, finished, drafted or asked about in this run.",
+                                    "Check why it stopped above; grw.py next shows what a session would pick."))
 
-    body.append("<h2>Sessions</h2><table><tr><th>Member</th><th>#</th><th>Outcome</th><th>Time</th><th>Cost</th><th class='hide-s'>Tokens</th><th>Session</th></tr>")
+    body.append("<h2>Sessions</h2>")
+    if not passes:
+        body.append(report_ui.empty("No session has finished yet.", "Sessions show here once grind_loop.py records a pass; rebuild the report then."))
+    body.append("<div class='wrap'><table id='sessions' data-ui data-page='25'><thead><tr><th data-sort='text'>Member</th><th class='n' data-sort='num'>#</th>"
+                "<th data-sort='text'>Outcome</th><th class='n' data-sort='num'>Time</th><th class='n' data-sort='num'>Cost</th>"
+                "<th class='hide-s n' data-sort='num'>Tokens</th><th>Session</th></tr></thead><tbody>")
     for m in members:
         for p in m.get("passes", []):
             path = transcript(m.get("cwd"), p.get("session_id"))
             sid = p.get("session_id") or ""
             ref = link(path.as_uri(), sid[:8]) if path else e(sid[:8])
             resume = f"<div class='mute'><code>claude --resume {e(sid)}</code></div>" if sid else ""
-            body.append(f"<tr><td>{e(m['member'])}</td><td>{p.get('n')}</td><td>{e(p.get('outcome', ''))}</td><td>{fmt_s(p.get('seconds'))}</td>"
-                        f"<td>${p.get('usd') or 0:.2f}</td><td class='hide-s'>{(p.get('tokens') or 0):,}</td><td>{ref}{resume}</td></tr>")
-    body.append("</table>")
+            body.append(f"<tr><td>{e(m['member'])}</td><td class='n'>{p.get('n')}</td><td>{e(p.get('outcome', ''))}</td>"
+                        f"<td class='n' data-v='{p.get('seconds') or 0}'>{fmt_s(p.get('seconds'))}</td>"
+                        f"<td class='n' data-v='{p.get('usd') or 0}'>${p.get('usd') or 0:.2f}</td><td class='hide-s n'>{(p.get('tokens') or 0):,}</td><td>{ref}{resume}</td></tr>")
+    body.append("</tbody></table></div>")
     title = f"{run.get('project') or 'Grind'} Run Report"
     return PAGE.replace("__TITLE__", e(title)).replace("__BODY__", "".join(body)).replace("__STEER__", steerwright_link())
 
