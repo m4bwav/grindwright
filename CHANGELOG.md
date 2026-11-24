@@ -4,6 +4,10 @@
 
 - engine-verify.md: performance baseline from day one (scripted run, golden metrics, nightly compare with history via testwright `tw.py perf`). From the 2026-11-22 harvest of r/ClaudeGameDev 1y2w5yy.
 
+## 0.22.0 (2026-11-23)
+
+- Data UI on the run report and the live status page (owner request 2026-11-23: loading indicators, paging and data-presentation best practice on every internal page). New shared `scripts/report_ui.py`: "Generated" stamp (relative, absolute in the title), sortable headers with aria-sort, sticky headers, right-aligned tabular numbers, filter, paging (page size, prev/next, "showing X-Y of N", page in the URL hash), long evidence that expands, empty states that say what to do next, focus rings and reduced motion. The status page shows a loading state, keeps the last data with a Retry button when the server stops answering, and keeps page, filter and sort across its 15 s redraws. Screenshots moved into the item's row so paging never splits them. Without JS every row still shows.
+
 ## 0.21.0 (2026-11-21)
 
 - Appetite and shaping (Singer, Shape Up, ch. 3, 8, 13): `add --appetite N --problem "..."`; a `redo` once claims reach the appetite marks the item `appetite_blown` and `claim` refuses it (code `appetite-blown`) until `analyse` or `--new-route` reshapes it. `add` warns on grab-bag titles, `claim` warns on an unshaped L item, `checkpoint --hill up|top|down` returns `stuck_uphill` after three ups. All opt-in: items without an appetite behave as before. Details live in references/loop.md (Appetite and shaping) to keep SKILL.md under its token budget. Reason: books round 7, track 68. Dropped: chowder and iceberg limits, cool-down lane, nice-to-have `~` children, triage "when not what" (untestable as script checks or already covered by `analyse` and owner-notes-first).

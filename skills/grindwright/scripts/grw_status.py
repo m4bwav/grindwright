@@ -25,6 +25,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from grind_report import FAVICON_LINK, open_asks  # noqa: E402
+import report_ui  # noqa: E402
 
 ENDS = {"done", "released", "skip", "dropped", "rejected", "drafted", "asked", "detached", "resolved"}
 
@@ -333,7 +334,7 @@ def collect(state, since=None):
     }
 
 
-PAGE = r"""<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+PAGE = r"""<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 """ + FAVICON_LINK + r"""
 <title>Grind status</title><style>
 :root{--bg:#f6f7f9;--card:#fff;--ink:#1d2330;--mute:#6b7280;--line:#e3e6ec;--ok:#15803d;--warn:#b45309;--bad:#b91c1c;--acc:#2563eb}
@@ -350,8 +351,8 @@ table{width:100%;border-collapse:collapse}td,th{text-align:left;padding:4px 6px;
 .mute{color:var(--mute)}.t{white-space:nowrap;color:var(--mute);font-variant-numeric:tabular-nums}code{font-size:12px}
 .k-done{color:var(--ok)}.k-skip,.k-dropped,.k-rejected,.k-released{color:var(--warn)}.k-asked{color:var(--acc)}
 ul{margin:0;padding-left:18px}li{margin:3px 0;overflow-wrap:anywhere}.scroll{max-height:420px;overflow:auto}pre{white-space:pre-wrap;margin:0;font-size:12px;color:var(--mute)}
-</style></head><body><main>
-<header><div><h1 id="proj">Grind status</h1><div class="mute" id="sub"></div></div><div><span id="run" class="pill off">...</span> <span id="mode" class="pill off" style="display:none" title="only owner-driven items: grw.py new-work on restarts new work"></span> <span class="mute" id="upd"></span></div></header>
+</style></head><body><main aria-busy="true">
+<header><div><h1 id="proj">Grind status</h1><div class="mute" id="sub"></div></div><div><span id="run" class="pill off">...</span> <span id="mode" class="pill off" style="display:none" title="only owner-driven items: grw.py new-work on restarts new work"></span> <span class="mute loading" id="upd" role="status" aria-live="polite">Loading status</span></div></header>
 <nav id="links" class="mute" style="margin:-6px 0 10px"></nav>
 <div class="grid">
 <section class="card wide"><div class="stats" id="stats"></div></section>
@@ -363,7 +364,8 @@ ul{margin:0;padding-left:18px}li{margin:3px 0;overflow-wrap:anywhere}.scroll{max
 <section class="card"><h2>Waiting on you</h2><div id="waiting"></div></section>
 <section class="card"><h2>Notes between members</h2><div id="notes"></div></section>
 <section class="card wide"><h2>Estimate vs actual (minutes)</h2><div id="timing"></div></section>
-</div></main><script>
+</div></main>__RUI__<script>
+function retry(){const u=document.getElementById('upd');u.className='mute loading';u.textContent='Retrying';tick()}
 const e=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const hm=s=>s?s.slice(11,16):'';const ago=m=>m==null?'':m<60?m+' min':Math.floor(m/60)+' h '+(m%60)+' min';
 const link=s=>e(s).replace(/(https?:\/\/[^\s,]+)/g,'<a href="$1" target="_blank">$1</a>');
@@ -380,27 +382,31 @@ const rows=(w.rows||[]).map(r=>{const what=(r.claims||[]).map(c=>e(c.id+' '+c.ti
  `<td><code>${e(r.branch||'')}</code><div class="mute">${e(r.worktree||r.cwd||'')}${r.machine?' · '+e(r.machine):''}</div></td>`+
  `<td class="t">${r.started?'started '+e(String(r.started).slice(5,16).replace('T',' ')):''}${run?'<div>working '+run+'</div>':''}${quiet?'<div>quiet '+quiet+'</div>':''}</td>`+
  `<td class="mute">${e((r.evidence||[]).join('; '))}</td></tr>`}).join('');
-document.getElementById('who').innerHTML=(rows?'<div class="scroll"><table><tr><th>status</th><th>working on</th><th>where</th><th>time</th><th>how it is known</th></tr>'+rows+'</table></div>':'<p class="mute">No agent session seen in this project'+(w.source==='askwright'?' on this machine':'')+'.</p>')+
+document.getElementById('who').innerHTML=(rows?'<div class="scroll"><table id="who-t" data-ui data-page="25"><thead><tr><th data-sort="text">status</th><th data-sort="text">working on</th><th>where</th><th>time</th><th>how it is known</th></tr></thead><tbody>'+rows+'</tbody></table></div>':'<p class="empty">No agent session seen in this project'+(w.source==='askwright'?' on this machine':'')+'. Start one with grind_loop.py or a continue prompt; it shows here within a minute.</p>')+
  (w.problems||[]).map(p=>'<p class="k-skip">'+e(p)+'</p>').join('');}
-async function tick(){let d;try{d=await (await fetch('api',{cache:'no-store'})).json()}catch(x){document.getElementById('upd').textContent='server not answering';return}
+async function tick(){let d;const u=document.getElementById('upd');try{d=await (await fetch('api',{cache:'no-store'})).json()}catch(x){
+u.className='err';u.innerHTML='Server not answering; the page keeps the last data. <button type="button" class="retry" onclick="retry()">Retry</button>';return}
+u.className='mute';document.querySelector('main').removeAttribute('aria-busy');
 drawWho(d);document.title=(d.running?'● ':'')+d.project+' grind';proj.textContent=d.project;sub.textContent='run since '+d.since.replace('T',' ')+'  ·  '+d.state;
-run.textContent=d.running?'RUNNING':'NOT RUNNING';run.className='pill '+(d.running?'on':'off');mode.textContent=d.new_work==='off'?'NEW WORK OFF':'';mode.style.display=d.new_work==='off'?'':'none';upd.textContent='updated '+hm(d.now)+':'+d.now.slice(17,19);
+run.textContent=d.running?'RUNNING':'NOT RUNNING';run.className='pill '+(d.running?'on':'off');mode.textContent=d.new_work==='off'?'NEW WORK OFF':'';mode.style.display=d.new_work==='off'?'':'none';u.innerHTML='updated <time title="'+e(d.now)+'">'+hm(d.now)+':'+d.now.slice(17,19)+'</time>, every 15 s';
 const c=d.counts,cost=Object.values(d.logs).reduce((a,l)=>a+l.cost,0),ses=Object.values(d.logs).reduce((a,l)=>a+l.sessions,0);
 stats.innerHTML=[['done',c.done],['claimed',c.claim],['added',c.add],['asked',c.asked],['skipped',(c.skip||0)+(c.released||0)+(c.dropped||0)],['agent sessions finished',ses],['agent cost',cost?'$'+cost.toFixed(2):'-'],['live agents',d.processes.agents.length]]
  .map(([k,v])=>`<div class="stat"><b>${e(v??0)}</b><span>${k}</span></div>`).join('');
 const p=d.processes;members.innerHTML=(p.error?`<p class="mute">process list failed: ${e(p.error)}</p>`:'')+(p.crew.length?`<p class="mute">crew ${e(p.crew[0].file)} since ${e(hm(p.crew[0].since))}</p>`:'')+
- '<table><tr><th>member</th><th>since</th><th>sessions</th><th>cost</th><th>log</th></tr>'+
+ '<table><thead><tr><th>member</th><th>since</th><th class="n">sessions</th><th class="n">cost</th><th>log</th></tr></thead><tbody>'+
  [...new Set([...p.members.map(m=>m.member),...Object.keys(d.logs)])].map(n=>{const m=p.members.find(x=>x.member==n),l=d.logs[n]||{};
- return `<tr><td>${m?'🟢':'⚪'} ${e(n)}</td><td class="t">${e(m?hm(m.since):'')}</td><td>${e(l.sessions??'')}</td><td>${l.cost?'$'+l.cost.toFixed(2):''}</td><td class="mute"><code>${e(l.log||'')}</code></td></tr>`}).join('')+'</table>'+
+ return `<tr><td>${m?'🟢':'⚪'} ${e(n)}</td><td class="t">${e(m?hm(m.since):'')}</td><td class="n">${e(l.sessions??'')}</td><td class="n">${l.cost?'$'+l.cost.toFixed(2):''}</td><td class="mute"><code>${e(l.log||'')}</code></td></tr>`}).join('')+'</tbody></table>'+
  (Object.values(d.logs).some(l=>l.last)?'<h2 style="margin-top:10px">Last agent result</h2>'+Object.entries(d.logs).filter(([,l])=>l.last).map(([n,l])=>`<pre><b>${e(n)}</b>: ${e(l.last.slice(-300))}</pre>`).join(''):'');
-working.innerHTML=d.working.length?'<table><tr><th>member</th><th>item</th><th>for</th></tr>'+d.working.map(w=>`<tr><td>${e(w.member)}</td><td>${e(w.title)} <span class="mute">${e(w.lane||'')} · <code>${e(w.id)}</code></span></td><td class="t">${ago(w.minutes)}</td></tr>`).join('')+'</table>':'<p class="mute">nothing claimed</p>';
-timeline.innerHTML=d.timeline.length?'<table>'+d.timeline.map(v=>`<tr><td class="t">${hm(v.ts)}</td><td class="k-${e(v.type)}"><b>${e(v.type)}</b></td><td>${e(v.session||'')}</td><td>${e(v.title||v.text||v.source||'')} <span class="mute">${e(v.lane||'')} ${v.id?'<code>'+e(v.id)+'</code>':''}</span>${v.evidence?'<div class="mute">'+e(v.evidence)+'</div>':''}${v.why?'<div class="mute">'+e(v.why)+'</div>':''}</td></tr>`).join('')+'</table>':'<p class="mute">no events since the run started</p>';
+working.innerHTML=d.working.length?'<table><tr><th>member</th><th>item</th><th>for</th></tr>'+d.working.map(w=>`<tr><td>${e(w.member)}</td><td>${e(w.title)} <span class="mute">${e(w.lane||'')} · <code>${e(w.id)}</code></span></td><td class="t">${ago(w.minutes)}</td></tr>`).join('')+'</table>':'<p class="empty">Nothing claimed. A member claims an item when its session starts work.</p>';
+timeline.innerHTML=d.timeline.length?'<table id="tl" data-ui data-page="25"><tbody>'+d.timeline.map(v=>`<tr><td class="t">${hm(v.ts)}</td><td class="k-${e(v.type)}"><b>${e(v.type)}</b></td><td>${e(v.session||'')}</td><td>${e(v.title||v.text||v.source||'')} <span class="mute">${e(v.lane||'')} ${v.id?'<code>'+e(v.id)+'</code>':''}</span>${v.evidence?'<div class="mute">'+e(v.evidence)+'</div>':''}${v.why?'<div class="mute">'+e(v.why)+'</div>':''}</td></tr>`).join('')+'</tbody></table>':'<p class="empty">No events since the run started. Events appear as members claim, finish or ask.</p>';
 asks.innerHTML=d.asks.length?'<ul>'+d.asks.map(a=>'<li><code>'+e(a.set)+'</code> ('+e(a.people.join(', ')||'anyone')+'): '+a.items.map(i=>e(i.id+' '+i.title)).join('; ')+'</li>').join('')+'</ul>':'<p class="mute">none open</p>';
 waiting.innerHTML=d.waiting.length?'<ul>'+d.waiting.map(w=>'<li>'+link(w)+'</li>').join('')+'</ul>':'<p class="mute">nothing</p>';
 notes.innerHTML=d.notes.length?'<ul>'+d.notes.slice().reverse().map(n=>'<li>'+e(n)+'</li>').join('')+'</ul>':'<p class="mute">none</p>';
-timing.innerHTML=d.timing.length?'<table><tr><th>date</th><th>member</th><th>item</th><th>est</th><th>actual</th><th>why</th></tr>'+d.timing.slice().reverse().map(t=>`<tr><td class="t">${e(t.date)}</td><td>${e(t.member)}</td><td>${e(t.title)}</td><td>${e(t.estimate)}</td><td>${e(t.actual)}</td><td class="mute">${e(t.why)}</td></tr>`).join('')+'</table>':'<p class="mute">none</p>';}
+timing.innerHTML=d.timing.length?'<table id="timing-t" data-ui data-page="25"><thead><tr><th data-sort="text">date</th><th data-sort="text">member</th><th data-sort="text">item</th><th class="n" data-sort="num">est</th><th class="n" data-sort="num">actual</th><th>why</th></tr></thead><tbody>'+d.timing.slice().reverse().map(t=>`<tr><td class="t">${e(t.date)}</td><td>${e(t.member)}</td><td>${e(t.title)}</td><td class="n">${e(t.estimate)}</td><td class="n">${e(t.actual)}</td><td class="mute">${e(t.why)}</td></tr>`).join('')+'</tbody></table>':'<p class="empty">No estimates recorded yet; rows come from timing.md in the state folder.</p>';
+RUI.enhance();}
 tick();setInterval(tick,15000);
 </script></body></html>"""
+PAGE = PAGE.replace("</style>", report_ui.CSS + "</style>", 1).replace("__RUI__", report_ui.JS)
 
 
 FETCH = "await (await fetch('api',{cache:'no-store'})).json()"

@@ -233,3 +233,6 @@ loop.md testing row: validate levels at load, solution steps + replay test, miss
 
 ## 2026-11-20 tw play soak line
 engine-verify.md: web games soak with `tw play dist --monkey` over seeds, crash/stuck runs become bug items (harvest arXiv:2610.33106). Released 0.20.1 (0.20.0 had no tag).
+
+## 2026-11-23 data UI on report pages
+0.22.0: shared scripts/report_ui.py gives grind_report.py and grw_status.py stamps, sort, filter, paging (hash), empty states, loading and Retry on the status page. Verified paging and sort in headless Chrome. Same helper pattern shipped in chainwright 0.14.0.

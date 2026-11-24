@@ -48,3 +48,4 @@ Claims coordinate across worktrees only when the state folder is outside them; `
 
 2026-11-09 (20:10): v0.8.0 released and installed (PR 65): `grind_index.py` master page `~/.grindwright/index.html`, every grind session (from transcripts) and run by project; 91 sessions, 3 projects on first build. Next: link the master page from each run report page.
 - 2026-11-18: wiki updated to 0.19.7 (note 2026-11-03-github-wiki.md); evergreen audit finds root evergreen.json.
+- 2026-11-23: v0.22.0 data UI (report_ui.py: stamps, sort, filter, paging, empty states, status page loading and Retry). grind_index.py master page not yet converted.
