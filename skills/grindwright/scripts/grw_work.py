@@ -351,12 +351,12 @@ def names_issue(pr, number):
     return re.search(rf"#{number}(?!\d)", (pr.get("title") or "") + " " + (pr.get("body") or "")) is not None
 
 
-CLAIM_WORDS = r"(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?|refs?|references|part(?:\s+\w+)?\s+of)"
+CLAIM_WORDS = r"(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?|refs?|references|moves|part(?:\s+\w+)?\s+of)"
 
 
 def claims_issue(pr, number):
     """A merged PR counts as the issue's work only when its title names the issue or its body says so with a keyword
-    (`Closes #N`, `Refs #N`, `Part 2 of #N`, also `owner/repo#N`). A plain mention, such as a follow-up named in
+    (`Closes #N`, `Refs #N`, `Moves #N to ready for acceptance`, `Part 2 of #N`, also `owner/repo#N`). A plain mention, such as a follow-up named in
     passing, does not."""
     if re.search(rf"(?<![\w/])#{number}(?!\d)", pr.get("title") or ""):
         return True
@@ -1055,15 +1055,16 @@ def cmd_issue_pr(store, args):
         raise Refused(["this concept already has an open PR or branch: " + OVERLAP_NEXT] +
                       [f"#{h.get('pr', '-')} {h['branch']}: {', '.join(h['why'])}" for h in hits])
     # GitHub honours the closing keyword only for a PR into the default branch; the comment below links it either way.
-    # With acceptance labels on, a person closes the issue after checking the work, so the PR only references it.
-    keyword = "Refs" if acceptance(config)["enabled"] else "Closes"
-    if acceptance(config)["enabled"]:
+    # With acceptance labels on, a person closes the issue after checking the work, so the PR names the label instead.
+    gate = acceptance(config)
+    link = f"Moves #{number} to {gate['label']}" if gate["enabled"] else f"Closes #{number}"
+    if gate["enabled"]:
         hits = closing_commits(store.repo_path(), args.branch, args.base or default_branch(repo))
         if hits:
             raise Refused(["with acceptance labels on, a closing keyword in a commit closes the issue when it reaches the default branch: "
-                           "reword these to Refs #N (amend the last commit, or rebase and reword, then push the branch with --force-with-lease "
+                           f"reword these to Moves #N to {gate['label']} (amend the last commit, or rebase and reword, then push the branch with --force-with-lease "
                            "before it has a PR), or squash the branch into one commit without the keyword"] + hits)
-    body = (f"{keyword} #{number}\n\n{series}Opened by an AI agent (session `{store.sid}`) for human review. Nothing merges without a person.\n\n"
+    body = (f"{link}\n\n{series}Opened by an AI agent (session `{store.sid}`) for human review. Nothing merges without a person.\n\n"
             f"## Why this is a good idea\n{args.why}\n\n## Why it may not be\n{args.why_not}\n\n## What was checked\n{args.evidence}\n\n{MARKER}\n")
     refuse_banned(store, body + " " + args.title, "PR text")
     command = ["pr", "create", "-R", repo, "--head", args.branch, "--title", args.title, "--body-file", "-"]

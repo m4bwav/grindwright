@@ -139,7 +139,7 @@ class Acceptance(Base):
     def test_claim_words_titles_and_plain_mentions(self):
         claims = grw_work.claims_issue
         for body in ("Closes #7", "fixes #7", "Resolved #7", "Refs #7", "Part of #7", "Part 2 of #7", "closes o/r#7",
-                     "References: #7"):
+                     "References: #7", "Moves #7 to ready for acceptance"):
             self.assertTrue(claims({"title": "", "body": body}, 7), body)
         self.assertTrue(claims({"title": "Herds shelter in snow (#7)", "body": ""}, 7))
         for body in ("See #7 for the art.", "Follow-up: #7", "Closes #70", "Closes #17", "Depends on #7"):
@@ -205,7 +205,7 @@ class Acceptance(Base):
         self.run_grw("issue-accept", item)
         self.run_grw("issue-pr", item, "--branch", "b", "--title", "Fix crash", "--why", "g", "--why-not", "r", "--evidence", "t")
         body = next(s for c, s in zip(self.fake.calls, self.fake.stdin) if c[:2] == ("pr", "create"))
-        self.assertTrue(body.startswith("Refs #1"), body[:40])
+        self.assertTrue(body.startswith("Moves #1 to ready for acceptance"), body[:40])
         self.assertNotIn("Closes #1", body)
 
     def git(self, *argv):
@@ -226,7 +226,7 @@ class Acceptance(Base):
         self.assertEqual(code, 2, out)
         self.assertIn("Fixes #1", " ".join(out["refused"]))
         self.assertFalse([c for c in self.fake.calls if c[:2] == ("pr", "create")])
-        self.git("commit", "-q", "--amend", "--allow-empty", "-m", "Fix the crash", "-m", "Refs #1.")
+        self.git("commit", "-q", "--amend", "--allow-empty", "-m", "Fix the crash", "-m", "Moves #1 to ready for acceptance.")
         self.assertEqual(self.run_grw(*argv)[0], 0)
 
     def test_issue_close_labels_instead_of_closing(self):
