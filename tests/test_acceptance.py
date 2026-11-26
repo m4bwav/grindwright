@@ -208,6 +208,27 @@ class Acceptance(Base):
         self.assertTrue(body.startswith("Refs #1"), body[:40])
         self.assertNotIn("Closes #1", body)
 
+    def git(self, *argv):
+        import subprocess
+        subprocess.run(["git", "-C", str(self.root), "-c", "user.name=t", "-c", "user.email=t@t", *argv], check=True, capture_output=True)
+
+    def test_a_closing_keyword_in_a_commit_refuses_the_pr(self):
+        self.git("init", "-q", "-b", "main")
+        self.git("commit", "-q", "--allow-empty", "-m", "base")
+        self.git("checkout", "-q", "-b", "b")
+        self.git("commit", "-q", "--allow-empty", "-m", "Fix the crash", "-m", "Fixes #1.")
+        self.fake.issues = [issue(1, "Crash", ("bug",))]
+        self.run_grw("issue-sync")
+        item = next(i["id"] for i in grw.Store(self.state).items() if i.get("issue") == 1)
+        self.run_grw("issue-accept", item)
+        argv = ("issue-pr", item, "--branch", "b", "--title", "Fix crash", "--why", "g", "--why-not", "r", "--evidence", "t")
+        code, out = self.run_grw(*argv)
+        self.assertEqual(code, 2, out)
+        self.assertIn("Fixes #1", " ".join(out["refused"]))
+        self.assertFalse([c for c in self.fake.calls if c[:2] == ("pr", "create")])
+        self.git("commit", "-q", "--amend", "--allow-empty", "-m", "Fix the crash", "-m", "Refs #1.")
+        self.assertEqual(self.run_grw(*argv)[0], 0)
+
     def test_issue_close_labels_instead_of_closing(self):
         self.fake.issues = [issue(1, "Crash")]
         item = self.run_grw("issue-sync")[1]["new"][0]

@@ -178,6 +178,31 @@ def agent_line(store):
     return f"**I am an AI agent ({name}, session `{store.sid}`), not a person.** A person reviews what I do here."
 
 
+CLOSING_KEYWORD = re.compile(r"(?i)\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\b:?\s+(?:[\w.-]+/[\w.-]+)?#\d+")
+
+
+def git_out(repo_dir, *argv):
+    done = subprocess.run(["git", "-C", str(repo_dir), *argv], capture_output=True, text=True, encoding="utf-8")
+    return done.stdout if done.returncode == 0 else None
+
+
+def closing_commits(repo_dir, branch, base):
+    """Commits on the branch, not on the base, whose message holds a closing keyword (Fixes #N, Closes #N, ...).
+    A keyword in a commit closes the issue when the commit reaches the default branch, whatever the PR says."""
+    tip = next((r for r in (branch, f"origin/{branch}") if git_out(repo_dir, "rev-parse", "-q", "--verify", r)), None)
+    floor = next((r for r in (f"origin/{base}", base) if git_out(repo_dir, "rev-parse", "-q", "--verify", r)), None)
+    if not tip or not floor:
+        return []
+    log = git_out(repo_dir, "log", "--format=%h%x1f%B%x1e", f"{floor}..{tip}") or ""
+    hits = []
+    for record in log.split("\x1e"):
+        sha, _, message = record.strip().partition("\x1f")
+        found = [m.group(0) for m in CLOSING_KEYWORD.finditer(message)]
+        if sha and found:
+            hits.append(f"{sha}: {', '.join(found)}")
+    return hits
+
+
 def refuse_banned(store, text, where):
     bans = [w for w in store.profile().get("text_bans", []) if re.search(rf"\b{re.escape(w)}\b", text, re.I)]
     if bans:
@@ -1032,6 +1057,12 @@ def cmd_issue_pr(store, args):
     # GitHub honours the closing keyword only for a PR into the default branch; the comment below links it either way.
     # With acceptance labels on, a person closes the issue after checking the work, so the PR only references it.
     keyword = "Refs" if acceptance(config)["enabled"] else "Closes"
+    if acceptance(config)["enabled"]:
+        hits = closing_commits(store.repo_path(), args.branch, args.base or default_branch(repo))
+        if hits:
+            raise Refused(["with acceptance labels on, a closing keyword in a commit closes the issue when it reaches the default branch: "
+                           "reword these to Refs #N (amend the last commit, or rebase and reword, then push the branch with --force-with-lease "
+                           "before it has a PR), or squash the branch into one commit without the keyword"] + hits)
     body = (f"{keyword} #{number}\n\n{series}Opened by an AI agent (session `{store.sid}`) for human review. Nothing merges without a person.\n\n"
             f"## Why this is a good idea\n{args.why}\n\n## Why it may not be\n{args.why_not}\n\n## What was checked\n{args.evidence}\n\n{MARKER}\n")
     refuse_banned(store, body + " " + args.title, "PR text")
