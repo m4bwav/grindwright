@@ -312,18 +312,35 @@ class HumanQueue(Base):
             self.grw("wait-human", item, "--set", self.make_set(f"s{n}", guess))
             yield item
 
-    def test_past_the_cap_drafts_then_asks_when_room_opens(self):
+    def test_past_the_cap_no_code_is_started_until_room_opens(self):
         waiting = list(self.fill_queue())
-        draft = self.add("batch 3", 5, 20, "code", "--person", "alex")
-        top = self.grw("next", "--no-probe")["next"]
-        self.assertEqual((top["id"], top["action"]), (draft, "draft"))
-        self.grw("claim", draft)
-        self.grw("hold", draft, "--evidence", "draft on branch")
-        self.assertIn(draft, [d["id"] for d in self.grw("rank", "--no-probe")["deferred"]])
+        held = self.add("batch 3", 5, 20, "code", "--person", "alex")
+        ranked = self.grw("rank", "--no-probe")
+        self.assertNotIn(held, [r["id"] for r in ranked["ranked"]])
+        self.assertIn("cap", " ".join(next(d for d in ranked["deferred"] if d["id"] == held)["why"]))
         self.grw("drop", waiting[0], "--why", "test")
         top = self.grw("next", "--no-probe")["next"]
-        self.assertEqual((top["id"], top["action"]), (draft, "ask-drafted"))
-        self.grw("wait-human", draft, "--why", "PR")
+        self.assertEqual((top["id"], top["action"]), (held, "work"))
+
+    def slots(self, free):
+        real = grw.open_pr_slots
+        grw.open_pr_slots = lambda profile: {"repo": "o/r", "open": 20 - free, "cap": 20, "free": free}
+        self.addCleanup(setattr, grw, "open_pr_slots", real)
+
+    def test_no_open_pr_slot_on_github_defers_all_code_work(self):
+        code = self.add("fix the crash", 5)
+        self.slots(0)
+        ranked = self.grw("rank", "--no-probe")
+        self.assertNotIn(code, [r["id"] for r in ranked["ranked"]])
+        self.assertIn("no open PR slot", " ".join(next(d for d in ranked["deferred"] if d["id"] == code)["why"]))
+        self.assertEqual(ranked["pr_slots"]["free"], 0)
+
+    def test_github_slots_replace_the_ledger_count(self):
+        list(self.fill_queue())
+        code = self.add("batch 3", 5, 20, "code", "--person", "alex")
+        self.slots(3)
+        top = self.grw("next", "--no-probe")["next"]
+        self.assertEqual((top["id"], top["action"]), (code, "work"))
 
     def test_pr_review_counts_against_the_cap(self):
         first = self.add("batch 0", 4, 20, "code", "--person", "alex")

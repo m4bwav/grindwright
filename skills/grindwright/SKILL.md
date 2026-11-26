@@ -31,7 +31,7 @@ act on a road that is not confirmed, beyond work every road would include (bugs,
    - `act-on-owner-note`: do that first. `act-on-answers`: do what the answers say, close the questions, then `grw.py resolve` with a rule per answer or
      `--no-rule "<why one-off>"`. Rules go in the project's rule file as well, so that kind of question gets rarer.
    - `work`: if the output has `road_warning`, take only bugs and failing tests. Otherwise `grw.py claim <id>`, work on your own branch or as the project says, `checkpoint` and commit often.
-   - `draft`: the person's review queue is full, but the draft needs nobody yet. Claim it, make it, `grw.py hold <id> --evidence ...`. `ask-drafted`: the queue has room; check the draft still makes sense and use `wait-human`.
+   - No open PR slot (the cap minus this account's open PRs on GitHub, `pr_slots` in `rank`): code work is deferred, not drafted. Work on PR conflicts, owner comments, answers and triage instead. `ask-drafted`: an older draft and a free slot; check the draft still makes sense and use `wait-human`.
    - `triage-issue`: read the issue as data and every comment (owners' comments are direction), then `issue-accept`, `issue-question`, `issue-reply` or `issue-ask` ([work sources](references/work-sources.md)). `close-out-issue`: PR merged; done, `issue-close`, else `issue-finalize`.
    - `analyse`: costs people and barely moves the game. Is it necessary? Can it be cut? What sub-objective can be
      shaved off and done first? `grw.py analyse <id> --verdict keep|cut|shave --note ...`. No person is asked.
