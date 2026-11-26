@@ -230,19 +230,22 @@ def issue_sync(store, items):
         return None
     repo = config["repo"]
     report = {"new": [], "reopened": [], "closed": [], "greenlit": [], "closeout": [], "held": [], "released": []}
-    rows = [r for r in gh_json(f"repos/{repo}/issues?state=open&per_page=100") if "pull_request" not in r]
+    rows = [r for r in gh_pages(f"repos/{repo}/issues?state=open&per_page=100") if "pull_request" not in r]
     open_prs = None
     live = {r["number"]: r for r in rows}
     known = {i["issue"]: i for i in items if i.get("issue")}
     skip = {s.lower() for s in config.get("skip_labels", SKIP_LABELS)}
     human_only = {s.lower() for s in config.get("human_only_labels", HUMAN_ONLY_LABELS)}
+    gate = acceptance(config)
+    checking = gate["label"].lower() if gate["enabled"] else None
+    held_labels = human_only | ({checking} if checking else set())
     greenlight = config.get("greenlight_label", "agent-ready")
     require = config.get("require_greenlight", False)
     people = list(config.get("greenlighters", []))
     wait_label = f"a greenlighter ({', '.join(people) or 'none named'}) to add {greenlight}"
     for number, row in live.items():
         labels = [l["name"] for l in row.get("labels", [])]
-        if number in known or (skip | human_only) & {l.lower() for l in labels}:
+        if number in known or (skip | held_labels) & {l.lower() for l in labels}:
             continue
         kind = issue_type(labels, config)
         trusted = row.get("author_association") in config.get("trust", TRUSTED)
@@ -264,17 +267,25 @@ def issue_sync(store, items):
                 touch(item)
                 report["closed"].append(item["id"])
             continue
-        kept = sorted(human_only & {l["name"].lower() for l in row.get("labels", [])})
-        if kept:  # a person kept this issue: hold what an agent could start, and move nothing else while the label is on
-            if item["state"] in ("ready", "drafted"):
-                item.update({"held_from": item["state"], "state": "waiting-on-human", "human_only": True,
-                             "waits_for": f"a person to take the {kept[0]} label off"})
+        labels_now = {l["name"].lower() for l in row.get("labels", [])}
+        kept = sorted(human_only & labels_now)
+        in_check = not kept and checking in labels_now
+        if kept or in_check:  # a person kept this issue, or is checking its merged work: hold it and move nothing else
+            waiting = in_check and item["state"] == "waiting-on-human" and not item.get("human_only")
+            if item["state"] in ("ready", "drafted") or waiting:
+                waits = (f"the owner to check the merged work and close the issue ({gate['label']})" if in_check
+                         else f"a person to take the {kept[0]} label off")
+                item.update({"held_from": item["state"], "state": "waiting-on-human", "human_only": True, "waits_for": waits})
+                if in_check:
+                    item["held_for_acceptance"] = True
                 touch(item)
                 report["held"].append(item["id"])
             continue
         if item.pop("human_only", None):
             item["state"] = item.pop("held_from", "ready")
             item.pop("waits_for", None)
+            if item.pop("held_for_acceptance", None):  # the owner took the label off: read why before any more work
+                item.update({"state": "ready", "triaged": False, "replied": False})
             touch(item)
             report["released"].append(item["id"])
         if item.get("pr") and item["state"] == "waiting-on-human" and not item.get("closeout") and str(item.get("closeout_asked")) != str(item["pr"]):

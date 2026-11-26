@@ -25,6 +25,9 @@ class AcceptanceGh(FakeGh):
             return {"default_branch": "main"}
         if "/pulls?state=closed" in path:
             return self.closed_prs
+        if "/issues?state=open" in path and "page=" in path:
+            page = int(path.rsplit("page=", 1)[1])
+            return self.issues[(page - 1) * 100:page * 100]
         if "/timeline" in path:
             return self.timeline.get(int(path.split("/issues/")[1].split("/")[0]), [])
         return super().api(*argv)
@@ -70,6 +73,42 @@ class Acceptance(Base):
         code, out = self.run_grw("issue-acceptance", *flags)
         self.assertEqual(code, 0, out)
         return out
+
+    def tracked(self):
+        return {i["issue"]: i for i in grw.Store(self.state).items() if i.get("issue")}
+
+    def test_an_issue_waiting_for_acceptance_is_not_taken(self):
+        self.fake.issues = [issue(1, "Crash", ("bug",)), issue(2, "Hang", ("bug", "ready for acceptance"))]
+        self.run_grw("issue-sync")
+        self.assertEqual(list(self.tracked()), [1])
+
+    def test_the_label_holds_a_known_issue_and_taking_it_off_sends_it_back_to_triage(self):
+        self.fake.issues = [issue(1, "Crash", ("bug",))]
+        self.run_grw("issue-sync")
+        item = self.tracked()[1]["id"]
+        self.run_grw("issue-accept", item)
+        self.fake.issues = [issue(1, "Crash", ("bug", "ready for acceptance"))]
+        self.assertEqual(self.run_grw("issue-sync")[1]["held"], [item])
+        row = self.tracked()[1]
+        self.assertEqual(row["state"], "waiting-on-human")
+        self.assertIn("check the merged work", row["waits_for"])
+        self.assertEqual(self.run_grw("claim", item)[0], 2)
+        self.fake.issues = [issue(1, "Crash", ("bug",))]
+        self.assertEqual(self.run_grw("issue-sync")[1]["released"], [item])
+        row = self.tracked()[1]
+        self.assertEqual((row["state"], row["triaged"]), ("ready", False))
+        self.assertNotIn("held_for_acceptance", row)
+
+    def test_the_label_is_ignored_while_acceptance_is_off(self):
+        self.set_acceptance(enabled=False)
+        self.fake.issues = [issue(2, "Hang", ("bug", "ready for acceptance"))]
+        self.run_grw("issue-sync")
+        self.assertEqual(list(self.tracked()), [2])
+
+    def test_sync_reads_every_page_of_open_issues(self):
+        self.fake.issues = [issue(n, f"Bug {n}", ("bug",)) for n in range(1, 102)]
+        self.run_grw("issue-sync")
+        self.assertIn(101, self.tracked())
 
     def test_default_is_off(self):
         self.assertFalse(grw_work.acceptance({})["enabled"])
@@ -236,12 +275,24 @@ class Acceptance(Base):
         self.run_grw("claim", item)
         self.run_grw("issue-pr", item, "--branch", "b", "--title", "Fix crash", "--why", "g", "--why-not", "r", "--evidence", "t")
         self.fake.pulls[9] = {"merged_at": "2026-01-02T00:00:00Z"}
-        self.fake.issues = [issue(1, "Crash", ("bug", "ready for acceptance"))]  # sync's own pass is tested above
         self.assertEqual(self.run_grw("issue-sync")[1]["closeout"], [item])
         code, out = self.run_grw("issue-close", item, "--evidence", "all three steps play")
         self.assertEqual((code, out["labelled"]), (0, 1))
         self.assertFalse(any(c[:2] == ("issue", "close") for c in self.fake.calls))
         self.assertEqual(grw_work.find_item(grw.Store(self.state).items(), item)["state"], "done")
+
+    def test_a_waiting_item_whose_issue_gets_the_label_waits_for_the_owner(self):
+        self.fake.issues = [issue(1, "Crash")]
+        item = self.run_grw("issue-sync")[1]["new"][0]
+        self.run_grw("issue-accept", item)
+        self.run_grw("claim", item)
+        self.run_grw("issue-pr", item, "--branch", "b", "--title", "Fix crash", "--why", "g", "--why-not", "r", "--evidence", "t")
+        self.fake.pulls[9] = {"merged_at": "2026-01-02T00:00:00Z"}
+        self.fake.issues = [issue(1, "Crash", ("bug", "ready for acceptance"))]
+        report = self.run_grw("issue-sync")[1]
+        self.assertEqual((report["closeout"], report["held"]), ([], [item]))
+        self.assertIn("check the merged work", self.tracked()[1]["waits_for"])
+        self.assertEqual(self.run_grw("issue-sync")[1]["held"], [])
 
 
 if __name__ == "__main__":
