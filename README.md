@@ -8,7 +8,7 @@ Status: 0.1.0. Unit tests pass. No live pilot yet, so it has not yet moved a rea
 
 ## Install
 
-As a Claude Code plugin:
+In Claude Code:
 
     /plugin marketplace add m4bwav/grindwright
     /plugin install grindwright@grindwright
