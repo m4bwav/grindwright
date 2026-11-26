@@ -431,7 +431,8 @@ def ticket_sources(profile):
     return lists + list(work.get("plans") or ["unbuilt design-doc sections"]) + ["open issues"]
 
 
-def select(profile, road, items, events, session, hosts_alive=None, hosts_idle=(), closed=None, sid=SOLO, quiet=False, gates=None):
+def select(profile, road, items, events, session, hosts_alive=None, hosts_idle=(), closed=None, sid=SOLO, quiet=False, gates=None,
+           slots=None):
     """Rank everything. Returns dict with ranked, deferred, answers_first, redo. No side effects.
     quiet: new work is off, so only owner-driven items rank (references/new-work.md).
     gates: paused and handed-off items to defer or offer to continue (grw_handoff.gates)."""
@@ -466,7 +467,9 @@ def select(profile, road, items, events, session, hosts_alive=None, hosts_idle=(
         if item["state"] == "drafted":
             person = item.get("person")
             cap = review_cap(profile, person)
-            if open_for_person(items, person) >= cap:
+            if slots is not None and slots["free"] <= 0:
+                deferred.append({"id": item["id"], "title": item["title"], "why": [f"drafted; {slot_text(slots)}"]})
+            elif slots is None and open_for_person(items, person) >= cap:
                 deferred.append({"id": item["id"], "title": item["title"], "why": [f"drafted; {person}'s review queue is at its cap of {cap}"]})
             else:
                 score, why = score_item(item, items, road, hosts_idle)
@@ -478,7 +481,6 @@ def select(profile, road, items, events, session, hosts_alive=None, hosts_idle=(
             continue
         lane = lane_of(profile, item)
         reasons = area_clashes(profile, item, items, sid)
-        draft_only = False
         if closed and item.get("lane") in closed:
             reasons.append("lane closed: needs " + ", ".join(closed[item["lane"]]))
         waiting = [b for b in item.get("blocked_by", []) if b not in done_ids]
@@ -489,14 +491,10 @@ def select(profile, road, items, events, session, hosts_alive=None, hosts_idle=(
         if item["value"] < floor and not needed and not item.get("answered") and not item.get("owner_note"):
             reasons.append(f"value {item['value']} is under the floor {profile.get('min_value', 2)}")
         person = item.get("person")
-        if item.get("human_min", 0) > 0 and person and not item.get("answered"):
+        if slots is None and item.get("human_min", 0) > 0 and person and not item.get("answered"):
             cap = review_cap(profile, person)
             if open_for_person(items, person) >= cap:
-                drafts = len([o for o in items if o["state"] == "drafted" and same_person(o.get("person"), person)])
-                if item.get("question") or lane.get("stack_on_pending") is False or drafts >= cap:
-                    reasons.append(f"{person}'s review queue is at its cap of {cap}")
-                else:
-                    draft_only = True
+                reasons.append(f"{person}'s review queue is at its cap of {cap}: {NO_SLOT_TEXT}")
             if lane.get("stack_on_pending") is False:
                 if any(o["state"] == "waiting-on-human" and o.get("lane") == item.get("lane") for o in items):
                     reasons.append("this lane does not stack on a pending review")
@@ -535,9 +533,9 @@ def select(profile, road, items, events, session, hosts_alive=None, hosts_idle=(
             entry["action"] = "analyse"
             entry["score"] = round(score * 0.5 + 1, 3)
             entry["why"] = ["costs people and barely moves the project: necessary? cut? what can be shaved off first?"] + why
-        elif draft_only:
-            entry["action"] = "draft"
-            entry["why"] = [f"{person}'s review queue is full: make the draft, then grw.py hold; ask later"] + why
+        if slots is not None and slots["free"] <= 0 and entry["action"] == "work":
+            deferred.append({"id": item["id"], "title": item["title"], "why": [slot_text(slots)]})
+            continue
         entry["category"] = category(entry, item)
         cap = lane.get("share_cap")
         if cap is None and lane.get("kind") == "maintenance":
@@ -842,13 +840,41 @@ def cmd_list(store, args):
     return {"items": items}
 
 
+NO_SLOT_TEXT = "no new code until a PR merges or closes; do other work (PR conflicts, owner comments, answers, triage)"
+
+
+def slot_text(slots):
+    return f"no open PR slot: {slots['open']} of {slots['cap']} open on {slots['repo']}; {NO_SLOT_TEXT}"
+
+
+def open_pr_slots(profile):
+    """Open PR slots from GitHub, not the ledger: the cap (work.prs.cap, else the first greenlighter's review_cap) minus this
+    account's open PRs on the project's repository. None when there is no repository or cap, or GitHub cannot be read."""
+    work = profile.get("work") or {}
+    prs, issues = work.get("prs") or {}, work.get("issues") or {}
+    repo = prs.get("repo") or issues.get("repo")
+    owners = issues.get("greenlighters") or []
+    cap = prs.get("cap", review_cap(profile, owners[0]) if owners and canonical_person(profile, owners[0]) else None)
+    if not repo or cap is None:
+        return None
+    try:
+        authors = set(prs.get("authors") or [json.loads(grw_work.gh("api", "user"))["login"]])
+        rows = grw_work.gh_pages(f"repos/{repo}/pulls?state=open&per_page=100")
+    except Exception:
+        return None
+    count = len([p for p in rows if (p.get("user") or {}).get("login") in authors])
+    return {"repo": repo, "open": count, "cap": cap, "free": cap - count}
+
+
 def ranking(store, args):
     profile, road, items = store.profile(), store.road(), store.items()
     alive, idle, report = hosts_for(args, profile)
     quiet = grw_work.new_work_off(store)
+    slots = open_pr_slots(profile)
     result = select(profile, road, items, store.events(), store.session(), alive, idle, closed_lanes(profile), sid=store.sid, quiet=quiet,
-                    gates=grw_handoff.gates(store, items))
+                    gates=grw_handoff.gates(store, items), slots=slots)
     result["quiet"] = quiet
+    result["pr_slots"] = slots
     result["hosts"] = report
     result["free_gpu_hosts"] = [n for n, r in report.items() if r.get("up") and not r.get("queued")]
     return result
