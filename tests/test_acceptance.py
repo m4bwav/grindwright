@@ -14,10 +14,15 @@ from test_crew import Base, FakeGh, issue  # noqa: E402
 class AcceptanceGh(FakeGh):
     def __init__(self):
         super().__init__()
-        self.closed_prs, self.timeline = [], {}
+        self.closed_prs, self.timeline, self.compares, self.pages_asked = [], {}, {}, []
 
     def api(self, *argv):
         path = argv[0]
+        self.pages_asked.append(path)
+        if "/compare/" in path:
+            return self.compares.get(path.rsplit("...", 1)[-1], {"status": "diverged"})
+        if path.endswith("repos/o/r"):
+            return {"default_branch": "main"}
         if "/pulls?state=closed" in path:
             return self.closed_prs
         if "/timeline" in path:
@@ -31,8 +36,11 @@ class AcceptanceGh(FakeGh):
         return [c for c in self.calls if c[:2] == ("issue", "comment")]
 
 
-def pr(number, body, merged=True):
-    return {"number": number, "title": f"Change {number}", "body": body, "merged_at": "2026-01-02T00:00:00Z" if merged else None}
+def pr(number, body, merged=True, base=None, sha=None):
+    row = {"number": number, "title": f"Change {number}", "body": body, "merged_at": "2026-01-02T00:00:00Z" if merged else None}
+    if base:
+        row.update({"base": {"ref": base}, "merge_commit_sha": sha})
+    return row
 
 
 def cross_ref(number, state, merged=False, repo="o/r", body=""):
@@ -173,6 +181,32 @@ class Acceptance(Base):
         self.fake.issues = [issue(1, "Crash", ("bug", "ready for acceptance"))]
         self.assertEqual(self.run_grw("issue-sync")[1]["acceptance"]["labelled"], [])
         self.assertEqual(len(self.fake.comments_posted()), 1)
+
+    def test_a_pr_merged_into_a_stacked_branch_waits_for_the_default_branch(self):
+        self.fake.issues = [issue(1, "Crash", ("bug",))]
+        self.fake.closed_prs = [pr(5, "Closes #1", base="feat/stack", sha="abc")]
+        out = self.accept("--dry-run")
+        self.assertEqual(out["ready"], [])
+        self.assertEqual(out["not_on_default"], [{"issue": 1, "merged_into_another_branch": ["#5"]}])
+        self.fake.compares["abc"] = {"status": "behind"}
+        self.assertEqual([r["issue"] for r in self.accept("--dry-run")["ready"]], [1])
+
+    def test_open_issues_and_closed_prs_are_read_page_by_page(self):
+        self.fake.issues = [issue(1, "Crash", ("bug",))]
+        self.fake.closed_prs = [pr(5, "Closes #1")]
+        self.accept("--dry-run")
+        self.assertTrue(any("issues?state=open" in p and "page=1" in p for p in self.fake.pages_asked))
+        self.assertTrue(any("pulls?state=closed" in p and "page=1" in p for p in self.fake.pages_asked))
+
+    def test_with_acceptance_on_the_pr_only_references_the_issue(self):
+        self.fake.issues = [issue(1, "Crash", ("bug",))]
+        self.run_grw("issue-sync")
+        item = next(i["id"] for i in grw.Store(self.state).items() if i.get("issue") == 1)
+        self.run_grw("issue-accept", item)
+        self.run_grw("issue-pr", item, "--branch", "b", "--title", "Fix crash", "--why", "g", "--why-not", "r", "--evidence", "t")
+        body = next(s for c, s in zip(self.fake.calls, self.fake.stdin) if c[:2] == ("pr", "create"))
+        self.assertTrue(body.startswith("Refs #1"), body[:40])
+        self.assertNotIn("Closes #1", body)
 
     def test_issue_close_labels_instead_of_closing(self):
         self.fake.issues = [issue(1, "Crash")]

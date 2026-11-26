@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Acceptance labels are the gate before an issue closes. With `work.issues.acceptance` on, `issue-pr` writes `Refs #N` instead of `Closes #N`, so merging leaves the issue open for the label and the owner closes it after checking; work-sources.md says the same for an agent's own PR text and commit messages and names GitHub's auto-close setting. `issue-acceptance` now reads every page of open issues and closed PRs (it read only the first 100 of each, so on a busy repository older merges were never seen), and a PR merged into a stacked branch counts only once its merge commit is on the default branch (`not_on_default`). Reason: owner request 2026-11-26: issues closed on merge before anyone had checked the work.
 - engine-verify.md: performance baseline from day one (scripted run, golden metrics, nightly compare with history via testwright `tw.py perf`). From the 2026-11-22 harvest of r/ClaudeGameDev 1y2w5yy.
 
 ## 0.22.0 (2026-11-23)

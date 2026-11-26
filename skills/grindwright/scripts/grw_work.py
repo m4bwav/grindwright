@@ -63,6 +63,17 @@ def gh_json(*argv):
     return json.loads(gh("api", *argv) or "[]")
 
 
+def gh_pages(path, pages=50):
+    """Every row of a paged list endpoint (per_page=100), not only the first page."""
+    rows, sep = [], "&" if "?" in path else "?"
+    for page in range(1, pages + 1):
+        batch = gh_json(f"{path}{sep}page={page}")
+        rows += batch
+        if len(batch) < 100:
+            break
+    return rows
+
+
 def work(store, name):
     block = store.profile().get("work", {}).get(name)
     if not block:
@@ -364,6 +375,33 @@ def referencing_prs(repo, number, open_prs, closed_prs):
     return found
 
 
+def default_branch(repo):
+    data = gh_json(f"repos/{repo}")
+    return (data.get("default_branch") if isinstance(data, dict) else None) or "main"
+
+
+def landed(repo, pr, default):
+    """A merged PR counts once its merge commit is on the default branch. A PR merged into another branch (a stacked
+    PR) waits until that branch reaches the default one."""
+    base = (pr.get("base") or {}).get("ref")
+    if not base or base == default:
+        return True
+    sha = pr.get("merge_commit_sha")
+    if not sha:
+        return False
+    compare = gh_json(f"repos/{repo}/compare/{default}...{sha}")
+    return isinstance(compare, dict) and compare.get("status") in ("behind", "identical")
+
+
+def pull(repo, key, known):
+    if key in known:
+        return known[key]
+    if not isinstance(key, int):
+        return {}
+    data = gh_json(f"repos/{repo}/pulls/{key}")
+    return data if isinstance(data, dict) else {}
+
+
 def create_label(repo, label):
     """Without --force: an existing label, a person's colour and description included, is left as it is."""
     try:
@@ -390,19 +428,21 @@ def acceptance_pass(store, items, rows=None, dry_run=False):
     block, repo = acceptance(config), config["repo"]
     label = block["label"]
     if rows is None:
-        rows = [r for r in gh_json(f"repos/{repo}/issues?state=open&per_page=100") if "pull_request" not in r]
+        rows = [r for r in gh_pages(f"repos/{repo}/issues?state=open&per_page=100") if "pull_request" not in r]
     passed = {s.lower() for s in config.get("human_only_labels", HUMAN_ONLY_LABELS)} | {s.lower() for s in config.get("skip_labels", SKIP_LABELS)}
     passed.add(label.lower())
     eligible = [r["number"] for r in rows if not passed & {l["name"].lower() for l in r.get("labels", [])}]
-    report = {"label": label, "dry_run": dry_run, "ready": [], "open_pr": [], "labelled": []}
+    report = {"label": label, "dry_run": dry_run, "ready": [], "open_pr": [], "not_on_default": [], "labelled": []}
     if not eligible:
         return report
-    open_prs = gh_json(f"repos/{repo}/pulls?state=open&per_page=100")
-    closed_prs = gh_json(f"repos/{repo}/pulls?state=closed&sort=updated&direction=desc&per_page=100")
+    open_prs = gh_pages(f"repos/{repo}/pulls?state=open&per_page=100")
+    closed_prs = gh_pages(f"repos/{repo}/pulls?state=closed&sort=updated&direction=desc&per_page=100")
+    known = {p["number"]: p for p in closed_prs}
+    default = None
     made = False
     for number in sorted(eligible):
         if not any(p.get("merged_at") and claims_issue(p, number) for p in closed_prs):
-            continue  # no merged PR among the newest 100 closed ones claims it: not worth a timeline call
+            continue  # no merged PR claims it: not worth a timeline call
         refs = referencing_prs(repo, number, open_prs, closed_prs)
         still_open = [pr_label(k) for k, v in refs.items() if v == "open"]
         merged = sorted((pr_label(k) for k, v in refs.items() if v == "merged"), key=lambda s: (len(s), s))
@@ -410,6 +450,11 @@ def acceptance_pass(store, items, rows=None, dry_run=False):
             report["open_pr"].append({"issue": number, "open": still_open})
             continue
         if not merged:
+            continue
+        default = default or default_branch(repo)
+        elsewhere = [pr_label(k) for k, v in refs.items() if v == "merged" and not landed(repo, pull(repo, k, known), default)]
+        if elsewhere:
+            report["not_on_default"].append({"issue": number, "merged_into_another_branch": elsewhere})
             continue
         report["ready"].append({"issue": number, "merged": merged})
         if dry_run:
@@ -985,7 +1030,9 @@ def cmd_issue_pr(store, args):
         raise Refused(["this concept already has an open PR or branch: " + OVERLAP_NEXT] +
                       [f"#{h.get('pr', '-')} {h['branch']}: {', '.join(h['why'])}" for h in hits])
     # GitHub honours the closing keyword only for a PR into the default branch; the comment below links it either way.
-    body = (f"Closes #{number}\n\n{series}Opened by an AI agent (session `{store.sid}`) for human review. Nothing merges without a person.\n\n"
+    # With acceptance labels on, a person closes the issue after checking the work, so the PR only references it.
+    keyword = "Refs" if acceptance(config)["enabled"] else "Closes"
+    body = (f"{keyword} #{number}\n\n{series}Opened by an AI agent (session `{store.sid}`) for human review. Nothing merges without a person.\n\n"
             f"## Why this is a good idea\n{args.why}\n\n## Why it may not be\n{args.why_not}\n\n## What was checked\n{args.evidence}\n\n{MARKER}\n")
     refuse_banned(store, body + " " + args.title, "PR text")
     command = ["pr", "create", "-R", repo, "--head", args.branch, "--title", args.title, "--body-file", "-"]
